@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Dashboard {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  schema      String   // JSON 스키마 (SQLite에서는 String으로 저장)
+  version     String   @default("1.0.0")
+  isPublished Boolean  @default(false)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator     User     @relation(fields: [createdBy], references: [id])
+  permissions DashboardPermission[]
+
+  @@index([createdBy])
+  @@index([isPublished])
+}
+
+model DashboardPermission {
+  id          String   @id @default(cuid())
+  dashboardId String
+  userId      String?
+  roleId      String?
+  permission  String   // "view" | "edit" | "admin"
+
+  dashboard   Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+
+  @@unique([dashboardId, userId])
+}
+
+model User {
+  id         String      @id @default(cuid())
+  email      String      @unique
+  name       String
+  role       String      @default("viewer")  // "admin" | "viewer"
+  dashboards Dashboard[]
+  createdAt  DateTime    @default(now())
+}
+
+model DataSourceConfig {
+  id        String   @id @default(cuid())
+  name      String
+  type      String   // "timeseries" | "realtime" | "metric" | "static" | "rest-api"
+  config    String   // JSON 연결 설정
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
