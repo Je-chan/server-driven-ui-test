@@ -58,3 +58,237 @@ model DataSourceConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// ============================================
+// 태양광 발전소 모니터링 Mock 데이터 테이블
+// ============================================
+
+// 발전소 (Site)
+model Site {
+  id           String   @id @default(cuid())
+  name         String
+  location     String
+  capacity     Float    // 총 설비용량 (kW)
+  latitude     Float?
+  longitude    Float?
+  createdAt    DateTime @default(now())
+
+  assets       Asset[]
+  weatherData  WeatherData[]
+}
+
+// 설비 (인버터)
+model Asset {
+  id            String   @id @default(cuid())
+  siteId        String
+  name          String
+  type          String   @default("inverter") // "inverter" | "meter" | "sensor"
+  manufacturer  String?
+  model         String?
+  ratedCapacity Float    // 정격용량 (kW)
+  installDate   DateTime?
+  status        String   @default("active") // "active" | "inactive" | "maintenance"
+
+  site          Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  inverterData  InverterData[]
+
+  @@index([siteId])
+}
+
+// 인버터 시계열 데이터
+model InverterData {
+  id            String   @id @default(cuid())
+  assetId       String
+  timestamp     DateTime
+  activePower   Float    // 유효전력 (kW)
+  reactivePower Float    // 무효전력 (kVar)
+  voltage       Float?   // 전압 (V)
+  current       Float?   // 전류 (A)
+  frequency     Float?   // 주파수 (Hz)
+  dailyEnergy   Float    // 일발전량 (kWh)
+  totalEnergy   Float    // 누적발전량 (kWh)
+  efficiency    Float?   // 효율 (%)
+  temperature   Float?   // 인버터 온도 (°C)
+
+  asset         Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, timestamp])
+  @@index([timestamp])
+}
+
+// 기상 데이터
+model WeatherData {
+  id           String   @id @default(cuid())
+  siteId       String
+  timestamp    DateTime
+  irradiance   Float    // 일사량 (W/m²)
+  temperature  Float    // 기온 (°C)
+  humidity     Float?   // 습도 (%)
+  windSpeed    Float?   // 풍속 (m/s)
+  windDirection Float?  // 풍향 (°)
+  rainfall     Float?   // 강수량 (mm)
+  cloudCover   Float?   // 운량 (%)
+
+  site         Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId, timestamp])
+  @@index([timestamp])
+}
+
+// 일별 KPI 데이터
+model KpiDaily {
+  id                String   @id @default(cuid())
+  siteId            String
+  date              DateTime
+  dailyGeneration   Float    // 일발전량 (kWh)
+  expectedGeneration Float?  // 예상발전량 (kWh)
+  pr                Float?   // Performance Ratio (%)
+  availability      Float?   // 가동률 (%)
+  capacityFactor    Float?   // 이용률 (%)
+  peakPower         Float?   // 최대출력 (kW)
+  operatingHours    Float?   // 운전시간 (h)
+
+  @@unique([siteId, date])
+  @@index([siteId])
+  @@index([date])
+}
+
+// 알람/이벤트 데이터
+model Alarm {
+  id          String   @id @default(cuid())
+  siteId      String
+  assetId     String?
+  timestamp   DateTime
+  severity    String   // "critical" | "warning" | "info"
+  code        String   // 알람 코드
+  message     String   // 알람 메시지
+  category    String   // "inverter" | "grid" | "communication" | "weather" | "system"
+  status      String   @default("active") // "active" | "acknowledged" | "resolved"
+  resolvedAt  DateTime?
+
+  @@index([siteId, timestamp])
+  @@index([severity])
+  @@index([status])
+}
+
+// 유지보수 기록
+model MaintenanceLog {
+  id            String   @id @default(cuid())
+  siteId        String
+  assetId       String?
+  scheduledDate DateTime
+  completedDate DateTime?
+  type          String   // "preventive" | "corrective" | "inspection"
+  description   String
+  technician    String?
+  cost          Float?
+  status        String   @default("scheduled") // "scheduled" | "in_progress" | "completed" | "cancelled"
+  notes         String?
+
+  @@index([siteId])
+  @@index([scheduledDate])
+  @@index([status])
+}
+
+// 전력 가격 데이터 (SMP)
+model EnergyPrice {
+  id          String   @id @default(cuid())
+  timestamp   DateTime
+  region      String   // "수도권" | "비수도권" | "제주"
+  smp         Float    // 계통한계가격 (원/kWh)
+  rec         Float?   // REC 가격 (원/REC)
+  priceType   String   @default("hourly") // "hourly" | "daily" | "monthly"
+
+  @@unique([timestamp, region])
+  @@index([timestamp])
+  @@index([region])
+}
+
+// 계량기 데이터 (전력거래용)
+model MeterData {
+  id              String   @id @default(cuid())
+  siteId          String
+  meterId         String
+  timestamp       DateTime
+  activeImport    Float    // 유입 유효전력량 (kWh)
+  activeExport    Float    // 유출 유효전력량 (kWh)
+  reactiveImport  Float?   // 유입 무효전력량 (kVarh)
+  reactiveExport  Float?   // 유출 무효전력량 (kVarh)
+  maxDemand       Float?   // 최대수요전력 (kW)
+  powerFactor     Float?   // 역률 (%)
+
+  @@index([siteId, timestamp])
+  @@index([meterId])
+  @@index([timestamp])
+}
+
+// ESS(에너지저장장치) 배터리 데이터
+model BatteryData {
+  id              String   @id @default(cuid())
+  siteId          String
+  batteryId       String
+  timestamp       DateTime
+  soc             Float    // 충전상태 (%)
+  soh             Float?   // 건강상태 (%)
+  voltage         Float    // 전압 (V)
+  current         Float    // 전류 (A) - 양수: 충전, 음수: 방전
+  power           Float    // 충/방전 전력 (kW)
+  temperature     Float?   // 온도 (°C)
+  cycleCount      Int?     // 사이클 횟수
+  status          String   @default("idle") // "charging" | "discharging" | "idle" | "standby"
+
+  @@index([siteId, timestamp])
+  @@index([batteryId])
+  @@index([timestamp])
+}
+
+// 수익/정산 데이터
+model Revenue {
+  id              String   @id @default(cuid())
+  siteId          String
+  date            DateTime
+  energySales     Float    // 전력 판매 수익 (원)
+  recSales        Float?   // REC 판매 수익 (원)
+  smpRevenue      Float?   // SMP 정산금 (원)
+  totalRevenue    Float    // 총 수익 (원)
+  generationKwh   Float    // 발전량 (kWh)
+  avgSmpPrice     Float?   // 평균 SMP (원/kWh)
+
+  @@unique([siteId, date])
+  @@index([siteId])
+  @@index([date])
+}
+
+// 계통 연계 데이터 (Grid)
+model GridData {
+  id              String   @id @default(cuid())
+  siteId          String
+  timestamp       DateTime
+  gridVoltage     Float    // 계통 전압 (V)
+  gridFrequency   Float    // 계통 주파수 (Hz)
+  exportPower     Float    // 역송 전력 (kW)
+  importPower     Float    // 수전 전력 (kW)
+  powerFactor     Float?   // 역률 (%)
+  gridStatus      String   @default("connected") // "connected" | "disconnected" | "islanding"
+
+  @@index([siteId, timestamp])
+  @@index([timestamp])
+}
+
+// 태양광 모듈/스트링 데이터
+model ModuleData {
+  id              String   @id @default(cuid())
+  siteId          String
+  stringId        String
+  timestamp       DateTime
+  voltage         Float    // 스트링 전압 (V)
+  current         Float    // 스트링 전류 (A)
+  power           Float    // 스트링 출력 (kW)
+  temperature     Float?   // 모듈 온도 (°C)
+  irradiance      Float?   // 경사면 일사량 (W/m²)
+  soiling         Float?   // 오염도 (%)
+
+  @@index([siteId, timestamp])
+  @@index([stringId])
+  @@index([timestamp])
+}

@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Pencil, RefreshCw } from "lucide-react";
+import { ArrowLeft, Pencil, RefreshCw, Monitor } from "lucide-react";
+import { ViewerCanvas, RESOLUTION_PRESETS, type ResolutionKey } from "@/src/widgets/viewer-canvas";
 import type { DashboardEntity } from "@/src/entities/dashboard";
 
 interface DashboardViewerPageProps {
@@ -10,7 +12,23 @@ interface DashboardViewerPageProps {
 
 export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
   const { schema } = dashboard;
-  const widgetCount = schema.widgets?.length ?? 0;
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(1200);
+  const [resolution, setResolution] = useState<ResolutionKey>("1920x1080");
+  const [showResolutionMenu, setShowResolutionMenu] = useState(false);
+
+  // 캔버스 컨테이너 너비 계산
+  useEffect(() => {
+    const updateWidth = () => {
+      if (canvasContainerRef.current) {
+        setContainerWidth(canvasContainerRef.current.offsetWidth);
+      }
+    };
+
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -23,7 +41,7 @@ export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
               className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back
+              뒤로가기
             </Link>
             <div className="h-6 w-px bg-border" />
             <div>
@@ -36,80 +54,87 @@ export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* 해상도 선택 */}
+            <div className="relative">
+              <button
+                onClick={() => setShowResolutionMenu(!showResolutionMenu)}
+                className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
+              >
+                <Monitor className="h-4 w-4" />
+                {resolution}
+              </button>
+              {showResolutionMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowResolutionMenu(false)}
+                  />
+                  <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-md border bg-card py-1 shadow-lg">
+                    {(Object.keys(RESOLUTION_PRESETS) as ResolutionKey[]).map((key) => (
+                      <button
+                        key={key}
+                        onClick={() => {
+                          setResolution(key);
+                          setShowResolutionMenu(false);
+                        }}
+                        className={`flex w-full items-center justify-between px-3 py-2 text-sm transition-colors hover:bg-accent ${
+                          resolution === key ? "bg-accent font-medium" : ""
+                        }`}
+                      >
+                        <span>{RESOLUTION_PRESETS[key].label}</span>
+                        {resolution === key && (
+                          <span className="text-primary">✓</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="h-6 w-px bg-border" />
+
             <button className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent">
               <RefreshCw className="h-4 w-4" />
-              Refresh
+              새로고침
             </button>
             <Link
               href={`/builder/${dashboard.id}`}
               className="flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               <Pencil className="h-4 w-4" />
-              Edit
+              수정
             </Link>
           </div>
         </div>
       </header>
 
       {/* Dashboard Content */}
-      <main className="container mx-auto p-4">
-        {widgetCount === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-32">
-            <p className="text-lg font-medium text-muted-foreground">
-              No widgets in this dashboard
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Edit this dashboard to add widgets
-            </p>
-            <Link
-              href={`/builder/${dashboard.id}`}
-              className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Open Builder
-            </Link>
-          </div>
-        ) : (
-          <div className="rounded-lg border bg-card p-6">
-            <h2 className="mb-4 text-lg font-semibold">Dashboard Preview</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {schema.widgets.map((widget) => (
-                <div
-                  key={widget.id}
-                  className="rounded-lg border bg-background p-4"
-                >
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-sm font-medium">{widget.title}</span>
-                    <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                      {widget.type}
-                    </span>
-                  </div>
-                  <div className="flex h-32 items-center justify-center rounded bg-muted/50 text-sm text-muted-foreground">
-                    Widget: {widget.type}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+      <main ref={canvasContainerRef} className="container mx-auto p-6">
+        <ViewerCanvas
+          schema={schema}
+          containerWidth={containerWidth}
+          resolution={resolution}
+        />
 
-        {/* Dashboard Info */}
+        {/* Dashboard 정보 */}
         <div className="mt-6 rounded-lg border bg-card p-6">
-          <h2 className="mb-4 text-lg font-semibold">Dashboard Info</h2>
+          <h2 className="mb-4 text-lg font-semibold">Dashboard 정보</h2>
           <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <dt className="text-sm text-muted-foreground">Version</dt>
+              <dt className="text-sm text-muted-foreground">버전</dt>
               <dd className="text-sm font-medium">{schema.version}</dd>
             </div>
             <div>
               <dt className="text-sm text-muted-foreground">Widgets</dt>
-              <dd className="text-sm font-medium">{widgetCount}</dd>
+              <dd className="text-sm font-medium">{schema.widgets?.length ?? 0}</dd>
             </div>
             <div>
               <dt className="text-sm text-muted-foreground">Filters</dt>
               <dd className="text-sm font-medium">{schema.filters?.length ?? 0}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Theme</dt>
+              <dt className="text-sm text-muted-foreground">테마</dt>
               <dd className="text-sm font-medium">{schema.settings?.theme ?? "light"}</dd>
             </div>
           </dl>

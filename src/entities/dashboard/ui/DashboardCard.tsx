@@ -34,7 +34,7 @@ export function DashboardCard({ dashboard }: DashboardCardProps) {
         </div>
         {dashboard.isPublished && (
           <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
-            Published
+            게시됨
           </span>
         )}
       </div>
@@ -56,14 +56,14 @@ export function DashboardCard({ dashboard }: DashboardCardProps) {
           className="flex items-center gap-1 rounded-md bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
         >
           <Eye className="h-4 w-4" />
-          View
+          보기
         </Link>
         <Link
           href={`/builder/${dashboard.id}`}
           className="flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           <Pencil className="h-4 w-4" />
-          Edit
+          수정
         </Link>
       </div>
     </div>

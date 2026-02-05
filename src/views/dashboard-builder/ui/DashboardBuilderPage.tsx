@@ -1,7 +1,13 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Save, Eye, Undo, Redo, Settings } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Save, Eye, Undo, Redo, Loader2, Monitor } from "lucide-react";
+import { useBuilderStore } from "@/src/features/dashboard-builder";
+import { BuilderCanvas, RESOLUTION_PRESETS, type ResolutionKey } from "@/src/widgets/builder-canvas";
+import { WidgetPalette } from "@/src/widgets/widget-palette";
+import { PropertyPanel } from "@/src/widgets/property-panel";
 import type { DashboardEntity } from "@/src/entities/dashboard";
 
 interface DashboardBuilderPageProps {
@@ -9,7 +15,87 @@ interface DashboardBuilderPageProps {
 }
 
 export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
-  const { schema } = dashboard;
+  const router = useRouter();
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(1200);
+  const [resolution, setResolution] = useState<ResolutionKey>("1920x1080");
+  const [isSaving, setIsSaving] = useState(false);
+  const [showResolutionMenu, setShowResolutionMenu] = useState(false);
+
+  const {
+    initSchema,
+    isDirty,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
+    getSchema,
+    resetDirty,
+  } = useBuilderStore();
+
+  // 초기 스키마 로드
+  useEffect(() => {
+    initSchema(dashboard.schema);
+  }, [dashboard.schema, initSchema]);
+
+  // 캔버스 컨테이너 너비 계산
+  useEffect(() => {
+    const updateWidth = () => {
+      if (canvasContainerRef.current) {
+        setContainerWidth(canvasContainerRef.current.offsetWidth);
+      }
+    };
+
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, []);
+
+  // 저장 핸들러
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const schema = getSchema();
+      const response = await fetch(`/api/dashboards/${dashboard.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ schema }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save");
+      }
+
+      resetDirty();
+      router.refresh();
+    } catch (error) {
+      console.error("Save failed:", error);
+      alert("저장에 실패했습니다.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // 키보드 단축키
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "z") {
+        e.preventDefault();
+        if (e.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [undo, redo]);
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -21,19 +107,72 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
             className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back
+            뒤로가기
           </Link>
           <div className="h-6 w-px bg-border" />
           <h1 className="text-lg font-semibold">{dashboard.title}</h1>
-          <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-            Editing
-          </span>
+          {isDirty && (
+            <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+              저장되지 않음
+            </span>
+          )}
         </div>
+
         <div className="flex items-center gap-2">
-          <button className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+          {/* 해상도 선택 */}
+          <div className="relative">
+            <button
+              onClick={() => setShowResolutionMenu(!showResolutionMenu)}
+              className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
+            >
+              <Monitor className="h-4 w-4" />
+              {resolution}
+            </button>
+            {showResolutionMenu && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setShowResolutionMenu(false)}
+                />
+                <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-md border bg-card py-1 shadow-lg">
+                  {(Object.keys(RESOLUTION_PRESETS) as ResolutionKey[]).map((key) => (
+                    <button
+                      key={key}
+                      onClick={() => {
+                        setResolution(key);
+                        setShowResolutionMenu(false);
+                      }}
+                      className={`flex w-full items-center justify-between px-3 py-2 text-sm transition-colors hover:bg-accent ${
+                        resolution === key ? "bg-accent font-medium" : ""
+                      }`}
+                    >
+                      <span>{RESOLUTION_PRESETS[key].label}</span>
+                      {resolution === key && (
+                        <span className="text-primary">✓</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="h-6 w-px bg-border" />
+
+          <button
+            onClick={undo}
+            disabled={!canUndo()}
+            className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+            title="실행 취소 (Ctrl+Z)"
+          >
             <Undo className="h-4 w-4" />
           </button>
-          <button className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+          <button
+            onClick={redo}
+            disabled={!canRedo()}
+            className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+            title="다시 실행 (Ctrl+Shift+Z)"
+          >
             <Redo className="h-4 w-4" />
           </button>
           <div className="h-6 w-px bg-border" />
@@ -42,11 +181,19 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
             className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
           >
             <Eye className="h-4 w-4" />
-            Preview
+            미리보기
           </Link>
-          <button className="flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
-            <Save className="h-4 w-4" />
-            Save
+          <button
+            onClick={handleSave}
+            disabled={isSaving || !isDirty}
+            className="flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+          >
+            {isSaving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            저장
           </button>
         </div>
       </header>
@@ -54,117 +201,27 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
       {/* Builder Layout */}
       <div className="flex flex-1 overflow-hidden">
         {/* Widget Palette */}
-        <aside className="w-64 overflow-y-auto border-r bg-card p-4">
+        <aside className="w-64 flex-shrink-0 overflow-y-auto border-r bg-card p-4">
           <h2 className="mb-4 text-sm font-semibold text-muted-foreground">
             WIDGETS
           </h2>
-          <div className="space-y-2">
-            {[
-              { type: "kpi-card", label: "KPI Card" },
-              { type: "line-chart", label: "Line Chart" },
-              { type: "bar-chart", label: "Bar Chart" },
-              { type: "pie-chart", label: "Pie Chart" },
-              { type: "table", label: "Data Table" },
-              { type: "map", label: "Map" },
-              { type: "gauge", label: "Gauge" },
-            ].map((widget) => (
-              <div
-                key={widget.type}
-                className="cursor-grab rounded-md border bg-background p-3 text-sm transition-colors hover:border-primary hover:bg-accent"
-                draggable
-              >
-                {widget.label}
-              </div>
-            ))}
-          </div>
+          <WidgetPalette />
         </aside>
 
         {/* Canvas */}
-        <main className="flex-1 overflow-auto bg-muted/30 p-6">
-          <div className="mx-auto min-h-full rounded-lg border-2 border-dashed border-muted-foreground/25 bg-background p-4">
-            {schema.widgets.length === 0 ? (
-              <div className="flex h-96 flex-col items-center justify-center text-muted-foreground">
-                <p className="text-lg font-medium">Drop widgets here</p>
-                <p className="mt-1 text-sm">
-                  Drag widgets from the left panel to build your dashboard
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {schema.widgets.map((widget) => (
-                  <div
-                    key={widget.id}
-                    className="group relative cursor-pointer rounded-lg border-2 border-transparent bg-card p-4 shadow-sm transition-all hover:border-primary hover:shadow-md"
-                  >
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="text-sm font-medium">{widget.title}</span>
-                      <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                        {widget.type}
-                      </span>
-                    </div>
-                    <div className="flex h-32 items-center justify-center rounded bg-muted/50 text-sm text-muted-foreground">
-                      {widget.type}
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                      <span className="text-sm font-medium text-white">
-                        Click to edit
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+        <main
+          ref={canvasContainerRef}
+          className="flex-1 overflow-auto bg-muted/30 p-6"
+        >
+          <BuilderCanvas
+            containerWidth={containerWidth}
+            resolution={resolution}
+          />
         </main>
 
         {/* Property Panel */}
-        <aside className="w-80 overflow-y-auto border-l bg-card p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-muted-foreground">
-              PROPERTIES
-            </h2>
-            <button className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
-              <Settings className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="mt-4 rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-            Select a widget to edit its properties
-          </div>
-
-          {/* Dashboard Settings */}
-          <div className="mt-6">
-            <h3 className="mb-3 text-sm font-semibold text-muted-foreground">
-              DASHBOARD SETTINGS
-            </h3>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs text-muted-foreground">Title</label>
-                <input
-                  type="text"
-                  defaultValue={dashboard.title}
-                  className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Theme</label>
-                <select className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm">
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
-                  <option value="system">System</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">
-                  Auto Refresh (seconds)
-                </label>
-                <input
-                  type="number"
-                  defaultValue={(schema.settings?.refreshInterval ?? 0) / 1000}
-                  className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm"
-                />
-              </div>
-            </div>
-          </div>
+        <aside className="w-80 flex-shrink-0 overflow-y-auto border-l bg-card p-4">
+          <PropertyPanel />
         </aside>
       </div>
     </div>
