@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Pencil, RefreshCw, Monitor } from "lucide-react";
+import { ArrowLeft, Pencil, RefreshCw, Monitor, Maximize2 } from "lucide-react";
 import { ViewerCanvas, RESOLUTION_PRESETS, type ResolutionKey } from "@/src/widgets/viewer-canvas";
 import type { DashboardEntity } from "@/src/entities/dashboard";
 
@@ -98,6 +98,13 @@ export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
               <RefreshCw className="h-4 w-4" />
               새로고침
             </button>
+            <Link
+              href={`/view/${dashboard.id}`}
+              className="flex items-center gap-2 rounded-md border border-primary bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
+            >
+              <Maximize2 className="h-4 w-4" />
+              전체 화면
+            </Link>
             <Link
               href={`/builder/${dashboard.id}`}
               className="flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
