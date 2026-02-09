@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, Calendar, Eye, Pencil } from "lucide-react";
+import { LayoutDashboard, Calendar, Eye, Pencil, Presentation } from "lucide-react";
 import type { DashboardEntity } from "../model/types";
 
 interface DashboardCardProps {
@@ -64,6 +64,13 @@ export function DashboardCard({ dashboard }: DashboardCardProps) {
         >
           <Pencil className="h-4 w-4" />
           수정
+        </Link>
+        <Link
+          href={`/presentation/${dashboard.id}`}
+          className="flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100"
+        >
+          <Presentation className="h-4 w-4" />
+          발표
         </Link>
       </div>
     </div>

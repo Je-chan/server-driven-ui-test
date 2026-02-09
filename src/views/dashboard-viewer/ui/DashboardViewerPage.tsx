@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Pencil, RefreshCw, Monitor, Maximize2 } from "lucide-react";
+import { ArrowLeft, Pencil, RefreshCw, Monitor, Maximize2, Presentation } from "lucide-react";
 import { ViewerCanvas, RESOLUTION_PRESETS, type ResolutionKey } from "@/src/widgets/viewer-canvas";
 import type { DashboardEntity } from "@/src/entities/dashboard";
 
@@ -104,6 +104,13 @@ export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
             >
               <Maximize2 className="h-4 w-4" />
               전체 화면
+            </Link>
+            <Link
+              href={`/presentation/${dashboard.id}`}
+              className="flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100"
+            >
+              <Presentation className="h-4 w-4" />
+              발표
             </Link>
             <Link
               href={`/builder/${dashboard.id}`}
