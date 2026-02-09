@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import ReactGridLayout from "react-grid-layout";
 import { Trash2, GripVertical } from "lucide-react";
 import { useBuilderStore } from "@/src/features/dashboard-builder/model/builder.store";
@@ -97,6 +97,19 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
     [updateAllLayouts]
   );
 
+  // 위젯 추가 시 해당 위젯으로 스크롤
+  const prevWidgetCountRef = useRef(widgets.length);
+  useEffect(() => {
+    if (widgets.length > prevWidgetCountRef.current && selectedWidgetId) {
+      // 새 위젯이 추가된 경우, DOM 업데이트 후 스크롤
+      requestAnimationFrame(() => {
+        const el = document.querySelector(`[data-widget-id="${selectedWidgetId}"]`);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+    prevWidgetCountRef.current = widgets.length;
+  }, [widgets.length, selectedWidgetId]);
+
   const handleWidgetClick = (widgetId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     selectWidget(widgetId);
@@ -163,6 +176,7 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
               return (
                 <div
                   key={widget.id}
+                  data-widget-id={widget.id}
                   className={`group relative flex flex-col overflow-hidden rounded-lg border-2 bg-card shadow-sm transition-all ${
                     isSelected
                       ? "border-primary ring-2 ring-primary/20"
