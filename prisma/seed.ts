@@ -2,8 +2,10 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// 샘플 대시보드 JSON 스키마
-const sampleDashboardSchema = {
+// ====== 대시보드 JSON 스키마 ======
+
+// 대시보드 1: 태양광 발전소 종합 모니터링
+const mainDashboardSchema = {
   version: "1.0.0",
   settings: {
     refreshInterval: 30000,
@@ -99,7 +101,7 @@ const sampleDashboardSchema = {
       id: "widget_power_chart",
       type: "line-chart",
       title: "실시간 발전 출력",
-      layout: { x: 0, y: 0, w: 16, h: 8 },
+      layout: { x: 0, y: 2, w: 5, h: 2 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         mapping: {
@@ -113,7 +115,7 @@ const sampleDashboardSchema = {
       id: "widget_total_power",
       type: "kpi-card",
       title: "현재 총 출력",
-      layout: { x: 16, y: 0, w: 4, h: 4 },
+      layout: { x: 0, y: 0, w: 2, h: 2 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         mapping: { measurements: [{ field: "activePower", label: "총 출력", unit: "kW", color: "#10b981" }] },
@@ -124,7 +126,7 @@ const sampleDashboardSchema = {
       id: "widget_daily_energy",
       type: "kpi-card",
       title: "금일 발전량",
-      layout: { x: 20, y: 0, w: 4, h: 4 },
+      layout: { x: 2, y: 0, w: 3, h: 2 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         mapping: { measurements: [{ field: "dailyEnergy", label: "일발전량", unit: "kWh", color: "#f59e0b" }] },
@@ -135,10 +137,10 @@ const sampleDashboardSchema = {
       id: "widget_weather",
       type: "kpi-card",
       title: "현재 일사량",
-      layout: { x: 16, y: 4, w: 4, h: 4 },
+      layout: { x: 5, y: 0, w: 5, h: 2 },
       dataBinding: {
         dataSourceId: "ds_weather",
-        mapping: { measurements: [{ field: "irradiance", label: "일사량", unit: "W/m²", color: "#ef4444" }] },
+        mapping: { measurements: [{ field: "humidity", label: "일사량", unit: "W/m²", color: "#ef4444" }] },
       },
       style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
     },
@@ -146,7 +148,7 @@ const sampleDashboardSchema = {
       id: "widget_temperature",
       type: "kpi-card",
       title: "외기 온도",
-      layout: { x: 20, y: 4, w: 4, h: 4 },
+      layout: { x: 10, y: 0, w: 2, h: 2 },
       dataBinding: {
         dataSourceId: "ds_weather",
         mapping: { measurements: [{ field: "temperature", label: "온도", unit: "°C", color: "#8b5cf6" }] },
@@ -157,7 +159,7 @@ const sampleDashboardSchema = {
       id: "widget_asset_table",
       type: "table",
       title: "인버터별 현황",
-      layout: { x: 0, y: 8, w: 24, h: 8 },
+      layout: { x: 5, y: 2, w: 7, h: 2 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         mapping: {
@@ -171,7 +173,99 @@ const sampleDashboardSchema = {
       },
       style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
     },
+    {
+      id: "widget_grid_chart",
+      type: "line-chart",
+      title: "Line Chart 7",
+      layout: { x: 0, y: 4, w: 12, h: 4, minW: 6, minH: 4 },
+      dataBinding: {
+        dataSourceId: "ds_grid",
+        mapping: {
+          measurements: [
+            { field: "gridVoltage", label: "23", unit: "ㅇ" },
+            { field: "exportPower", label: "231", unit: "ㅇㅇ" },
+          ],
+          timeField: "timestamp",
+        },
+      },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, padding: 16, shadow: "sm" },
+      options: { showLegend: true, smooth: true, showArea: false },
+    },
+    {
+      id: "widget_revenue_bar",
+      type: "bar-chart",
+      title: "Bar Chart 8",
+      layout: { x: 0, y: 8, w: 12, h: 4, minW: 6, minH: 4 },
+      dataBinding: {
+        dataSourceId: "ds_revenue",
+        mapping: {
+          measurements: [
+            { field: "energySales", label: "에너지", unit: "", color: "#f7483b" },
+            { field: "recSales", label: "REC", unit: "", color: "#f7b23b" },
+            { field: "generationKwh", label: "발전", unit: "", color: "#eaf73b" },
+            { field: "totalRevenue", label: "총 이득", unit: "", color: "#20bc4f" },
+          ],
+          timeField: "siteId",
+        },
+      },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, padding: 16, shadow: "sm" },
+      options: { showLegend: true, horizontal: false },
+    },
   ],
+  linkages: [],
+};
+
+// 대시보드 2: 테스트 대시보드
+const testDashboardSchema = {
+  version: "1.0.0",
+  settings: {
+    refreshInterval: 0,
+    theme: "light",
+    gridColumns: 24,
+    rowHeight: 40,
+  },
+  dataSources: [],
+  filters: [],
+  widgets: [
+    {
+      id: "widget_test_bar",
+      type: "bar-chart",
+      title: "Bar Chart 2",
+      layout: { x: 3, y: 0, w: 9, h: 4, minW: 6, minH: 4 },
+      dataBinding: {
+        dataSourceId: "ds_inverter",
+        mapping: {
+          measurements: [{ field: "totalEnergy", label: "d", unit: "fd" }],
+          timeField: "assetName",
+        },
+      },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, padding: 16, shadow: "sm" },
+      options: { showLegend: true, horizontal: false },
+    },
+    {
+      id: "widget_test_kpi",
+      type: "kpi-card",
+      title: "KPI Card 2",
+      layout: { x: 0, y: 0, w: 3, h: 3, minW: 3, minH: 3 },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, padding: 16, shadow: "sm" },
+      options: { showTrend: true, icon: "Activity" },
+    },
+  ],
+  linkages: [],
+};
+
+// 대시보드 3: 빈 대시보드
+const emptyDashboardSchema = {
+  version: "1.0.0",
+  settings: {
+    refreshInterval: 0,
+    theme: "light",
+    gridColumns: 24,
+    rowHeight: 40,
+  },
+  dataSources: [],
+  filters: [],
+  widgets: [],
   linkages: [],
 };
 
@@ -571,22 +665,46 @@ async function main() {
     });
     console.log(`👤 Created viewer user: ${viewerUser.email}`);
 
-    // 대시보드 생성
-    const dashboard = await prisma.dashboard.create({
+    // 대시보드 1: 태양광 발전소 종합 모니터링
+    const dashboard1 = await prisma.dashboard.create({
       data: {
         title: "태양광 발전소 종합 모니터링",
         description: "전국 PV 발전소 실시간 현황 대시보드",
-        schema: JSON.stringify(sampleDashboardSchema),
+        schema: JSON.stringify(mainDashboardSchema),
         version: "1.0.0",
         isPublished: true,
         createdBy: adminUser.id,
       },
     });
-    console.log(`📊 Created dashboard: ${dashboard.title}`);
+    console.log(`📊 Created dashboard: ${dashboard1.title}`);
 
     await prisma.dashboardPermission.create({
-      data: { dashboardId: dashboard.id, userId: viewerUser.id, permission: "view" },
+      data: { dashboardId: dashboard1.id, userId: viewerUser.id, permission: "view" },
     });
+
+    // 대시보드 2: 테스트 대시보드
+    const dashboard2 = await prisma.dashboard.create({
+      data: {
+        title: "Untitled Dashboard",
+        schema: JSON.stringify(testDashboardSchema),
+        version: "1.0.0",
+        isPublished: false,
+        createdBy: adminUser.id,
+      },
+    });
+    console.log(`📊 Created dashboard: ${dashboard2.title} (test)`);
+
+    // 대시보드 3: 빈 대시보드
+    const dashboard3 = await prisma.dashboard.create({
+      data: {
+        title: "Untitled Dashboard",
+        schema: JSON.stringify(emptyDashboardSchema),
+        version: "1.0.0",
+        isPublished: false,
+        createdBy: adminUser.id,
+      },
+    });
+    console.log(`📊 Created dashboard: ${dashboard3.title} (empty)`);
   }
 
   // ====== Mock 데이터 생성 ======
