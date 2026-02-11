@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { DashboardEntity } from "@/src/entities/dashboard";
+import { migrateFiltersToWidgets } from "@/src/entities/dashboard";
 import { PresentationCanvas } from "@/src/widgets/presentation-canvas";
 import { SchemaInspector } from "@/src/widgets/schema-inspector";
 import { PRESENTATION_STEPS } from "../model/types";
@@ -13,7 +14,7 @@ interface PresentationPageProps {
 }
 
 export function PresentationPage({ dashboard }: PresentationPageProps) {
-  const { schema } = dashboard;
+  const schema = useMemo(() => migrateFiltersToWidgets(dashboard.schema), [dashboard.schema]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);

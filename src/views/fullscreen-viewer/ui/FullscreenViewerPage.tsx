@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import ReactGridLayout from "react-grid-layout";
-import { X, ArrowLeft, Settings, RefreshCw } from "lucide-react";
+import { X, ArrowLeft, Settings, RefreshCw, Search } from "lucide-react";
 import { WidgetRenderer } from "@/src/entities/widget";
-import type { DashboardEntity, DashboardJson } from "@/src/entities/dashboard";
+import { useFilterValues } from "@/src/features/dashboard-filter";
+import type { DashboardEntity } from "@/src/entities/dashboard";
+import { migrateFiltersToWidgets } from "@/src/entities/dashboard";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
@@ -27,9 +29,11 @@ const GridLayout = ReactGridLayout as any;
 
 export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
   const router = useRouter();
-  const { schema } = dashboard;
+  const schema = useMemo(() => migrateFiltersToWidgets(dashboard.schema), [dashboard.schema]);
   const [showControls, setShowControls] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const filterMode = schema.settings.filterMode ?? "auto";
+  const { appliedValues, setFilterValue, applyFilters, hasPendingChanges } = useFilterValues(schema.widgets ?? [], filterMode);
 
   // 기본 해상도 설정 (1920x1080 기준)
   const targetWidth = 1920;
@@ -52,7 +56,6 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
 
   // 마우스 이동 시 컨트롤 표시
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    // 상단 100px 영역에서만 컨트롤 표시
     if (e.clientY < 100) {
       setShowControls(true);
     } else {
@@ -195,6 +198,7 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
         >
           {schema.widgets.map((widget) => {
             const style = widget.style ?? {};
+            const isFilter = widget.type.startsWith("filter-");
 
             return (
               <div
@@ -206,23 +210,36 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
                   boxShadow: getShadowStyle(style.shadow),
                 }}
               >
-                {/* Widget Header */}
-                <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-2">
-                  <span className="text-sm font-medium">{widget.title}</span>
-                  <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                    {widget.type}
-                  </span>
-                </div>
+                {/* Widget Header — 필터 위젯은 헤더 생략 */}
+                {!isFilter && (
+                  <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-2">
+                    <span className="text-sm font-medium">{widget.title}</span>
+                    <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                      {widget.type}
+                    </span>
+                  </div>
+                )}
 
                 {/* Widget Content */}
                 <div className="flex-1 overflow-hidden">
-                  <WidgetRenderer widget={widget} />
+                  <WidgetRenderer widget={widget} filterValues={appliedValues} onFilterChange={setFilterValue} />
                 </div>
               </div>
             );
           })}
         </GridLayout>
       </div>
+
+      {/* Manual 모드: 조회 FAB */}
+      {hasPendingChanges && (
+        <button
+          onClick={applyFilters}
+          className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
+        >
+          <Search className="h-4 w-4" />
+          조회
+        </button>
+      )}
     </div>
   );
 }

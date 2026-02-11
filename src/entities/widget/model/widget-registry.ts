@@ -6,6 +6,12 @@ import {
   Gauge,
   Map,
   Activity,
+  ListFilter,
+  ListChecks,
+  FolderTree,
+  TextCursorInput,
+  ToggleLeft,
+  Calendar,
   type LucideIcon,
 } from "lucide-react";
 
@@ -13,7 +19,7 @@ export interface WidgetTypeDefinition {
   type: string;
   label: string;
   icon: LucideIcon;
-  category: "chart" | "card" | "table" | "map" | "status";
+  category: "filter" | "chart" | "card" | "table" | "map" | "status";
   description: string;
   defaultSize: { w: number; h: number };
   minSize: { w: number; h: number };
@@ -113,6 +119,88 @@ export const WIDGET_TYPES: WidgetTypeDefinition[] = [
     defaultOptions: {
       center: [36.5, 127.5],
       zoom: 7,
+    },
+  },
+  // ── 필터 위젯 ──
+  {
+    type: "filter-select",
+    label: "Select",
+    icon: ListFilter,
+    category: "filter",
+    description: "드롭다운 선택 필터",
+    defaultSize: { w: 4, h: 1 },
+    minSize: { w: 3, h: 1 },
+    defaultOptions: {
+      filterKey: "",
+      options: [],
+    },
+  },
+  {
+    type: "filter-multiselect",
+    label: "Multi Select",
+    icon: ListChecks,
+    category: "filter",
+    description: "다중 선택 필터",
+    defaultSize: { w: 4, h: 2 },
+    minSize: { w: 3, h: 1 },
+    defaultOptions: {
+      filterKey: "",
+      options: [],
+    },
+  },
+  {
+    type: "filter-treeselect",
+    label: "Tree Select",
+    icon: FolderTree,
+    category: "filter",
+    description: "계층 트리 선택 필터",
+    defaultSize: { w: 4, h: 2 },
+    minSize: { w: 3, h: 1 },
+    defaultOptions: {
+      filterKey: "",
+      options: [],
+    },
+  },
+  {
+    type: "filter-input",
+    label: "Input",
+    icon: TextCursorInput,
+    category: "filter",
+    description: "텍스트 입력 필터",
+    defaultSize: { w: 4, h: 1 },
+    minSize: { w: 3, h: 1 },
+    defaultOptions: {
+      filterKey: "",
+      placeholder: "",
+    },
+  },
+  {
+    type: "filter-tab",
+    label: "Tab",
+    icon: ToggleLeft,
+    category: "filter",
+    description: "탭/버튼 선택 필터",
+    defaultSize: { w: 6, h: 1 },
+    minSize: { w: 4, h: 1 },
+    defaultOptions: {
+      filterKey: "",
+      options: [],
+      variant: "pill",
+    },
+  },
+  {
+    type: "filter-datepicker",
+    label: "Datepicker",
+    icon: Calendar,
+    category: "filter",
+    description: "날짜 범위 선택 필터",
+    defaultSize: { w: 8, h: 1 },
+    minSize: { w: 4, h: 1 },
+    defaultOptions: {
+      filterKey: "timeRange",
+      presets: ["today", "yesterday", "last7days", "last30days", "thisMonth"],
+      defaultValue: "today",
+      outputKeys: { start: "startTime", end: "endTime" },
     },
   },
 ];

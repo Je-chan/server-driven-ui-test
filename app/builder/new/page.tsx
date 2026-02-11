@@ -20,6 +20,7 @@ export default async function NewBuilderPage() {
       theme: "light" as const,
       gridColumns: 24,
       rowHeight: 40,
+      filterMode: "auto" as const,
     },
     dataSources: [],
     filters: [],

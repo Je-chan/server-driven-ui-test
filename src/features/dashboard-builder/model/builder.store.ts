@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { DashboardJson, Widget, WidgetLayout } from "@/src/entities/dashboard";
+import type { DashboardJson, DashboardSettings, Widget, WidgetLayout } from "@/src/entities/dashboard";
 
 interface BuilderState {
   // 대시보드 스키마
@@ -28,6 +28,9 @@ interface BuilderState {
   // Selection
   selectWidget: (widgetId: string | null) => void;
 
+  // Settings
+  updateSettings: (updates: Partial<DashboardSettings>) => void;
+
   // Preview
   togglePreview: () => void;
 
@@ -42,7 +45,7 @@ interface BuilderState {
   resetDirty: () => void;
 }
 
-const generateId = () => `widget_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+const generateWidgetId = () => `widget_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 export const useBuilderStore = create<BuilderState>((set, get) => ({
   schema: {
@@ -52,6 +55,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
       theme: "light",
       gridColumns: 24,
       rowHeight: 40,
+      filterMode: "auto",
     },
     dataSources: [],
     filters: [],
@@ -80,7 +84,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
     const state = get();
     const newWidget: Widget = {
       ...widget,
-      id: generateId(),
+      id: generateWidgetId(),
     };
 
     const newSchema = {
@@ -185,6 +189,24 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
     set({ selectedWidgetId: widgetId });
   },
 
+  updateSettings: (updates) => {
+    const state = get();
+    const newSchema = {
+      ...state.schema,
+      settings: { ...state.schema.settings, ...updates },
+    };
+
+    const newHistory = state.history.slice(0, state.historyIndex + 1);
+    newHistory.push(newSchema);
+
+    set({
+      schema: newSchema,
+      isDirty: true,
+      history: newHistory,
+      historyIndex: newHistory.length - 1,
+    });
+  },
+
   togglePreview: () => {
     set((state) => ({ isPreviewMode: !state.isPreviewMode }));
   },
@@ -193,8 +215,9 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
     const state = get();
     if (state.historyIndex > 0) {
       const newIndex = state.historyIndex - 1;
+      const newSchema = state.history[newIndex];
       set({
-        schema: state.history[newIndex],
+        schema: newSchema,
         historyIndex: newIndex,
         isDirty: true,
       });
@@ -205,8 +228,9 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
     const state = get();
     if (state.historyIndex < state.history.length - 1) {
       const newIndex = state.historyIndex + 1;
+      const newSchema = state.history[newIndex];
       set({
-        schema: state.history[newIndex],
+        schema: newSchema,
         historyIndex: newIndex,
         isDirty: true,
       });

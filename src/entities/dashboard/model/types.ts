@@ -29,6 +29,15 @@ export const widgetSchema = z.object({
   options: z.record(z.string(), z.unknown()).optional(),
 });
 
+// 필터 의존관계 스키마
+export const filterDependencySchema = z.object({
+  filterKey: z.string(),
+  optionsMap: z.record(
+    z.string(),
+    z.array(z.object({ value: z.string(), label: z.string() }))
+  ),
+});
+
 // 필터 스키마
 export const filterSchema = z.object({
   id: z.string(),
@@ -36,6 +45,9 @@ export const filterSchema = z.object({
   key: z.string(),
   label: z.string(),
   config: z.record(z.string(), z.unknown()),
+  visible: z.boolean().optional(),
+  fixedValue: z.unknown().optional(),
+  dependsOn: filterDependencySchema.optional(),
 });
 
 // 대시보드 설정 스키마
@@ -49,6 +61,7 @@ export const dashboardSettingsSchema = z.object({
     md: z.number().default(996),
     sm: z.number().default(768),
   }).optional(),
+  filterMode: z.enum(["auto", "manual"]).default("auto"),
 });
 
 // 대시보드 JSON 스키마
@@ -65,6 +78,7 @@ export type WidgetLayout = z.infer<typeof widgetLayoutSchema>;
 export type WidgetStyle = z.infer<typeof widgetStyleSchema>;
 export type Widget = z.infer<typeof widgetSchema>;
 export type Filter = z.infer<typeof filterSchema>;
+export type FilterDependency = z.infer<typeof filterDependencySchema>;
 export type DashboardSettings = z.infer<typeof dashboardSettingsSchema>;
 export type DashboardJson = z.infer<typeof dashboardJsonSchema>;
 

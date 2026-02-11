@@ -12,6 +12,8 @@ export function WidgetPalette() {
       return Math.max(max, w.layout.y + w.layout.h);
     }, 0);
 
+    const isFilter = widgetDef.category === "filter";
+
     addWidget({
       type: widgetDef.type,
       title: `${widgetDef.label} ${schema.widgets.length + 1}`,
@@ -23,17 +25,15 @@ export function WidgetPalette() {
         minW: widgetDef.minSize.w,
         minH: widgetDef.minSize.h,
       },
-      style: {
-        backgroundColor: "#ffffff",
-        borderRadius: 8,
-        padding: 16,
-        shadow: "sm",
-      },
+      style: isFilter
+        ? { backgroundColor: "#ffffff", borderRadius: 4, padding: 8, shadow: "none" }
+        : { backgroundColor: "#ffffff", borderRadius: 8, padding: 16, shadow: "sm" },
       options: widgetDef.defaultOptions,
     });
   };
 
   const categories = [
+    { key: "filter", label: "Filters" },
     { key: "card", label: "Cards" },
     { key: "chart", label: "Charts" },
     { key: "table", label: "Tables" },

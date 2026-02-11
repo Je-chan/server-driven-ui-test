@@ -1,21 +1,25 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Pencil, RefreshCw, Monitor, Maximize2, Presentation } from "lucide-react";
+import { ArrowLeft, Pencil, RefreshCw, Monitor, Maximize2, Presentation, Search } from "lucide-react";
 import { ViewerCanvas, RESOLUTION_PRESETS, type ResolutionKey } from "@/src/widgets/viewer-canvas";
+import { useFilterValues } from "@/src/features/dashboard-filter";
 import type { DashboardEntity } from "@/src/entities/dashboard";
+import { migrateFiltersToWidgets } from "@/src/entities/dashboard";
 
 interface DashboardViewerPageProps {
   dashboard: DashboardEntity;
 }
 
 export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
-  const { schema } = dashboard;
+  const schema = useMemo(() => migrateFiltersToWidgets(dashboard.schema), [dashboard.schema]);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(1200);
   const [resolution, setResolution] = useState<ResolutionKey>("1920x1080");
   const [showResolutionMenu, setShowResolutionMenu] = useState(false);
+  const filterMode = schema.settings.filterMode ?? "auto";
+  const { filterValues, appliedValues, setFilterValue, applyFilters, hasPendingChanges } = useFilterValues(schema.widgets ?? [], filterMode);
 
   // 캔버스 컨테이너 너비 계산
   useEffect(() => {
@@ -129,6 +133,8 @@ export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
           schema={schema}
           containerWidth={containerWidth}
           resolution={resolution}
+          filterValues={appliedValues}
+          onFilterChange={setFilterValue}
         />
 
         {/* Dashboard 정보 */}
@@ -145,7 +151,9 @@ export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
             </div>
             <div>
               <dt className="text-sm text-muted-foreground">Filters</dt>
-              <dd className="text-sm font-medium">{schema.filters?.length ?? 0}</dd>
+              <dd className="text-sm font-medium">
+                {(schema.widgets ?? []).filter((w) => w.type.startsWith("filter-")).length}
+              </dd>
             </div>
             <div>
               <dt className="text-sm text-muted-foreground">테마</dt>
@@ -154,6 +162,17 @@ export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
           </dl>
         </div>
       </main>
+
+      {/* Manual 모드: 조회 FAB */}
+      {hasPendingChanges && (
+        <button
+          onClick={applyFilters}
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
+        >
+          <Search className="h-4 w-4" />
+          조회
+        </button>
+      )}
     </div>
   );
 }

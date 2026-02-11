@@ -1,0 +1,73 @@
+"use client";
+
+import { FolderTree } from "lucide-react";
+import type { Widget } from "@/src/entities/dashboard";
+
+interface TreeSelectFilterWidgetProps {
+  widget: Widget;
+  filterValues: Record<string, unknown>;
+  onFilterChange: (key: string, value: unknown) => void;
+}
+
+interface TreeOption {
+  value: string;
+  label: string;
+  depth?: number;
+  children?: TreeOption[];
+}
+
+function flattenTree(options: TreeOption[], depth = 0): { value: string; label: string; depth: number }[] {
+  const result: { value: string; label: string; depth: number }[] = [];
+  for (const opt of options) {
+    result.push({ value: opt.value, label: opt.label, depth: opt.depth ?? depth });
+    if (opt.children) {
+      result.push(...flattenTree(opt.children, depth + 1));
+    }
+  }
+  return result;
+}
+
+export function TreeSelectFilterWidget({ widget, filterValues, onFilterChange }: TreeSelectFilterWidgetProps) {
+  const opts = widget.options as {
+    filterKey?: string;
+    options?: TreeOption[];
+    placeholder?: string;
+    fixedValue?: unknown;
+  } | undefined;
+
+  const filterKey = opts?.filterKey ?? "";
+  const fixedValue = opts?.fixedValue;
+  const isFixed = fixedValue !== undefined && fixedValue !== null;
+  const currentValue = String(filterValues[filterKey] ?? "");
+  const flatOptions = flattenTree(opts?.options ?? []);
+
+  if (!filterKey) {
+    return (
+      <div className="flex h-full items-center gap-2 px-3 text-muted-foreground">
+        <FolderTree className="h-4 w-4" />
+        <span className="text-xs">filterKey를 설정하세요</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full items-center gap-2 px-3">
+      <label className="shrink-0 text-xs font-medium text-muted-foreground">
+        {widget.title}
+      </label>
+      <select
+        value={currentValue}
+        onChange={(e) => onFilterChange(filterKey, e.target.value)}
+        disabled={isFixed}
+        className="h-7 flex-1 rounded border bg-background px-2 text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+      >
+        <option value="">{opts?.placeholder ?? "선택..."}</option>
+        {flatOptions.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {"  ".repeat(opt.depth)}{opt.depth > 0 ? "└ " : ""}{opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}

@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
         theme: "light",
         gridColumns: 24,
         rowHeight: 40,
+        filterMode: "auto",
       },
       dataSources: [],
       filters: [],

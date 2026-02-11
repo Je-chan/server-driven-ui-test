@@ -1,19 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/shared/lib/prisma";
+import { parseDateStart, parseDateEnd } from "@/src/shared/lib/date-utils";
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const siteId = searchParams.get("siteId");
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
+    const startDate = searchParams.get("startDate") ?? searchParams.get("startTime");
+    const endDate = searchParams.get("endDate") ?? searchParams.get("endTime");
     const limit = parseInt(searchParams.get("limit") ?? "30");
 
     // 날짜 범위 설정
     const now = new Date();
     const defaultStartDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const start = startDate ? new Date(startDate) : defaultStartDate;
-    const end = endDate ? new Date(endDate) : now;
+    const start = startDate ? parseDateStart(startDate) : defaultStartDate;
+    const end = endDate ? parseDateEnd(endDate) : now;
 
     const whereClause: {
       date: { gte: Date; lte: Date };

@@ -21,6 +21,8 @@ interface ViewerCanvasProps {
   schema: DashboardJson;
   containerWidth: number;
   resolution?: ResolutionKey;
+  filterValues?: Record<string, unknown>;
+  onFilterChange?: (key: string, value: unknown) => void;
 }
 
 interface LayoutItem {
@@ -36,7 +38,7 @@ interface LayoutItem {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const GridLayout = ReactGridLayout as any;
 
-export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080" }: ViewerCanvasProps) {
+export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080", filterValues, onFilterChange }: ViewerCanvasProps) {
   const { widgets } = schema;
   const cols = schema.settings?.gridColumns ?? 24;
 
@@ -131,6 +133,7 @@ export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080" 
         >
           {widgets.map((widget) => {
             const style = widget.style ?? {};
+            const isFilter = widget.type.startsWith("filter-");
 
             return (
               <div
@@ -142,17 +145,19 @@ export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080" 
                   boxShadow: getShadowStyle(style.shadow),
                 }}
               >
-                {/* Widget Header */}
-                <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-2">
-                  <span className="text-sm font-medium">{widget.title}</span>
-                  <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                    {widget.type}
-                  </span>
-                </div>
+                {/* Widget Header — 필터 위젯은 헤더 생략 */}
+                {!isFilter && (
+                  <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-2">
+                    <span className="text-sm font-medium">{widget.title}</span>
+                    <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                      {widget.type}
+                    </span>
+                  </div>
+                )}
 
-                {/* Widget Content - 실제 위젯 렌더링 */}
+                {/* Widget Content */}
                 <div className="flex-1 overflow-hidden">
-                  <WidgetRenderer widget={widget} />
+                  <WidgetRenderer widget={widget} filterValues={filterValues} onFilterChange={onFilterChange} />
                 </div>
               </div>
             );

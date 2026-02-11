@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/shared/lib/prisma";
+import { parseDateStart, parseDateEnd } from "@/src/shared/lib/date-utils";
+import { aggregateTimeBuckets, autoInterval } from "@/src/shared/lib/time-bucket";
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,21 +9,22 @@ export async function GET(request: NextRequest) {
     const siteId = searchParams.get("siteId");
     const startTime = searchParams.get("startTime");
     const endTime = searchParams.get("endTime");
-    const limit = parseInt(searchParams.get("limit") ?? "100");
+    const interval = searchParams.get("interval");
     const aggregation = searchParams.get("aggregation") ?? "latest";
 
     // 시간 범위 설정
     const now = new Date();
     const defaultStartTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const start = startTime ? new Date(startTime) : defaultStartTime;
-    const end = endTime ? new Date(endTime) : now;
+    const start = startTime ? parseDateStart(startTime) : defaultStartTime;
+    const end = endTime ? parseDateEnd(endTime) : now;
 
     if (aggregation === "latest") {
-      // 각 사이트의 최신 기상 데이터
+      // 각 사이트의 최신 기상 데이터 (선택된 시간 범위 내)
       const sites = await prisma.site.findMany({
         where: siteId ? { id: siteId } : undefined,
         include: {
           weatherData: {
+            where: { timestamp: { gte: start, lte: end } },
             orderBy: { timestamp: "desc" },
             take: 1,
           },
@@ -90,10 +93,9 @@ export async function GET(request: NextRequest) {
         site: true,
       },
       orderBy: { timestamp: "asc" },
-      take: limit,
     });
 
-    const data = weatherData.map((d) => ({
+    const rawData = weatherData.map((d) => ({
       siteId: d.siteId,
       siteName: d.site.name,
       timestamp: d.timestamp,
@@ -106,6 +108,13 @@ export async function GET(request: NextRequest) {
       cloudCover: d.cloudCover,
     }));
 
+    const bucketInterval = (!interval || interval === "auto") ? autoInterval(start, end) : interval;
+    const data = aggregateTimeBuckets(rawData, {
+      interval: bucketInterval,
+      timeField: "timestamp",
+      valueFields: ["irradiance", "temperature", "humidity", "windSpeed", "rainfall", "cloudCover"],
+    });
+
     return NextResponse.json({
       success: true,
       data,
@@ -113,6 +122,7 @@ export async function GET(request: NextRequest) {
         startTime: start,
         endTime: end,
         count: data.length,
+        interval: bucketInterval,
       },
     });
   } catch (error) {

@@ -6,3 +6,12 @@ export {
 } from "./model/widget-registry";
 
 export { WidgetRenderer } from "./ui/WidgetRenderer";
+
+export {
+  SelectFilterWidget,
+  MultiSelectFilterWidget,
+  TreeSelectFilterWidget,
+  InputFilterWidget,
+  TabFilterWidget,
+  DatepickerFilterWidget,
+} from "./ui/filters";

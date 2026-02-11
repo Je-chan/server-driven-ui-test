@@ -9,6 +9,7 @@ import {
   type DashboardDataSource,
   type MeasurementMapping,
 } from "@/src/entities/data-source";
+import { FilterWidgetOptions } from "./FilterWidgetOptions";
 
 type TabType = "style" | "data" | "options";
 
@@ -486,12 +487,18 @@ export function PropertyPanel() {
         {/* Options Tab */}
         {activeTab === "options" && (
           <div className="space-y-4">
-            <p className="text-xs text-muted-foreground">
-              {widgetDef?.label ?? selectedWidget.type} Widget 옵션
-            </p>
-            <div className="rounded-md bg-muted/50 p-4 text-center text-xs text-muted-foreground">
-              Widget 옵션이 여기에 표시됩니다
-            </div>
+            {selectedWidget.type.startsWith("filter-") ? (
+              <FilterWidgetOptions widget={selectedWidget} />
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  {widgetDef?.label ?? selectedWidget.type} Widget 옵션
+                </p>
+                <div className="rounded-md bg-muted/50 p-4 text-center text-xs text-muted-foreground">
+                  Widget 옵션이 여기에 표시됩니다
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

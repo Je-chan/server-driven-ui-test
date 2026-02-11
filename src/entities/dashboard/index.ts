@@ -9,6 +9,7 @@ export type {
   WidgetLayout,
   WidgetStyle,
   Filter,
+  FilterDependency,
 } from "./model/types";
 
 export {
@@ -18,6 +19,7 @@ export {
   widgetLayoutSchema,
   widgetStyleSchema,
   filterSchema,
+  filterDependencySchema,
 } from "./model/types";
 
 // API
@@ -28,6 +30,9 @@ export {
   updateDashboard,
   deleteDashboard,
 } from "./api/dashboard.api";
+
+// Lib
+export { migrateFiltersToWidgets } from "./lib/migrate-filters";
 
 // UI
 export { DashboardCard } from "./ui/DashboardCard";

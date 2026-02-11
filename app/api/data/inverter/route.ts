@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/shared/lib/prisma";
+import { parseDateStart, parseDateEnd } from "@/src/shared/lib/date-utils";
+import { aggregateTimeBuckets, autoInterval } from "@/src/shared/lib/time-bucket";
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,14 +10,14 @@ export async function GET(request: NextRequest) {
     const assetId = searchParams.get("assetId");
     const startTime = searchParams.get("startTime");
     const endTime = searchParams.get("endTime");
-    const limit = parseInt(searchParams.get("limit") ?? "100");
-    const aggregation = searchParams.get("aggregation") ?? "latest"; // latest, avg, sum
+    const interval = searchParams.get("interval");
+    const aggregation = searchParams.get("aggregation") ?? "latest";
 
     // 시간 범위 설정
     const now = new Date();
-    const defaultStartTime = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24시간 전
-    const start = startTime ? new Date(startTime) : defaultStartTime;
-    const end = endTime ? new Date(endTime) : now;
+    const defaultStartTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const start = startTime ? parseDateStart(startTime) : defaultStartTime;
+    const end = endTime ? parseDateEnd(endTime) : now;
 
     // 인버터 데이터 조회
     const whereClause: {
@@ -33,12 +35,13 @@ export async function GET(request: NextRequest) {
     }
 
     if (aggregation === "latest") {
-      // 각 인버터의 최신 데이터
+      // 각 인버터의 최신 데이터 (선택된 시간 범위 내)
       const assets = await prisma.asset.findMany({
         where: siteId ? { siteId } : assetId ? { id: assetId } : undefined,
         include: {
           site: true,
           inverterData: {
+            where: { timestamp: { gte: start, lte: end } },
             orderBy: { timestamp: "desc" },
             take: 1,
           },
@@ -99,10 +102,9 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: { timestamp: "asc" },
-      take: limit,
     });
 
-    const data = inverterData.map((d) => ({
+    const rawData = inverterData.map((d) => ({
       assetId: d.assetId,
       assetName: d.asset.name,
       siteId: d.asset.siteId,
@@ -116,6 +118,14 @@ export async function GET(request: NextRequest) {
       temperature: d.temperature,
     }));
 
+    // 시간 버킷 집계
+    const bucketInterval = (!interval || interval === "auto") ? autoInterval(start, end) : interval;
+    const data = aggregateTimeBuckets(rawData, {
+      interval: bucketInterval,
+      timeField: "timestamp",
+      valueFields: ["activePower", "reactivePower", "dailyEnergy", "totalEnergy", "efficiency", "temperature"],
+    });
+
     return NextResponse.json({
       success: true,
       data,
@@ -123,6 +133,7 @@ export async function GET(request: NextRequest) {
         startTime: start,
         endTime: end,
         count: data.length,
+        interval: bucketInterval,
       },
     });
   } catch (error) {
