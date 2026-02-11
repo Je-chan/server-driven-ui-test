@@ -42,25 +42,18 @@ export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080",
   const { widgets } = schema;
   const cols = schema.settings?.gridColumns ?? 24;
 
-  // 해상도 기반 계산
-  const { canvasWidth, canvasHeight, rowHeight, scale } = useMemo(() => {
-    const preset = RESOLUTION_PRESETS[resolution];
-    const targetAspectRatio = preset.width / preset.height;
+  const rowHeight = schema.settings?.rowHeight ?? 10;
 
-    // 컨테이너에 맞게 스케일 조정
+  // 해상도 기반 캔버스 너비 계산
+  const { canvasWidth, scale } = useMemo(() => {
+    const preset = RESOLUTION_PRESETS[resolution];
+
     const maxWidth = containerWidth - 48;
     const scaledWidth = Math.min(maxWidth, preset.width);
     const currentScale = scaledWidth / preset.width;
-    const scaledHeight = scaledWidth / targetAspectRatio;
-
-    // rowHeight 계산: 전체 높이를 rows로 나눔 (24 rows 기준)
-    const rows = 24;
-    const calculatedRowHeight = Math.floor(scaledHeight / rows);
 
     return {
       canvasWidth: scaledWidth,
-      canvasHeight: scaledHeight,
-      rowHeight: calculatedRowHeight,
       scale: currentScale,
     };
   }, [containerWidth, resolution]);
@@ -116,7 +109,6 @@ export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080",
         className="relative rounded-lg bg-muted/30"
         style={{
           width: canvasWidth,
-          minHeight: canvasHeight,
         }}
       >
         <GridLayout

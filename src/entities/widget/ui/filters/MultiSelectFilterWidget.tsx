@@ -40,8 +40,8 @@ export function MultiSelectFilterWidget({ widget, filterValues, onFilterChange }
   };
 
   return (
-    <div className="flex h-full flex-col gap-1 overflow-auto px-3 py-1.5">
-      <label className="shrink-0 text-xs font-medium text-muted-foreground">
+    <div className="flex h-full flex-col justify-center gap-1 overflow-auto px-3">
+      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
         {widget.title}
       </label>
       <div className="flex flex-wrap gap-1">
@@ -52,10 +52,10 @@ export function MultiSelectFilterWidget({ widget, filterValues, onFilterChange }
               key={opt.value}
               onClick={() => toggleOption(opt.value)}
               disabled={isFixed}
-              className={`rounded-full border px-2 py-0.5 text-xs transition-colors ${
+              className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
                 isChecked
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-background text-muted-foreground hover:border-primary/50"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted/60 text-muted-foreground hover:bg-muted"
               } disabled:opacity-50`}
             >
               {opt.label}

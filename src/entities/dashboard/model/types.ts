@@ -55,7 +55,7 @@ export const dashboardSettingsSchema = z.object({
   refreshInterval: z.number().default(0),
   theme: z.enum(["light", "dark", "system"]).default("light"),
   gridColumns: z.number().default(24),
-  rowHeight: z.number().default(40),
+  rowHeight: z.number().default(10),
   breakpoints: z.object({
     lg: z.number().default(1200),
     md: z.number().default(996),

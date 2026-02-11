@@ -26,7 +26,7 @@ export function WidgetPalette() {
         minH: widgetDef.minSize.h,
       },
       style: isFilter
-        ? { backgroundColor: "#ffffff", borderRadius: 4, padding: 8, shadow: "none" }
+        ? { backgroundColor: "transparent", borderRadius: 0, padding: 0, shadow: "none" }
         : { backgroundColor: "#ffffff", borderRadius: 8, padding: 16, shadow: "sm" },
       options: widgetDef.defaultOptions,
     });

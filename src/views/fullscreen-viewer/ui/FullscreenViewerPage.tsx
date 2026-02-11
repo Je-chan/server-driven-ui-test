@@ -37,10 +37,8 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
 
   // 기본 해상도 설정 (1920x1080 기준)
   const targetWidth = 1920;
-  const targetHeight = 1080;
   const cols = schema.settings?.gridColumns ?? 24;
-  const rows = 24;
-  const rowHeight = Math.floor(targetHeight / rows);
+  const rowHeight = schema.settings?.rowHeight ?? 10;
 
   // ESC 키로 나가기
   useEffect(() => {

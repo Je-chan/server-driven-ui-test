@@ -36,9 +36,9 @@ export function TabFilterWidget({ widget, filterValues, onFilterChange }: TabFil
   const baseStyles = "text-xs font-medium transition-colors disabled:opacity-50";
   const variantStyles = {
     pill: {
-      container: "flex items-center gap-1 rounded-full bg-muted p-0.5",
-      active: "rounded-full bg-background px-3 py-1 shadow-sm text-foreground",
-      inactive: "rounded-full px-3 py-1 text-muted-foreground hover:text-foreground",
+      container: "flex items-center gap-0.5 rounded-lg bg-muted/50 p-1",
+      active: "rounded-md bg-card px-3 py-1 shadow-sm text-foreground",
+      inactive: "rounded-md px-3 py-1 text-muted-foreground hover:text-foreground",
     },
     tab: {
       container: "flex items-center border-b",
@@ -47,16 +47,16 @@ export function TabFilterWidget({ widget, filterValues, onFilterChange }: TabFil
     },
     button: {
       container: "flex items-center gap-1",
-      active: "rounded border border-primary bg-primary/10 px-3 py-1 text-primary",
-      inactive: "rounded border border-border px-3 py-1 text-muted-foreground hover:border-primary/50",
+      active: "rounded-md border border-primary bg-primary/10 px-3 py-1 text-primary",
+      inactive: "rounded-md border border-border/50 px-3 py-1 text-muted-foreground hover:border-border",
     },
   };
 
   const styles = variantStyles[variant];
 
   return (
-    <div className="flex h-full items-center gap-2 px-3">
-      <label className="shrink-0 text-xs font-medium text-muted-foreground">
+    <div className="flex h-full flex-col justify-center gap-1 px-3">
+      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
         {widget.title}
       </label>
       <div className={styles.container}>

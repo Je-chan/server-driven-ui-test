@@ -105,64 +105,66 @@ export function DatepickerFilterWidget({ widget, filterValues, onFilterChange }:
   };
 
   return (
-    <div className="flex h-full items-center gap-2 overflow-auto px-3">
-      <label className="shrink-0 text-xs font-medium text-muted-foreground">
+    <div className="flex h-full flex-col justify-center gap-1 overflow-auto px-3">
+      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
         {widget.title}
       </label>
-      <div className="flex items-center gap-1">
-        {presets.map((preset) => (
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 p-1">
+          {presets.map((preset) => (
+            <button
+              key={preset}
+              onClick={() => handlePresetClick(preset)}
+              disabled={isFixed}
+              className={`shrink-0 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                currentPreset === preset
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              } disabled:opacity-50`}
+            >
+              {PRESET_LABELS[preset] ?? preset}
+            </button>
+          ))}
           <button
-            key={preset}
-            onClick={() => handlePresetClick(preset)}
+            onClick={() => setShowCustom(!showCustom)}
             disabled={isFixed}
-            className={`shrink-0 rounded px-2 py-1 text-xs font-medium transition-colors ${
-              currentPreset === preset
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            className={`shrink-0 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+              currentPreset === "custom"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             } disabled:opacity-50`}
           >
-            {PRESET_LABELS[preset] ?? preset}
-          </button>
-        ))}
-        <button
-          onClick={() => setShowCustom(!showCustom)}
-          disabled={isFixed}
-          className={`shrink-0 rounded px-2 py-1 text-xs font-medium transition-colors ${
-            currentPreset === "custom"
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
-          } disabled:opacity-50`}
-        >
-          직접입력
-        </button>
-      </div>
-
-      {showCustom && (
-        <div className="flex items-center gap-1">
-          <input
-            type="date"
-            value={customStart}
-            onChange={(e) => setCustomStart(e.target.value)}
-            disabled={isFixed}
-            className="h-7 rounded border bg-background px-1.5 text-xs disabled:opacity-50"
-          />
-          <span className="text-xs text-muted-foreground">~</span>
-          <input
-            type="date"
-            value={customEnd}
-            onChange={(e) => setCustomEnd(e.target.value)}
-            disabled={isFixed}
-            className="h-7 rounded border bg-background px-1.5 text-xs disabled:opacity-50"
-          />
-          <button
-            onClick={handleCustomApply}
-            disabled={isFixed}
-            className="shrink-0 rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-          >
-            적용
+            직접입력
           </button>
         </div>
-      )}
+
+        {showCustom && (
+          <div className="flex items-center gap-1">
+            <input
+              type="date"
+              value={customStart}
+              onChange={(e) => setCustomStart(e.target.value)}
+              disabled={isFixed}
+              className="h-7 rounded-md border border-border/50 bg-card px-1.5 text-xs shadow-sm disabled:opacity-50"
+            />
+            <span className="text-xs text-muted-foreground">~</span>
+            <input
+              type="date"
+              value={customEnd}
+              onChange={(e) => setCustomEnd(e.target.value)}
+              disabled={isFixed}
+              className="h-7 rounded-md border border-border/50 bg-card px-1.5 text-xs shadow-sm disabled:opacity-50"
+            />
+            <button
+              onClick={handleCustomApply}
+              disabled={isFixed}
+              className="shrink-0 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
+            >
+              적용
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

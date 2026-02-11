@@ -49,25 +49,18 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
   const { widgets } = schema;
   const cols = schema.settings?.gridColumns ?? 24;
 
-  // 해상도 기반 계산
-  const { canvasWidth, canvasHeight, rowHeight, scale } = useMemo(() => {
-    const preset = RESOLUTION_PRESETS[resolution];
-    const targetAspectRatio = preset.width / preset.height;
+  const rowHeight = schema.settings?.rowHeight ?? 10;
 
-    // 컨테이너에 맞게 스케일 조정 (패딩 고려)
-    const maxWidth = containerWidth - 48; // 좌우 패딩
+  // 해상도 기반 캔버스 너비 계산
+  const { canvasWidth, scale } = useMemo(() => {
+    const preset = RESOLUTION_PRESETS[resolution];
+
+    const maxWidth = containerWidth - 48;
     const scaledWidth = Math.min(maxWidth, preset.width);
     const currentScale = scaledWidth / preset.width;
-    const scaledHeight = scaledWidth / targetAspectRatio;
-
-    // rowHeight 계산: 전체 높이를 rows로 나눔 (24 rows 기준)
-    const rows = 24;
-    const calculatedRowHeight = Math.floor(scaledHeight / rows);
 
     return {
       canvasWidth: scaledWidth,
-      canvasHeight: scaledHeight,
-      rowHeight: calculatedRowHeight,
       scale: currentScale,
     };
   }, [containerWidth, resolution]);
@@ -136,7 +129,7 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
         className="relative rounded-lg border-2 border-dashed border-muted-foreground/30 bg-background shadow-sm"
         style={{
           width: canvasWidth,
-          height: canvasHeight,
+          minHeight: 400,
         }}
         onClick={handleCanvasClick}
       >
@@ -149,7 +142,7 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
               왼쪽 패널에서 Widget을 클릭하여 추가하세요
             </p>
             <p className="mt-4 text-xs text-muted-foreground">
-              캔버스: {Math.round(canvasWidth)}×{Math.round(canvasHeight)}px
+              캔버스: {Math.round(canvasWidth)}px • rowHeight: {rowHeight}
             </p>
           </div>
         ) : (

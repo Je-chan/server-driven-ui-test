@@ -51,15 +51,15 @@ export function TreeSelectFilterWidget({ widget, filterValues, onFilterChange }:
   }
 
   return (
-    <div className="flex h-full items-center gap-2 px-3">
-      <label className="shrink-0 text-xs font-medium text-muted-foreground">
+    <div className="flex h-full flex-col justify-center gap-1 px-3">
+      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
         {widget.title}
       </label>
       <select
         value={currentValue}
         onChange={(e) => onFilterChange(filterKey, e.target.value)}
         disabled={isFixed}
-        className="h-7 flex-1 rounded border bg-background px-2 text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+        className="h-8 w-full rounded-md border border-border/50 bg-card px-2 text-sm shadow-sm transition-colors hover:border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
       >
         <option value="">{opts?.placeholder ?? "선택..."}</option>
         {flatOptions.map((opt) => (

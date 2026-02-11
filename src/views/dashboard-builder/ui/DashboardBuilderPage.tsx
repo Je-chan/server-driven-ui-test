@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, Eye, Undo, Redo, Loader2, Monitor } from "lucide-react";
+import { ArrowLeft, Save, Eye, Undo, Redo, Loader2, Monitor, Grid3X3 } from "lucide-react";
 import { useBuilderStore } from "@/src/features/dashboard-builder";
 import { BuilderCanvas, RESOLUTION_PRESETS, type ResolutionKey } from "@/src/widgets/builder-canvas";
 import { WidgetPalette } from "@/src/widgets/widget-palette";
@@ -22,8 +22,10 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
   const [resolution, setResolution] = useState<ResolutionKey>("1920x1080");
   const [isSaving, setIsSaving] = useState(false);
   const [showResolutionMenu, setShowResolutionMenu] = useState(false);
+  const [showGridSettings, setShowGridSettings] = useState(false);
 
   const {
+    schema,
     initSchema,
     isDirty,
     canUndo,
@@ -33,6 +35,7 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
     getSchema,
     resetDirty,
     selectWidget,
+    updateSettings,
   } = useBuilderStore();
 
   // 초기 스키마 로드 (기존 filters[] 자동 마이그레이션)
@@ -154,6 +157,62 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
                       )}
                     </button>
                   ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* 그리드 설정 */}
+          <div className="relative">
+            <button
+              onClick={() => setShowGridSettings(!showGridSettings)}
+              className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
+              title="그리드 설정"
+            >
+              <Grid3X3 className="h-4 w-4" />
+              Grid
+            </button>
+            {showGridSettings && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setShowGridSettings(false)}
+                />
+                <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-md border bg-card p-3 shadow-lg">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                        Row Height
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={schema.settings?.rowHeight ?? 10}
+                        onChange={(e) => {
+                          const v = Math.max(1, Math.min(100, Number(e.target.value) || 10));
+                          updateSettings({ rowHeight: v });
+                        }}
+                        className="w-full rounded-md border px-2 py-1.5 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                        Grid Columns
+                      </label>
+                      <input
+                        type="number"
+                        min={6}
+                        max={48}
+                        value={schema.settings?.gridColumns ?? 24}
+                        onChange={(e) => {
+                          const v = Math.max(6, Math.min(48, Number(e.target.value) || 24));
+                          updateSettings({ gridColumns: v });
+                        }}
+                        className="w-full rounded-md border px-2 py-1.5 text-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
               </>
             )}
