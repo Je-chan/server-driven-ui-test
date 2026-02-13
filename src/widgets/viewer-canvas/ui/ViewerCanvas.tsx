@@ -151,7 +151,7 @@ export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080",
 
                 {/* Widget Content */}
                 <div className="flex-1 overflow-hidden">
-                  <WidgetRenderer widget={widget} filterValues={filterValues} onFilterChange={onFilterChange} formManager={formManager} />
+                  <WidgetRenderer widget={widget} filterValues={filterValues} onFilterChange={onFilterChange} formManager={formManager} dataSources={schema.dataSources} />
                 </div>
               </div>
             );

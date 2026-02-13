@@ -633,6 +633,7 @@ const allDataSources = [
     type: "timeseries",
     name: "인버터 데이터",
     config: { endpoint: "/api/data/inverter" },
+    cache: { staleTime: 30000, gcTime: 300000 },
     returnStructure: {
       dimensions: ["assetId", "assetName", "siteName", "timestamp"],
       measurements: ["activePower", "reactivePower", "dailyEnergy", "totalEnergy", "efficiency"],
@@ -643,6 +644,7 @@ const allDataSources = [
     type: "rest-api",
     name: "기상 데이터",
     config: { endpoint: "/api/data/weather" },
+    cache: { staleTime: 600000, gcTime: 1800000 },
     returnStructure: {
       dimensions: ["siteId", "siteName", "timestamp"],
       measurements: ["irradiance", "temperature", "humidity", "windSpeed"],
@@ -653,6 +655,7 @@ const allDataSources = [
     type: "metric",
     name: "KPI 지표",
     config: { endpoint: "/api/data/kpi" },
+    cache: { staleTime: 300000, gcTime: 1800000 },
     returnStructure: {
       dimensions: ["siteId", "date"],
       measurements: ["dailyGeneration", "pr", "availability", "capacityFactor"],
@@ -663,6 +666,7 @@ const allDataSources = [
     type: "rest-api",
     name: "알람 데이터",
     config: { endpoint: "/api/data/alarm" },
+    cache: { staleTime: 60000, gcTime: 300000 },
     returnStructure: {
       dimensions: ["siteId", "severity", "category", "timestamp"],
       measurements: ["count"],
@@ -673,6 +677,7 @@ const allDataSources = [
     type: "metric",
     name: "수익 데이터",
     config: { endpoint: "/api/data/revenue" },
+    cache: { staleTime: 300000, gcTime: 1800000 },
     returnStructure: {
       dimensions: ["siteId", "date"],
       measurements: ["energySales", "recSales", "totalRevenue", "generationKwh"],
@@ -683,6 +688,7 @@ const allDataSources = [
     type: "timeseries",
     name: "ESS 데이터",
     config: { endpoint: "/api/data/battery" },
+    cache: { staleTime: 30000, gcTime: 300000 },
     returnStructure: {
       dimensions: ["siteId", "batteryId", "timestamp"],
       measurements: ["soc", "power", "temperature", "voltage", "current"],
@@ -693,6 +699,7 @@ const allDataSources = [
     type: "timeseries",
     name: "계통 데이터",
     config: { endpoint: "/api/data/grid" },
+    cache: { staleTime: 30000, gcTime: 300000 },
     returnStructure: {
       dimensions: ["siteId", "timestamp"],
       measurements: ["gridVoltage", "gridFrequency", "exportPower", "importPower"],
@@ -703,6 +710,7 @@ const allDataSources = [
     type: "rest-api",
     name: "전력 가격",
     config: { endpoint: "/api/data/price" },
+    cache: { staleTime: 600000, gcTime: 1800000 },
     returnStructure: {
       dimensions: ["region", "timestamp"],
       measurements: ["smp", "rec"],
@@ -713,6 +721,7 @@ const allDataSources = [
     type: "timeseries",
     name: "계량기 데이터",
     config: { endpoint: "/api/data/meter" },
+    cache: { staleTime: 30000, gcTime: 300000 },
     returnStructure: {
       dimensions: ["siteId", "meterId", "timestamp"],
       measurements: ["activeExport", "activeImport", "powerFactor"],
@@ -723,6 +732,7 @@ const allDataSources = [
     type: "rest-api",
     name: "유지보수 데이터",
     config: { endpoint: "/api/data/maintenance" },
+    cache: { staleTime: 60000, gcTime: 300000 },
     returnStructure: {
       dimensions: ["siteId", "type", "status"],
       measurements: ["cost"],
@@ -733,6 +743,7 @@ const allDataSources = [
     type: "timeseries",
     name: "모듈/스트링 데이터",
     config: { endpoint: "/api/data/module" },
+    cache: { staleTime: 30000, gcTime: 300000 },
     returnStructure: {
       dimensions: ["siteId", "stringId", "timestamp"],
       measurements: ["voltage", "current", "power", "temperature"],

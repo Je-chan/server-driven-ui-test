@@ -171,7 +171,7 @@ export function PresentationCanvas({
 
                 {/* Widget Content */}
                 <div className="flex-1 overflow-hidden">
-                  <WidgetRenderer widget={widget} />
+                  <WidgetRenderer widget={widget} dataSources={schema.dataSources} />
                 </div>
               </div>
             );

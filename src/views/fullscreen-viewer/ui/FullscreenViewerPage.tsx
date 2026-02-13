@@ -222,7 +222,7 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
 
                 {/* Widget Content */}
                 <div className="flex-1 overflow-hidden">
-                  <WidgetRenderer widget={widget} filterValues={appliedValues} onFilterChange={setFilterValue} formManager={formManager} />
+                  <WidgetRenderer widget={widget} filterValues={appliedValues} onFilterChange={setFilterValue} formManager={formManager} dataSources={schema.dataSources} />
                 </div>
               </div>
             );

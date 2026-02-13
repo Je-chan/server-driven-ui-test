@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo } from "react";
 import type { Widget } from "@/src/entities/dashboard";
+import { useFormSubmit } from "@/src/shared/api";
 import { runValidation, type ValidationRule } from "./validation";
 
 interface FieldState {
@@ -100,6 +101,7 @@ export function useFormManager(widgets: Widget[]): FormManagerReturn {
   const initialStates = useMemo(() => buildInitialFormStates(formConfigs), [formConfigs]);
 
   const [forms, setForms] = useState<Record<string, FormState>>(initialStates);
+  const { mutateAsync } = useFormSubmit();
 
   const ensureForm = useCallback((formId: string): FormState => {
     return forms[formId] ?? { fields: {}, isSubmitting: false, submitError: null, submitSuccess: false };
@@ -201,25 +203,13 @@ export function useFormManager(widgets: Widget[]): FormManagerReturn {
     }
 
     try {
-      const headers: Record<string, string> = { ...config.headers };
-      if (config.contentType !== "multipart/form-data") {
-        headers["Content-Type"] = config.contentType ?? "application/json";
-      }
-
-      const fetchOptions: RequestInit = {
+      await mutateAsync({
+        endpoint: config.endpoint,
         method: config.method,
-        headers,
-      };
-
-      if (config.method !== "GET") {
-        fetchOptions.body = JSON.stringify(data);
-      }
-
-      const response = await fetch(config.endpoint, fetchOptions);
-
-      if (!response.ok) {
-        throw new Error(config.onError?.message ?? `요청 실패 (${response.status})`);
-      }
+        headers: config.headers,
+        contentType: config.contentType,
+        data,
+      });
 
       setForms((prev) => {
         const form = prev[formId] ?? { fields: {}, isSubmitting: false, submitError: null, submitSuccess: false };
@@ -250,7 +240,7 @@ export function useFormManager(widgets: Widget[]): FormManagerReturn {
         };
       });
     }
-  }, [formConfigs, forms, resetForm]);
+  }, [formConfigs, forms, resetForm, mutateAsync]);
 
   const isSubmittingFn = useCallback((formId: string): boolean => {
     return ensureForm(formId).isSubmitting;

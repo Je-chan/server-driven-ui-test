@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { Loader2, AlertCircle } from "lucide-react";
 import {
   LineChart,
@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import type { Widget } from "@/src/entities/dashboard";
 import { resolveTemplateParams } from "@/src/shared/lib";
+import { useWidgetData } from "@/src/shared/api";
 import {
   SelectFilterWidget,
   MultiSelectFilterWidget,
@@ -32,6 +33,7 @@ interface WidgetRendererProps {
   filterValues?: Record<string, unknown>;
   onFilterChange?: (key: string, value: unknown) => void;
   formManager?: FormManagerReturn;
+  dataSources?: Record<string, unknown>[];
 }
 
 interface DataResponse {
@@ -41,79 +43,7 @@ interface DataResponse {
   error?: string;
 }
 
-// 데이터 소스 ID를 API 엔드포인트로 매핑
-function getEndpoint(
-  dataSourceId: string,
-  widgetType: string,
-  resolvedParams?: Record<string, unknown>
-): string {
-  const isChart = widgetType === "line-chart" || widgetType === "bar-chart";
-
-  const endpoints: Record<string, { latest: string; timeseries: string }> = {
-    ds_inverter: {
-      latest: "/api/data/inverter?aggregation=latest",
-      timeseries: "/api/data/inverter?aggregation=timeseries",
-    },
-    ds_weather: {
-      latest: "/api/data/weather?aggregation=latest",
-      timeseries: "/api/data/weather?aggregation=timeseries",
-    },
-    ds_kpi: {
-      latest: "/api/data/kpi?limit=1",
-      timeseries: "/api/data/kpi?limit=60",
-    },
-    ds_alarm: {
-      latest: "/api/data/alarm?limit=20",
-      timeseries: "/api/data/alarm?limit=100",
-    },
-    ds_battery: {
-      latest: "/api/data/battery?aggregation=latest",
-      timeseries: "/api/data/battery?aggregation=timeseries",
-    },
-    ds_revenue: {
-      latest: "/api/data/revenue?limit=1",
-      timeseries: "/api/data/revenue?limit=60",
-    },
-    ds_grid: {
-      latest: "/api/data/grid?aggregation=latest",
-      timeseries: "/api/data/grid?aggregation=timeseries",
-    },
-    ds_price: {
-      latest: "/api/data/price?aggregation=latest",
-      timeseries: "/api/data/price?aggregation=timeseries",
-    },
-    ds_meter: {
-      latest: "/api/data/meter?aggregation=latest",
-      timeseries: "/api/data/meter?aggregation=timeseries",
-    },
-    ds_maintenance: {
-      latest: "/api/data/maintenance?limit=20",
-      timeseries: "/api/data/maintenance?limit=50",
-    },
-    ds_module: {
-      latest: "/api/data/module?aggregation=latest",
-      timeseries: "/api/data/module?aggregation=timeseries",
-    },
-  };
-
-  const config = endpoints[dataSourceId];
-  if (!config) return "";
-
-  let url = isChart ? config.timeseries : config.latest;
-
-  // 치환된 필터 파라미터를 쿼리스트링에 추가
-  if (resolvedParams) {
-    for (const [key, value] of Object.entries(resolvedParams)) {
-      if (value !== undefined && value !== null && value !== "") {
-        url += `&${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`;
-      }
-    }
-  }
-
-  return url;
-}
-
-export function WidgetRenderer({ widget, filterValues, onFilterChange, formManager }: WidgetRendererProps) {
+export function WidgetRenderer({ widget, filterValues, onFilterChange, formManager, dataSources }: WidgetRendererProps) {
   // 필터 위젯은 데이터 페칭 없이 즉시 렌더링
   if (widget.type.startsWith("filter-") && onFilterChange && filterValues) {
     return renderFilterWidget(widget, filterValues, onFilterChange);
@@ -124,7 +54,7 @@ export function WidgetRenderer({ widget, filterValues, onFilterChange, formManag
     return <FormWidget widget={widget} formManager={formManager} />;
   }
 
-  return <DataWidgetRenderer widget={widget} filterValues={filterValues} />;
+  return <DataWidgetRenderer widget={widget} filterValues={filterValues} dataSources={dataSources} />;
 }
 
 function renderFilterWidget(
@@ -154,11 +84,15 @@ function renderFilterWidget(
   }
 }
 
-function DataWidgetRenderer({ widget, filterValues }: { widget: Widget; filterValues?: Record<string, unknown> }) {
-  const [data, setData] = useState<DataResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
+function DataWidgetRenderer({
+  widget,
+  filterValues,
+  dataSources,
+}: {
+  widget: Widget;
+  filterValues?: Record<string, unknown>;
+  dataSources?: Record<string, unknown>[];
+}) {
   const dataBinding = widget.dataBinding as {
     dataSourceId?: string;
     requestParams?: Record<string, unknown>;
@@ -169,70 +103,43 @@ function DataWidgetRenderer({ widget, filterValues }: { widget: Widget; filterVa
     };
   } | undefined;
 
-  // 필터 값에서 내부용 키(__preset_ 등) 제거
-  const filterParamsKey = filterValues
-    ? JSON.stringify(
-        Object.fromEntries(
-          Object.entries(filterValues).filter(([k]) => !k.startsWith("__"))
-        )
-      )
-    : "";
+  // 필터 파라미터 치환 + 시간 필터 포함
+  const resolvedParams = useMemo(() => {
+    const params = dataBinding?.requestParams && filterValues
+      ? resolveTemplateParams(dataBinding.requestParams, filterValues)
+      : {};
 
-  useEffect(() => {
-    async function fetchData() {
-      if (!dataBinding?.dataSourceId) {
-        setLoading(false);
-        return;
+    const paramsWithTime = { ...params };
+    if (filterValues) {
+      if (filterValues.startTime && !paramsWithTime.startTime) {
+        paramsWithTime.startTime = filterValues.startTime;
       }
-
-      // requestParams의 {{filter.xxx}} 템플릿을 필터 값으로 치환
-      const resolvedParams = dataBinding.requestParams && filterValues
-        ? resolveTemplateParams(dataBinding.requestParams, filterValues)
-        : undefined;
-
-      // 시간 필터는 항상 포함 (requestParams에 명시적으로 없어도)
-      const paramsWithTime = { ...resolvedParams };
-      if (filterValues) {
-        if (filterValues.startTime && !paramsWithTime.startTime) {
-          paramsWithTime.startTime = filterValues.startTime;
-        }
-        if (filterValues.endTime && !paramsWithTime.endTime) {
-          paramsWithTime.endTime = filterValues.endTime;
-        }
-      }
-
-      const endpoint = getEndpoint(dataBinding.dataSourceId, widget.type, paramsWithTime);
-      if (!endpoint) {
-        setError(`Unknown data source: ${dataBinding.dataSourceId}`);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const response = await fetch(endpoint);
-        const result = await response.json();
-
-        if (result.success) {
-          setData(result);
-          setError(null);
-        } else {
-          setError(result.error ?? "Failed to fetch data");
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Network error");
-      } finally {
-        setLoading(false);
+      if (filterValues.endTime && !paramsWithTime.endTime) {
+        paramsWithTime.endTime = filterValues.endTime;
       }
     }
 
-    fetchData();
-    // 30초마다 데이터 갱신
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
-  }, [dataBinding?.dataSourceId, widget.type, filterParamsKey]);
+    return paramsWithTime;
+  }, [dataBinding?.requestParams, filterValues]);
 
-  if (loading) {
+  // dataSources에서 해당 dataSourceId의 cache 설정 조회
+  const cache = useMemo(() => {
+    if (!dataSources || !dataBinding?.dataSourceId) return undefined;
+    const ds = dataSources.find(
+      (s) => (s as { id?: string }).id === dataBinding.dataSourceId,
+    ) as { cache?: Record<string, unknown> } | undefined;
+    return ds?.cache;
+  }, [dataSources, dataBinding?.dataSourceId]);
+
+  const { data, isLoading, error } = useWidgetData({
+    dataSourceId: dataBinding?.dataSourceId ?? "",
+    widgetType: widget.type,
+    resolvedParams,
+    cache,
+    enabled: !!dataBinding?.dataSourceId,
+  });
+
+  if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -244,7 +151,7 @@ function DataWidgetRenderer({ widget, filterValues }: { widget: Widget; filterVa
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-destructive">
         <AlertCircle className="h-6 w-6" />
-        <span className="text-xs text-center">{error}</span>
+        <span className="text-xs text-center">{error.message}</span>
       </div>
     );
   }
@@ -260,13 +167,13 @@ function DataWidgetRenderer({ widget, filterValues }: { widget: Widget; filterVa
   // 위젯 타입에 따른 렌더링
   switch (widget.type) {
     case "kpi-card":
-      return <KpiCardContent data={data} mapping={dataBinding.mapping} />;
+      return <KpiCardContent data={data ?? null} mapping={dataBinding.mapping} />;
     case "table":
-      return <TableContent data={data} mapping={dataBinding.mapping} />;
+      return <TableContent data={data ?? null} mapping={dataBinding.mapping} />;
     case "line-chart":
-      return <LineChartContent data={data} mapping={dataBinding.mapping} />;
+      return <LineChartContent data={data ?? null} mapping={dataBinding.mapping} />;
     case "bar-chart":
-      return <BarChartContent data={data} mapping={dataBinding.mapping} />;
+      return <BarChartContent data={data ?? null} mapping={dataBinding.mapping} />;
     default:
       return (
         <div className="flex h-full items-center justify-center p-4 text-muted-foreground">
