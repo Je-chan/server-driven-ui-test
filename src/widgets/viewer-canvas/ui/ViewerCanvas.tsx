@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import ReactGridLayout from "react-grid-layout";
 import { WidgetRenderer } from "@/src/entities/widget";
 import type { DashboardJson } from "@/src/entities/dashboard";
+import type { FormManagerReturn } from "@/src/features/dashboard-form";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
@@ -23,6 +24,7 @@ interface ViewerCanvasProps {
   resolution?: ResolutionKey;
   filterValues?: Record<string, unknown>;
   onFilterChange?: (key: string, value: unknown) => void;
+  formManager?: FormManagerReturn;
 }
 
 interface LayoutItem {
@@ -38,7 +40,7 @@ interface LayoutItem {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const GridLayout = ReactGridLayout as any;
 
-export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080", filterValues, onFilterChange }: ViewerCanvasProps) {
+export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080", filterValues, onFilterChange, formManager }: ViewerCanvasProps) {
   const { widgets } = schema;
   const cols = schema.settings?.gridColumns ?? 24;
 
@@ -149,7 +151,7 @@ export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080",
 
                 {/* Widget Content */}
                 <div className="flex-1 overflow-hidden">
-                  <WidgetRenderer widget={widget} filterValues={filterValues} onFilterChange={onFilterChange} />
+                  <WidgetRenderer widget={widget} filterValues={filterValues} onFilterChange={onFilterChange} formManager={formManager} />
                 </div>
               </div>
             );

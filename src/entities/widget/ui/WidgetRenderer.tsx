@@ -24,11 +24,14 @@ import {
   TabFilterWidget,
   DatepickerFilterWidget,
 } from "./filters";
+import { FormWidget } from "./forms";
+import type { FormManagerReturn } from "@/src/features/dashboard-form";
 
 interface WidgetRendererProps {
   widget: Widget;
   filterValues?: Record<string, unknown>;
   onFilterChange?: (key: string, value: unknown) => void;
+  formManager?: FormManagerReturn;
 }
 
 interface DataResponse {
@@ -110,10 +113,15 @@ function getEndpoint(
   return url;
 }
 
-export function WidgetRenderer({ widget, filterValues, onFilterChange }: WidgetRendererProps) {
+export function WidgetRenderer({ widget, filterValues, onFilterChange, formManager }: WidgetRendererProps) {
   // 필터 위젯은 데이터 페칭 없이 즉시 렌더링
   if (widget.type.startsWith("filter-") && onFilterChange && filterValues) {
     return renderFilterWidget(widget, filterValues, onFilterChange);
+  }
+
+  // 폼 위젯은 formManager를 통해 렌더링
+  if (widget.type === "form" && formManager) {
+    return <FormWidget widget={widget} formManager={formManager} />;
   }
 
   return <DataWidgetRenderer widget={widget} filterValues={filterValues} />;

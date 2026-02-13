@@ -1962,6 +1962,233 @@ const emptyDashboardSchema = {
   linkages: [],
 };
 
+// Dashboard 11: 설비 점검 보고서 (Form 위젯 데모)
+function createInspectionFormDashboardSchema(siteOptions: { value: string; label: string }[]) {
+  return {
+    version: "1.0.0",
+    settings: { refreshInterval: 0, theme: "light", gridColumns: 24, rowHeight: 40 },
+    dataSources: allDataSources,
+    filters: [],
+    widgets: [
+      // ── 제목 영역: KPI 카드로 폼 안내 ──
+      {
+        id: "w_form_header",
+        type: "kpi-card",
+        title: "설비 점검 보고서",
+        layout: { x: 0, y: 0, w: 12, h: 2 },
+        dataBinding: {
+          dataSourceId: "ds_maintenance",
+          requestParams: {},
+          mapping: { measurements: [{ field: "scheduled", label: "예정 점검", unit: "건", color: "#3b82f6" }] },
+        },
+        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      },
+      {
+        id: "w_form_header2",
+        type: "kpi-card",
+        title: "최근 알람",
+        layout: { x: 12, y: 0, w: 12, h: 2 },
+        dataBinding: {
+          dataSourceId: "ds_alarm",
+          requestParams: {},
+          mapping: { measurements: [{ field: "totalActive", label: "활성 알람", unit: "건", color: "#ef4444" }] },
+        },
+        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      },
+
+      // ── 폼 영역 (컨테이너 카드) ──
+      {
+        id: "w_form_inspection",
+        type: "form",
+        title: "설비 점검 보고서",
+        layout: { x: 0, y: 2, w: 24, h: 18 },
+        style: { backgroundColor: "#ffffff", borderRadius: 8, padding: 16, shadow: "sm" },
+        options: {
+          formId: "inspection",
+          columns: 3,
+          fields: [
+            {
+              fieldName: "siteId",
+              type: "select",
+              label: "점검 대상 발전소",
+              options: siteOptions,
+              placeholder: "발전소를 선택하세요",
+              validation: [{ type: "required", message: "발전소를 선택해주세요" }],
+            },
+            {
+              fieldName: "inspectionType",
+              type: "radio",
+              label: "점검 유형",
+              options: [
+                { value: "routine", label: "정기 점검" },
+                { value: "emergency", label: "긴급 점검" },
+                { value: "preventive", label: "예방 정비" },
+              ],
+              direction: "horizontal",
+              defaultValue: "routine",
+              validation: [{ type: "required", message: "점검 유형을 선택해주세요" }],
+            },
+            {
+              fieldName: "inspectorName",
+              type: "input",
+              label: "점검자명",
+              inputType: "text",
+              placeholder: "이름을 입력하세요",
+              validation: [
+                { type: "required", message: "점검자명을 입력해주세요" },
+                { type: "minLength", value: 2, message: "2자 이상 입력해주세요" },
+              ],
+            },
+            {
+              fieldName: "phone",
+              type: "input",
+              label: "연락처",
+              inputType: "tel",
+              placeholder: "010-0000-0000",
+              validation: [
+                { type: "required", message: "연락처를 입력해주세요" },
+                { type: "pattern", value: "^\\d{2,3}-\\d{3,4}-\\d{4}$", message: "올바른 전화번호 형식이 아닙니다" },
+              ],
+            },
+            {
+              fieldName: "checklist",
+              type: "checkbox",
+              label: "점검 항목 (해당 항목 선택)",
+              mode: "group",
+              options: [
+                { value: "panel", label: "태양광 패널 상태" },
+                { value: "inverter", label: "인버터 동작 확인" },
+                { value: "wiring", label: "배선 및 커넥터" },
+                { value: "structure", label: "구조물/마운트" },
+                { value: "grounding", label: "접지 상태" },
+                { value: "monitoring", label: "모니터링 시스템" },
+              ],
+              direction: "vertical",
+              validation: [{ type: "required", message: "하나 이상의 항목을 선택해주세요" }],
+            },
+            {
+              fieldName: "conditionScore",
+              type: "input",
+              label: "설비 상태 점수 (0~100)",
+              inputType: "number",
+              placeholder: "0~100",
+              validation: [
+                { type: "required", message: "점수를 입력해주세요" },
+                { type: "min", value: 0, message: "0 이상이어야 합니다" },
+                { type: "max", value: 100, message: "100 이하여야 합니다" },
+              ],
+            },
+            {
+              fieldName: "isUrgent",
+              type: "checkbox",
+              label: "긴급 여부",
+              mode: "single",
+              checkboxLabel: "긴급 조치가 필요합니다",
+            },
+            {
+              fieldName: "severity",
+              type: "select",
+              label: "발견 이상 심각도",
+              options: [
+                { value: "none", label: "이상 없음" },
+                { value: "low", label: "경미" },
+                { value: "medium", label: "보통" },
+                { value: "high", label: "심각" },
+                { value: "critical", label: "긴급" },
+              ],
+              placeholder: "심각도 선택",
+              defaultValue: "none",
+            },
+            {
+              fieldName: "nextInspectionDate",
+              type: "input",
+              label: "다음 점검 희망일",
+              inputType: "text",
+              placeholder: "YYYY-MM-DD",
+              validation: [
+                { type: "pattern", value: "^\\d{4}-\\d{2}-\\d{2}$", message: "YYYY-MM-DD 형식으로 입력해주세요" },
+              ],
+            },
+            {
+              fieldName: "notes",
+              type: "textarea",
+              label: "점검 소견 및 특이사항",
+              placeholder: "점검 결과를 상세히 기록해주세요...",
+              rows: 5,
+              maxLength: 500,
+              colSpan: 3,
+              validation: [
+                { type: "required", message: "점검 소견을 입력해주세요" },
+                { type: "minLength", value: 10, message: "10자 이상 입력해주세요" },
+              ],
+            },
+          ],
+          buttons: [
+            { label: "점검 보고서 제출", buttonType: "submit", variant: "primary" },
+            { label: "초기화", buttonType: "reset", variant: "outline" },
+          ],
+          submitConfig: {
+            endpoint: "/api/data/maintenance",
+            method: "POST",
+            confirmation: {
+              enabled: true,
+              title: "보고서 제출",
+              message: "점검 보고서를 제출하시겠습니까? 제출 후에는 수정할 수 없습니다.",
+            },
+            onSuccess: {
+              message: "점검 보고서가 성공적으로 제출되었습니다",
+              resetForm: true,
+            },
+            onError: {
+              message: "제출에 실패했습니다. 다시 시도해주세요.",
+            },
+          },
+        },
+      },
+
+      // ── 참고 데이터 영역 (테이블) ──
+      {
+        id: "w_form_ref_alarms",
+        type: "table",
+        title: "최근 알람 내역 (참고)",
+        layout: { x: 0, y: 15, w: 12, h: 3 },
+        dataBinding: {
+          dataSourceId: "ds_alarm",
+          requestParams: {},
+          mapping: {
+            dimensions: ["siteId", "severity", "category"],
+            measurements: [
+              { field: "message", label: "메시지" },
+              { field: "status", label: "상태" },
+            ],
+          },
+        },
+        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      },
+      {
+        id: "w_form_ref_maint",
+        type: "table",
+        title: "최근 정비 기록 (참고)",
+        layout: { x: 12, y: 15, w: 12, h: 3 },
+        dataBinding: {
+          dataSourceId: "ds_maintenance",
+          requestParams: {},
+          mapping: {
+            dimensions: ["siteId", "type"],
+            measurements: [
+              { field: "description", label: "내용" },
+              { field: "status", label: "상태" },
+              { field: "cost", label: "비용", unit: "원" },
+            ],
+          },
+        },
+        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      },
+    ],
+    linkages: [],
+  };
+}
+
 // ====== Main ======
 
 async function main() {
@@ -2165,6 +2392,12 @@ async function main() {
       title: "인버터 상세 분석",
       description: "인버터 성능, 온도, 스트링 출력 상세 분석 대시보드",
       schema: createInverterDetailDashboardSchema(siteOptions),
+      isPublished: true,
+    },
+    {
+      title: "설비 점검 보고서",
+      description: "현장 설비 점검 결과를 입력하고 제출하는 폼 대시보드",
+      schema: createInspectionFormDashboardSchema(siteOptions),
       isPublished: true,
     },
     {

@@ -2,6 +2,29 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/shared/lib/prisma";
 import { parseDateStart, parseDateEnd } from "@/src/shared/lib/date-utils";
 
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+
+    const log = await prisma.maintenanceLog.create({
+      data: {
+        siteId: body.siteId,
+        type: body.inspectionType ?? "inspection",
+        description: body.notes ?? "",
+        status: "scheduled",
+        scheduledDate: new Date(),
+        technician: body.inspectorName ?? null,
+        cost: null,
+      },
+    });
+
+    return NextResponse.json({ success: true, data: log }, { status: 201 });
+  } catch (error) {
+    console.error("Maintenance POST Error:", error);
+    return NextResponse.json({ success: false, error: "Failed to create maintenance log" }, { status: 500 });
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;

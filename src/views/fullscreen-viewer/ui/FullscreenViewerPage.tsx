@@ -6,6 +6,7 @@ import ReactGridLayout from "react-grid-layout";
 import { X, ArrowLeft, Settings, RefreshCw, Search } from "lucide-react";
 import { WidgetRenderer } from "@/src/entities/widget";
 import { useFilterValues } from "@/src/features/dashboard-filter";
+import { useFormManager } from "@/src/features/dashboard-form";
 import type { DashboardEntity } from "@/src/entities/dashboard";
 import { migrateFiltersToWidgets } from "@/src/entities/dashboard";
 import "react-grid-layout/css/styles.css";
@@ -34,6 +35,7 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
   const [refreshKey, setRefreshKey] = useState(0);
   const filterMode = schema.settings.filterMode ?? "auto";
   const { appliedValues, setFilterValue, applyFilters, hasPendingChanges } = useFilterValues(schema.widgets ?? [], filterMode);
+  const formManager = useFormManager(schema.widgets ?? []);
 
   // 기본 해상도 설정 (1920x1080 기준)
   const targetWidth = 1920;
@@ -220,7 +222,7 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
 
                 {/* Widget Content */}
                 <div className="flex-1 overflow-hidden">
-                  <WidgetRenderer widget={widget} filterValues={appliedValues} onFilterChange={setFilterValue} />
+                  <WidgetRenderer widget={widget} filterValues={appliedValues} onFilterChange={setFilterValue} formManager={formManager} />
                 </div>
               </div>
             );

@@ -12,6 +12,7 @@ import {
   TextCursorInput,
   ToggleLeft,
   Calendar,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 
@@ -19,7 +20,7 @@ export interface WidgetTypeDefinition {
   type: string;
   label: string;
   icon: LucideIcon;
-  category: "filter" | "chart" | "card" | "table" | "map" | "status";
+  category: "filter" | "chart" | "card" | "table" | "map" | "status" | "form";
   description: string;
   defaultSize: { w: number; h: number };
   minSize: { w: number; h: number };
@@ -201,6 +202,25 @@ export const WIDGET_TYPES: WidgetTypeDefinition[] = [
       presets: ["today", "yesterday", "last7days", "last30days", "thisMonth"],
       defaultValue: "today",
       outputKeys: { start: "startTime", end: "endTime" },
+    },
+  },
+  // ── 폼 위젯 ──
+  {
+    type: "form",
+    label: "Form",
+    icon: ClipboardList,
+    category: "form",
+    description: "폼 카드 (필드 + 버튼)",
+    defaultSize: { w: 12, h: 10 },
+    minSize: { w: 6, h: 4 },
+    defaultOptions: {
+      formId: "",
+      columns: 1,
+      fields: [],
+      buttons: [
+        { label: "제출", buttonType: "submit", variant: "primary" },
+        { label: "초기화", buttonType: "reset", variant: "outline" },
+      ],
     },
   },
 ];

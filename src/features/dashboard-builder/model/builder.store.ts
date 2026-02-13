@@ -161,8 +161,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
         return {
           ...w,
           layout: {
-            x: newLayout.x,
-            y: newLayout.y,
+            x: newLayout.x,y: newLayout.y,
             w: newLayout.w,
             h: newLayout.h,
             minW: w.layout.minW,

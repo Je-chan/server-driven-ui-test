@@ -10,6 +10,7 @@ import {
   type MeasurementMapping,
 } from "@/src/entities/data-source";
 import { FilterWidgetOptions } from "./FilterWidgetOptions";
+import { FormWidgetOptions } from "./FormWidgetOptions";
 
 type TabType = "style" | "data" | "options";
 
@@ -489,6 +490,8 @@ export function PropertyPanel() {
           <div className="space-y-4">
             {selectedWidget.type.startsWith("filter-") ? (
               <FilterWidgetOptions widget={selectedWidget} />
+            ) : selectedWidget.type === "form" ? (
+              <FormWidgetOptions widget={selectedWidget} />
             ) : (
               <>
                 <p className="text-xs text-muted-foreground">

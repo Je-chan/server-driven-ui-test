@@ -166,7 +166,9 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
               const isSelected = selectedWidgetId === widget.id;
               const Icon = widgetDef?.icon;
               const isFilter = widget.type.startsWith("filter-");
+              const isForm = widget.type === "form";
               const filterKey = isFilter ? (widget.options as { filterKey?: string } | undefined)?.filterKey : undefined;
+              const formId = isForm ? (widget.options as { formId?: string } | undefined)?.formId : undefined;
 
               return (
                 <div
@@ -201,10 +203,13 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
                   {/* Widget Content Placeholder */}
                   <div className="flex flex-1 items-center justify-center p-2">
                     <div className="flex flex-col items-center gap-1 text-muted-foreground">
-                      {Icon && <Icon className={isFilter ? "h-4 w-4" : "h-6 w-6"} />}
+                      {Icon && <Icon className={isFilter || isForm ? "h-4 w-4" : "h-6 w-6"} />}
                       <span className="text-xs">{widgetDef?.label ?? widget.type}</span>
                       {isFilter && filterKey && (
                         <span className="text-[10px] text-muted-foreground/60">filterKey: {filterKey}</span>
+                      )}
+                      {isForm && formId && (
+                        <span className="text-[10px] text-muted-foreground/60">formId: {formId}</span>
                       )}
                     </div>
                   </div>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Pencil, RefreshCw, Monitor, Maximize2, Presentation, Search } from "lucide-react";
 import { ViewerCanvas, RESOLUTION_PRESETS, type ResolutionKey } from "@/src/widgets/viewer-canvas";
 import { useFilterValues } from "@/src/features/dashboard-filter";
+import { useFormManager } from "@/src/features/dashboard-form";
 import type { DashboardEntity } from "@/src/entities/dashboard";
 import { migrateFiltersToWidgets } from "@/src/entities/dashboard";
 
@@ -20,6 +21,7 @@ export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
   const [showResolutionMenu, setShowResolutionMenu] = useState(false);
   const filterMode = schema.settings.filterMode ?? "auto";
   const { filterValues, appliedValues, setFilterValue, applyFilters, hasPendingChanges } = useFilterValues(schema.widgets ?? [], filterMode);
+  const formManager = useFormManager(schema.widgets ?? []);
 
   // 캔버스 컨테이너 너비 계산
   useEffect(() => {
@@ -135,6 +137,7 @@ export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
           resolution={resolution}
           filterValues={appliedValues}
           onFilterChange={setFilterValue}
+          formManager={formManager}
         />
 
         {/* Dashboard 정보 */}

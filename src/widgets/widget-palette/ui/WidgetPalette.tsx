@@ -34,6 +34,7 @@ export function WidgetPalette() {
 
   const categories = [
     { key: "filter", label: "Filters" },
+    { key: "form", label: "Forms" },
     { key: "card", label: "Cards" },
     { key: "chart", label: "Charts" },
     { key: "table", label: "Tables" },

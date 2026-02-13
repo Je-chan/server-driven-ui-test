@@ -15,3 +15,5 @@ export {
   TabFilterWidget,
   DatepickerFilterWidget,
 } from "./ui/filters";
+
+export { FormWidget } from "./ui/forms";
