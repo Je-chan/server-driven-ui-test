@@ -6,6 +6,7 @@ export {
 } from "./model/widget-registry";
 
 export { WidgetRenderer } from "./ui/WidgetRenderer";
+export { CardWidget } from "./ui/CardWidget";
 
 export {
   SelectFilterWidget,

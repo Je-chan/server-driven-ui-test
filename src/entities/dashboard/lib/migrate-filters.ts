@@ -19,10 +19,13 @@ export function migrateFiltersToWidgets(schema: DashboardJson): DashboardJson {
 
   const filterRowHeight = 2; // 필터 위젯이 차지할 행 높이
 
-  // 기존 위젯의 y좌표를 이동
+  // 기존 위젯의 y좌표를 이동 (filter-submit은 필터 행에 유지)
   const shiftedWidgets = schema.widgets.map((w) => ({
     ...w,
-    layout: { ...w.layout, y: w.layout.y + filterRowHeight },
+    layout: {
+      ...w.layout,
+      y: w.type === "filter-submit" ? w.layout.y : w.layout.y + filterRowHeight,
+    },
   }));
 
   // 필터를 위젯으로 변환
@@ -33,7 +36,7 @@ export function migrateFiltersToWidgets(schema: DashboardJson): DashboardJson {
 
     // 크기 결정
     const w = isDatepicker ? 8 : 4;
-    const h = 1;
+    const h = 2;
 
     // 한 줄에 배치 (넘치면 다음 줄)
     if (xOffset + w > 24) xOffset = 0;
@@ -59,7 +62,7 @@ export function migrateFiltersToWidgets(schema: DashboardJson): DashboardJson {
       id: filter.id.startsWith("filter_") ? `widget_migrated_${filter.id}` : `widget_${filter.id}`,
       type: widgetType,
       title: filter.label,
-      layout: { x, y: 0, w, h, minW: 3, minH: 1 },
+      layout: { x, y: 0, w, h, minW: 3, minH: 2 },
       style: { backgroundColor: "#ffffff", borderRadius: 4, padding: 8, shadow: "none" as const },
       options,
     };

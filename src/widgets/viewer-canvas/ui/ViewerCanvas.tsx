@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import ReactGridLayout from "react-grid-layout";
-import { WidgetRenderer } from "@/src/entities/widget";
+import { WidgetRenderer, CardWidget } from "@/src/entities/widget";
 import type { DashboardJson } from "@/src/entities/dashboard";
 import type { FormManagerReturn } from "@/src/features/dashboard-form";
 import "react-grid-layout/css/styles.css";
@@ -23,8 +23,11 @@ interface ViewerCanvasProps {
   containerWidth: number;
   resolution?: ResolutionKey;
   filterValues?: Record<string, unknown>;
+  appliedFilterValues?: Record<string, unknown>;
   onFilterChange?: (key: string, value: unknown) => void;
   formManager?: FormManagerReturn;
+  applyFilters?: () => void;
+  hasPendingChanges?: boolean;
 }
 
 interface LayoutItem {
@@ -40,7 +43,7 @@ interface LayoutItem {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const GridLayout = ReactGridLayout as any;
 
-export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080", filterValues, onFilterChange, formManager }: ViewerCanvasProps) {
+export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080", filterValues, appliedFilterValues, onFilterChange, formManager, applyFilters, hasPendingChanges }: ViewerCanvasProps) {
   const { widgets } = schema;
   const cols = schema.settings?.gridColumns ?? 24;
 
@@ -121,13 +124,33 @@ export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080",
           width={canvasWidth}
           isDraggable={false}
           isResizable={false}
-          compactType="vertical"
+          compactType={null}
           margin={[8, 8]}
           containerPadding={[8, 8]}
         >
           {widgets.map((widget) => {
             const style = widget.style ?? {};
             const isFilter = widget.type.startsWith("filter-");
+            const isCard = widget.type === "card";
+
+            if (isCard) {
+              return (
+                <div key={widget.id}>
+                  <CardWidget
+                    widget={widget}
+                    canvasWidth={canvasWidth}
+                    rowHeight={rowHeight}
+                    cols={cols}
+                    filterValues={filterValues}
+                    appliedFilterValues={appliedFilterValues}
+                    onFilterChange={onFilterChange}
+                    formManager={formManager}
+                    dataSources={schema.dataSources}
+                    filterSubmitProps={applyFilters ? { applyFilters, hasPendingChanges: hasPendingChanges ?? false } : undefined}
+                  />
+                </div>
+              );
+            }
 
             return (
               <div
@@ -151,7 +174,15 @@ export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080",
 
                 {/* Widget Content */}
                 <div className="flex-1 overflow-hidden">
-                  <WidgetRenderer widget={widget} filterValues={filterValues} onFilterChange={onFilterChange} formManager={formManager} dataSources={schema.dataSources} />
+                  <WidgetRenderer
+                    widget={widget}
+                    filterValues={filterValues}
+                    appliedFilterValues={appliedFilterValues}
+                    onFilterChange={onFilterChange}
+                    formManager={formManager}
+                    dataSources={schema.dataSources}
+                    filterSubmitProps={applyFilters ? { applyFilters, hasPendingChanges: hasPendingChanges ?? false } : undefined}
+                  />
                 </div>
               </div>
             );

@@ -24,16 +24,24 @@ import {
   InputFilterWidget,
   TabFilterWidget,
   DatepickerFilterWidget,
+  FilterSubmitWidget,
 } from "./filters";
 import { FormWidget } from "./forms";
 import type { FormManagerReturn } from "@/src/features/dashboard-form";
 
+interface FilterSubmitProps {
+  applyFilters: () => void;
+  hasPendingChanges: boolean;
+}
+
 interface WidgetRendererProps {
   widget: Widget;
   filterValues?: Record<string, unknown>;
+  appliedFilterValues?: Record<string, unknown>;
   onFilterChange?: (key: string, value: unknown) => void;
   formManager?: FormManagerReturn;
   dataSources?: Record<string, unknown>[];
+  filterSubmitProps?: FilterSubmitProps;
 }
 
 interface DataResponse {
@@ -43,7 +51,21 @@ interface DataResponse {
   error?: string;
 }
 
-export function WidgetRenderer({ widget, filterValues, onFilterChange, formManager, dataSources }: WidgetRendererProps) {
+export function WidgetRenderer({ widget, filterValues, appliedFilterValues, onFilterChange, formManager, dataSources, filterSubmitProps }: WidgetRendererProps) {
+  // filter-submit 위젯은 별도 처리
+  if (widget.type === "filter-submit") {
+    if (filterSubmitProps) {
+      return <FilterSubmitWidget widget={widget} {...filterSubmitProps} />;
+    }
+    return (
+      <div className="flex h-full items-center justify-center p-2">
+        <div className="flex h-full w-full items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/30 text-sm text-muted-foreground">
+          조회 버튼
+        </div>
+      </div>
+    );
+  }
+
   // 필터 위젯은 데이터 페칭 없이 즉시 렌더링
   if (widget.type.startsWith("filter-") && onFilterChange && filterValues) {
     return renderFilterWidget(widget, filterValues, onFilterChange);
@@ -54,7 +76,7 @@ export function WidgetRenderer({ widget, filterValues, onFilterChange, formManag
     return <FormWidget widget={widget} formManager={formManager} />;
   }
 
-  return <DataWidgetRenderer widget={widget} filterValues={filterValues} dataSources={dataSources} />;
+  return <DataWidgetRenderer widget={widget} filterValues={appliedFilterValues ?? filterValues} dataSources={dataSources} />;
 }
 
 function renderFilterWidget(

@@ -16,11 +16,21 @@ type TabType = "style" | "data" | "options";
 
 export function PropertyPanel() {
   const [activeTab, setActiveTab] = useState<TabType>("data");
-  const { schema, selectedWidgetId, updateWidget, removeWidget } = useBuilderStore();
+  const {
+    schema,
+    selectedWidgetId,
+    selectedCardId,
+    updateWidget,
+    removeWidget,
+    findWidget,
+    updateChildWidget,
+    removeChildWidget,
+  } = useBuilderStore();
 
-  const selectedWidget = selectedWidgetId
-    ? schema.widgets.find((w) => w.id === selectedWidgetId)
-    : null;
+  // findWidget을 사용하여 최상위 또는 Card 자식 위젯 검색
+  const foundWidget = selectedWidgetId ? findWidget(selectedWidgetId) : null;
+  const selectedWidget = foundWidget?.widget ?? null;
+  const parentCardId = foundWidget?.parentCardId ?? null;
 
   const widgetDef = selectedWidget ? getWidgetType(selectedWidget.type) : null;
 
@@ -47,24 +57,41 @@ export function PropertyPanel() {
     );
   }
 
+  // 자식 위젯이면 updateChildWidget, 최상위이면 updateWidget
+  const handleUpdate = (updates: Record<string, unknown>) => {
+    if (parentCardId) {
+      updateChildWidget(parentCardId, selectedWidget.id, updates);
+    } else {
+      updateWidget(selectedWidget.id, updates);
+    }
+  };
+
+  const handleDelete = () => {
+    if (parentCardId) {
+      removeChildWidget(parentCardId, selectedWidget.id);
+    } else {
+      removeWidget(selectedWidget.id);
+    }
+  };
+
   const handleTitleChange = (title: string) => {
-    updateWidget(selectedWidget.id, { title });
+    handleUpdate({ title });
   };
 
   const handleStyleChange = (key: string, value: string | number) => {
-    updateWidget(selectedWidget.id, {
+    handleUpdate({
       style: { ...selectedWidget.style, [key]: value },
     });
   };
 
   const handleLayoutChange = (key: string, value: number) => {
-    updateWidget(selectedWidget.id, {
+    handleUpdate({
       layout: { ...selectedWidget.layout, [key]: value },
     });
   };
 
   const handleDataSourceChange = (dataSourceId: string) => {
-    updateWidget(selectedWidget.id, {
+    handleUpdate({
       dataBinding: {
         dataSourceId,
         mapping: {
@@ -78,7 +105,7 @@ export function PropertyPanel() {
     const currentBinding = selectedWidget.dataBinding as { mapping?: { measurements?: MeasurementMapping[] } } | undefined;
     const measurements = currentBinding?.mapping?.measurements ?? [];
 
-    updateWidget(selectedWidget.id, {
+    handleUpdate({
       dataBinding: {
         ...currentBinding,
         mapping: {
@@ -101,7 +128,7 @@ export function PropertyPanel() {
     const measurements = [...(currentBinding?.mapping?.measurements ?? [])];
     measurements[index] = { ...measurements[index], [key]: value };
 
-    updateWidget(selectedWidget.id, {
+    handleUpdate({
       dataBinding: {
         ...currentBinding,
         mapping: {
@@ -117,7 +144,7 @@ export function PropertyPanel() {
     const measurements = [...(currentBinding?.mapping?.measurements ?? [])];
     measurements.splice(index, 1);
 
-    updateWidget(selectedWidget.id, {
+    handleUpdate({
       dataBinding: {
         ...currentBinding,
         mapping: {
@@ -130,7 +157,7 @@ export function PropertyPanel() {
 
   const handleTimeFieldChange = (timeField: string) => {
     const currentBinding = selectedWidget.dataBinding as { mapping?: Record<string, unknown> } | undefined;
-    updateWidget(selectedWidget.id, {
+    handleUpdate({
       dataBinding: {
         ...currentBinding,
         mapping: {
@@ -159,7 +186,7 @@ export function PropertyPanel() {
           </span>
         </div>
         <button
-          onClick={() => removeWidget(selectedWidget.id)}
+          onClick={handleDelete}
           className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
           title="Widget 삭제"
         >
@@ -488,7 +515,12 @@ export function PropertyPanel() {
         {/* Options Tab */}
         {activeTab === "options" && (
           <div className="space-y-4">
-            {selectedWidget.type.startsWith("filter-") ? (
+            {selectedWidget.type === "card" ? (
+              <CardWidgetOptions
+                widget={selectedWidget}
+                onUpdate={handleUpdate}
+              />
+            ) : selectedWidget.type.startsWith("filter-") ? (
               <FilterWidgetOptions widget={selectedWidget} />
             ) : selectedWidget.type === "form" ? (
               <FormWidgetOptions widget={selectedWidget} />
@@ -506,5 +538,51 @@ export function PropertyPanel() {
         )}
       </div>
     </div>
+  );
+}
+
+// Card 위젯 전용 옵션 컴포넌트
+function CardWidgetOptions({
+  widget,
+  onUpdate,
+}: {
+  widget: { options?: Record<string, unknown> };
+  onUpdate: (updates: Record<string, unknown>) => void;
+}) {
+  const options = (widget.options ?? {}) as { showHeader?: boolean; headerTitle?: string };
+
+  return (
+    <>
+      <p className="text-xs text-muted-foreground">Card 컨테이너 옵션</p>
+
+      <div>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={options.showHeader ?? true}
+            onChange={(e) =>
+              onUpdate({ options: { ...options, showHeader: e.target.checked } })
+            }
+            className="rounded border"
+          />
+          헤더 표시
+        </label>
+      </div>
+
+      {(options.showHeader ?? true) && (
+        <div>
+          <label className="text-xs font-medium text-muted-foreground">헤더 제목</label>
+          <input
+            type="text"
+            value={options.headerTitle ?? ""}
+            onChange={(e) =>
+              onUpdate({ options: { ...options, headerTitle: e.target.value } })
+            }
+            placeholder="Card 제목"
+            className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+      )}
+    </>
   );
 }

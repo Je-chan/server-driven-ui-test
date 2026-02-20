@@ -751,16 +751,96 @@ const allDataSources = [
   },
 ];
 
+// ====== Card 컨테이너 래핑 유틸리티 ======
+
+interface WidgetDef {
+  id: string;
+  type: string;
+  title: string;
+  layout: { x: number; y: number; w: number; h: number; minW?: number; minH?: number };
+  dataBinding?: Record<string, unknown>;
+  style?: Record<string, unknown>;
+  options?: Record<string, unknown>;
+}
+
+/**
+ * 위젯 배열을 Card 컨테이너 구조로 변환
+ * - 필터/submit 위젯은 최상위에 유지
+ * - 같은 Y 행의 위젯들을 하나의 Card로 그룹화
+ * - Card 내부의 자식 위젯은 Card 로컬 좌표로 변환
+ */
+function wrapWidgetsInCards(widgets: WidgetDef[], dashboardPrefix: string) {
+  const filterWidgets: WidgetDef[] = [];
+  const dataWidgets: WidgetDef[] = [];
+
+  for (const w of widgets) {
+    if (w.type.startsWith("filter-")) {
+      filterWidgets.push(w);
+    } else {
+      dataWidgets.push(w);
+    }
+  }
+
+  // Y 값으로 그룹핑
+  const rowGroups = new Map<number, WidgetDef[]>();
+  for (const w of dataWidgets) {
+    const y = w.layout.y;
+    if (!rowGroups.has(y)) rowGroups.set(y, []);
+    rowGroups.get(y)!.push(w);
+  }
+
+  const cardWidgets: WidgetDef[] = [];
+  let cardIdx = 1;
+
+  // 정렬된 Y 순서대로 Card 생성
+  const sortedYs = Array.from(rowGroups.keys()).sort((a, b) => a - b);
+
+  for (const y of sortedYs) {
+    const group = rowGroups.get(y)!;
+    // 그룹의 전체 너비와 높이 계산
+    const minX = Math.min(...group.map((w) => w.layout.x));
+    const maxXW = Math.max(...group.map((w) => w.layout.x + w.layout.w));
+    const cardW = maxXW - minX;
+    const cardH = Math.max(...group.map((w) => w.layout.h));
+
+    // 자식 위젯: Card 로컬 좌표로 변환
+    const children = group.map((w) => ({
+      id: w.id,
+      type: w.type,
+      title: w.title,
+      layout: {
+        x: w.layout.x - minX,
+        y: 0,
+        w: w.layout.w,
+        h: w.layout.h,
+      },
+      dataBinding: w.dataBinding,
+      style: {},
+      options: w.options,
+    }));
+
+    cardWidgets.push({
+      id: `${dashboardPrefix}_card${cardIdx}`,
+      type: "card",
+      title: group.length === 1 ? group[0].title : `Card ${cardIdx}`,
+      layout: { x: minX, y, w: cardW, h: cardH },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      options: { showHeader: false, headerTitle: "" },
+      // children은 Widget 스키마에 추가 — 타입 안전을 위해 any로 캐스팅
+      ...({ children } as Record<string, unknown>),
+    });
+
+    cardIdx++;
+  }
+
+  return [...filterWidgets, ...cardWidgets];
+}
+
 // ====== 대시보드 스키마 ======
 
 // Dashboard 1: 태양광 발전소 종합 모니터링
 function createMainDashboardSchema(siteOptions: { value: string; label: string }[]) {
-  return {
-    version: "1.0.0",
-    settings: { refreshInterval: 30000, theme: "light", gridColumns: 24, rowHeight: 40 },
-    dataSources: allDataSources,
-    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
-    widgets: [
+  const rawWidgets: WidgetDef[] = [
       {
         id: "w_main_kpi1",
         type: "kpi-card",
@@ -884,19 +964,21 @@ function createMainDashboardSchema(siteOptions: { value: string; label: string }
         style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
         options: { showLegend: true, horizontal: false },
       },
-    ],
+  ];
+
+  return {
+    version: "1.0.0",
+    settings: { refreshInterval: 30000, theme: "light", gridColumns: 24, rowHeight: 40 },
+    dataSources: allDataSources,
+    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
+    widgets: wrapWidgetsInCards(rawWidgets, "w_main"),
     linkages: [],
   };
 }
 
 // Dashboard 2: ESS 배터리 모니터링
 function createEssDashboardSchema(siteOptions: { value: string; label: string }[]) {
-  return {
-    version: "1.0.0",
-    settings: { refreshInterval: 15000, theme: "light", gridColumns: 24, rowHeight: 40 },
-    dataSources: allDataSources,
-    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
-    widgets: [
+  const rawWidgets: WidgetDef[] = [
       {
         id: "w_ess_kpi1",
         type: "kpi-card",
@@ -1053,19 +1135,21 @@ function createEssDashboardSchema(siteOptions: { value: string; label: string }[
         },
         style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
       },
-    ],
+  ];
+
+  return {
+    version: "1.0.0",
+    settings: { refreshInterval: 15000, theme: "light", gridColumns: 24, rowHeight: 40 },
+    dataSources: allDataSources,
+    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
+    widgets: wrapWidgetsInCards(rawWidgets, "w_ess"),
     linkages: [],
   };
 }
 
 // Dashboard 3: 수익/정산 분석
 function createRevenueDashboardSchema(siteOptions: { value: string; label: string }[]) {
-  return {
-    version: "1.0.0",
-    settings: { refreshInterval: 60000, theme: "light", gridColumns: 24, rowHeight: 40, filterMode: "manual" },
-    dataSources: allDataSources,
-    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
-    widgets: [
+  const rawWidgets: WidgetDef[] = [
       {
         id: "w_rev_kpi1",
         type: "kpi-card",
@@ -1207,19 +1291,29 @@ function createRevenueDashboardSchema(siteOptions: { value: string; label: strin
         },
         style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
       },
-    ],
+      {
+        id: "w_rev_submit",
+        type: "filter-submit",
+        title: "조회",
+        layout: { x: 16, y: 0, w: 2, h: 2 },
+        style: { backgroundColor: "#ffffff", borderRadius: 4, shadow: "none" },
+        options: { label: "조회", variant: "primary" },
+      },
+  ];
+
+  return {
+    version: "1.0.0",
+    settings: { refreshInterval: 60000, theme: "light", gridColumns: 24, rowHeight: 40, filterMode: "manual" as const },
+    dataSources: allDataSources,
+    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
+    widgets: wrapWidgetsInCards(rawWidgets, "w_rev"),
     linkages: [],
   };
 }
 
 // Dashboard 4: 설비 유지보수 현황
 function createMaintenanceDashboardSchema(siteOptions: { value: string; label: string }[]) {
-  return {
-    version: "1.0.0",
-    settings: { refreshInterval: 60000, theme: "light", gridColumns: 24, rowHeight: 40 },
-    dataSources: allDataSources,
-    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
-    widgets: [
+  const rawWidgets: WidgetDef[] = [
       {
         id: "w_mnt_kpi1",
         type: "kpi-card",
@@ -1342,19 +1436,21 @@ function createMaintenanceDashboardSchema(siteOptions: { value: string; label: s
         style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
         options: { showLegend: true, smooth: true },
       },
-    ],
+  ];
+
+  return {
+    version: "1.0.0",
+    settings: { refreshInterval: 60000, theme: "light", gridColumns: 24, rowHeight: 40 },
+    dataSources: allDataSources,
+    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
+    widgets: wrapWidgetsInCards(rawWidgets, "w_mnt"),
     linkages: [],
   };
 }
 
 // Dashboard 5: 날씨 & 발전 상관관계
 function createWeatherDashboardSchema(siteOptions: { value: string; label: string }[]) {
-  return {
-    version: "1.0.0",
-    settings: { refreshInterval: 30000, theme: "light", gridColumns: 24, rowHeight: 40 },
-    dataSources: allDataSources,
-    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
-    widgets: [
+  const rawWidgets: WidgetDef[] = [
       {
         id: "w_wth_kpi1",
         type: "kpi-card",
@@ -1497,19 +1593,21 @@ function createWeatherDashboardSchema(siteOptions: { value: string; label: strin
         },
         style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
       },
-    ],
+  ];
+
+  return {
+    version: "1.0.0",
+    settings: { refreshInterval: 30000, theme: "light", gridColumns: 24, rowHeight: 40 },
+    dataSources: allDataSources,
+    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
+    widgets: wrapWidgetsInCards(rawWidgets, "w_wth"),
     linkages: [],
   };
 }
 
 // Dashboard 6: 전력 거래 현황
 function createGridDashboardSchema(siteOptions: { value: string; label: string }[]) {
-  return {
-    version: "1.0.0",
-    settings: { refreshInterval: 30000, theme: "light", gridColumns: 24, rowHeight: 40 },
-    dataSources: allDataSources,
-    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
-    widgets: [
+  const rawWidgets: WidgetDef[] = [
       {
         id: "w_grd_kpi1",
         type: "kpi-card",
@@ -1648,19 +1746,21 @@ function createGridDashboardSchema(siteOptions: { value: string; label: string }
         style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
         options: { showLegend: true, horizontal: false },
       },
-    ],
+  ];
+
+  return {
+    version: "1.0.0",
+    settings: { refreshInterval: 30000, theme: "light", gridColumns: 24, rowHeight: 40 },
+    dataSources: allDataSources,
+    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
+    widgets: wrapWidgetsInCards(rawWidgets, "w_grid"),
     linkages: [],
   };
 }
 
 // Dashboard 7: 발전소 비교 분석
 function createComparisonDashboardSchema() {
-  return {
-    version: "1.0.0",
-    settings: { refreshInterval: 60000, theme: "light", gridColumns: 24, rowHeight: 40, filterMode: "manual" },
-    dataSources: allDataSources,
-    filters: [timeRangeFilter, intervalFilter], // 사이트 필터 없음 — 전체 비교
-    widgets: [
+  const rawWidgets: WidgetDef[] = [
       {
         id: "w_cmp_kpi1",
         type: "kpi-card",
@@ -1786,19 +1886,29 @@ function createComparisonDashboardSchema() {
         },
         style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
       },
-    ],
+      {
+        id: "w_cmp_submit",
+        type: "filter-submit",
+        title: "조회",
+        layout: { x: 12, y: 0, w: 2, h: 2 },
+        style: { backgroundColor: "#ffffff", borderRadius: 4, shadow: "none" },
+        options: { label: "조회", variant: "primary" },
+      },
+  ];
+
+  return {
+    version: "1.0.0",
+    settings: { refreshInterval: 60000, theme: "light", gridColumns: 24, rowHeight: 40, filterMode: "manual" as const },
+    dataSources: allDataSources,
+    filters: [timeRangeFilter, intervalFilter],
+    widgets: wrapWidgetsInCards(rawWidgets, "w_cmp"),
     linkages: [],
   };
 }
 
 // Dashboard 8: 인버터 상세 분석
 function createInverterDetailDashboardSchema(siteOptions: { value: string; label: string }[]) {
-  return {
-    version: "1.0.0",
-    settings: { refreshInterval: 15000, theme: "light", gridColumns: 24, rowHeight: 40 },
-    dataSources: allDataSources,
-    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
-    widgets: [
+  const rawWidgets: WidgetDef[] = [
       {
         id: "w_inv_kpi1",
         type: "kpi-card",
@@ -1924,56 +2034,20 @@ function createInverterDetailDashboardSchema(siteOptions: { value: string; label
         },
         style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
       },
-    ],
+  ];
+
+  return {
+    version: "1.0.0",
+    settings: { refreshInterval: 15000, theme: "light", gridColumns: 24, rowHeight: 40 },
+    dataSources: allDataSources,
+    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
+    widgets: wrapWidgetsInCards(rawWidgets, "w_inv"),
     linkages: [],
   };
 }
 
 // Dashboard 9: 테스트 대시보드 (기존)
-const testDashboardSchema = {
-  version: "1.0.0",
-  settings: { refreshInterval: 0, theme: "light", gridColumns: 24, rowHeight: 40 },
-  dataSources: [],
-  filters: [],
-  widgets: [
-    {
-      id: "widget_test_bar",
-      type: "bar-chart",
-      title: "Bar Chart 2",
-      layout: { x: 3, y: 0, w: 9, h: 4, minW: 6, minH: 4 },
-      dataBinding: {
-        dataSourceId: "ds_inverter",
-        mapping: {
-          measurements: [{ field: "totalEnergy", label: "d", unit: "fd" }],
-          timeField: "assetName",
-        },
-      },
-      style: { backgroundColor: "#ffffff", borderRadius: 8, padding: 16, shadow: "sm" },
-      options: { showLegend: true, horizontal: false },
-    },
-    {
-      id: "widget_test_kpi",
-      type: "kpi-card",
-      title: "KPI Card 2",
-      layout: { x: 0, y: 0, w: 3, h: 3, minW: 3, minH: 3 },
-      style: { backgroundColor: "#ffffff", borderRadius: 8, padding: 16, shadow: "sm" },
-      options: { showTrend: true, icon: "Activity" },
-    },
-  ],
-  linkages: [],
-};
-
-// Dashboard 10: 빈 대시보드 (기존)
-const emptyDashboardSchema = {
-  version: "1.0.0",
-  settings: { refreshInterval: 0, theme: "light", gridColumns: 24, rowHeight: 40 },
-  dataSources: [],
-  filters: [],
-  widgets: [],
-  linkages: [],
-};
-
-// Dashboard 11: 설비 점검 보고서 (Form 위젯 데모)
+// Dashboard 9: 설비 점검 보고서 (Form 위젯 데모)
 function createInspectionFormDashboardSchema(siteOptions: { value: string; label: string }[]) {
   return {
     version: "1.0.0",
@@ -2410,18 +2484,6 @@ async function main() {
       description: "현장 설비 점검 결과를 입력하고 제출하는 폼 대시보드",
       schema: createInspectionFormDashboardSchema(siteOptions),
       isPublished: true,
-    },
-    {
-      title: "Untitled Dashboard",
-      description: null,
-      schema: testDashboardSchema,
-      isPublished: false,
-    },
-    {
-      title: "Untitled Dashboard",
-      description: null,
-      schema: emptyDashboardSchema,
-      isPublished: false,
     },
   ];
 

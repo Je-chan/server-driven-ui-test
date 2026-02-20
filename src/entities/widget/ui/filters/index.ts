@@ -4,3 +4,4 @@ export { TreeSelectFilterWidget } from "./TreeSelectFilterWidget";
 export { InputFilterWidget } from "./InputFilterWidget";
 export { TabFilterWidget } from "./TabFilterWidget";
 export { DatepickerFilterWidget } from "./DatepickerFilterWidget";
+export { FilterSubmitWidget } from "./FilterSubmitWidget";

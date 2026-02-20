@@ -12,7 +12,9 @@ import {
   TextCursorInput,
   ToggleLeft,
   Calendar,
+  Search,
   ClipboardList,
+  LayoutGrid,
   type LucideIcon,
 } from "lucide-react";
 
@@ -20,7 +22,7 @@ export interface WidgetTypeDefinition {
   type: string;
   label: string;
   icon: LucideIcon;
-  category: "filter" | "chart" | "card" | "table" | "map" | "status" | "form";
+  category: "filter" | "chart" | "card" | "table" | "map" | "status" | "form" | "container";
   description: string;
   defaultSize: { w: number; h: number };
   minSize: { w: number; h: number };
@@ -204,6 +206,16 @@ export const WIDGET_TYPES: WidgetTypeDefinition[] = [
       outputKeys: { start: "startTime", end: "endTime" },
     },
   },
+  {
+    type: "filter-submit",
+    label: "Submit",
+    icon: Search,
+    category: "filter",
+    description: "필터 적용 버튼 (수동 조회 모드)",
+    defaultSize: { w: 3, h: 3 },
+    minSize: { w: 2, h: 2 },
+    defaultOptions: { label: "조회", variant: "primary" },
+  },
   // ── 폼 위젯 ──
   {
     type: "form",
@@ -222,6 +234,17 @@ export const WIDGET_TYPES: WidgetTypeDefinition[] = [
         { label: "초기화", buttonType: "reset", variant: "outline" },
       ],
     },
+  },
+  // ── 컨테이너 위젯 ──
+  {
+    type: "card",
+    label: "Card",
+    icon: LayoutGrid,
+    category: "container",
+    description: "위젯을 그룹화하는 컨테이너 카드",
+    defaultSize: { w: 12, h: 8 },
+    minSize: { w: 4, h: 3 },
+    defaultOptions: { showHeader: true, headerTitle: "" },
   },
 ];
 

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import ReactGridLayout from "react-grid-layout";
 import { Database } from "lucide-react";
-import { WidgetRenderer } from "@/src/entities/widget";
+import { WidgetRenderer, CardWidget } from "@/src/entities/widget";
 import type { DashboardJson } from "@/src/entities/dashboard";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -113,7 +113,7 @@ export function PresentationCanvas({
           width={canvasWidth}
           isDraggable={false}
           isResizable={false}
-          compactType="vertical"
+          compactType={null}
           margin={[8, 8]}
           containerPadding={[8, 8]}
         >
@@ -121,6 +121,35 @@ export function PresentationCanvas({
             const style = widget.style ?? {};
             const isSelected = selectedWidgetId === widget.id;
             const hasDataBinding = !!widget.dataBinding;
+            const isCard = widget.type === "card";
+
+            if (isCard) {
+              return (
+                <div
+                  key={widget.id}
+                  className={`transition-all duration-200 ${
+                    isSelected
+                      ? "ring-2 ring-blue-500 ring-offset-2"
+                      : selectedWidgetId
+                        ? "opacity-40"
+                        : ""
+                  }`}
+                  style={{ cursor: "pointer" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onWidgetClick(widget.id);
+                  }}
+                >
+                  <CardWidget
+                    widget={widget}
+                    canvasWidth={canvasWidth}
+                    rowHeight={rowHeight}
+                    cols={cols}
+                    dataSources={schema.dataSources}
+                  />
+                </div>
+              );
+            }
 
             return (
               <div

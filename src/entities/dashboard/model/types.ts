@@ -18,6 +18,17 @@ export const widgetStyleSchema = z.object({
   shadow: z.enum(["none", "sm", "md", "lg"]).optional(),
 });
 
+// 자식 위젯 스키마 (Card 컨테이너 내부용, children 필드 없음)
+export const childWidgetSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  title: z.string(),
+  layout: widgetLayoutSchema,
+  dataBinding: z.record(z.string(), z.unknown()).optional(),
+  style: widgetStyleSchema.optional(),
+  options: z.record(z.string(), z.unknown()).optional(),
+});
+
 // 위젯 스키마
 export const widgetSchema = z.object({
   id: z.string(),
@@ -27,6 +38,7 @@ export const widgetSchema = z.object({
   dataBinding: z.record(z.string(), z.unknown()).optional(),
   style: widgetStyleSchema.optional(),
   options: z.record(z.string(), z.unknown()).optional(),
+  children: z.array(childWidgetSchema).optional(),
 });
 
 // 필터 의존관계 스키마
@@ -76,6 +88,7 @@ export const dashboardJsonSchema = z.object({
 
 export type WidgetLayout = z.infer<typeof widgetLayoutSchema>;
 export type WidgetStyle = z.infer<typeof widgetStyleSchema>;
+export type ChildWidget = z.infer<typeof childWidgetSchema>;
 export type Widget = z.infer<typeof widgetSchema>;
 export type Filter = z.infer<typeof filterSchema>;
 export type FilterDependency = z.infer<typeof filterDependencySchema>;

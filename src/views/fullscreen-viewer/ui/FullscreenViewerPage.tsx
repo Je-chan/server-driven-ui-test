@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import ReactGridLayout from "react-grid-layout";
 import { X, ArrowLeft, Settings, RefreshCw, Search } from "lucide-react";
-import { WidgetRenderer } from "@/src/entities/widget";
+import { WidgetRenderer, CardWidget } from "@/src/entities/widget";
 import { useFilterValues } from "@/src/features/dashboard-filter";
 import { useFormManager } from "@/src/features/dashboard-form";
 import type { DashboardEntity } from "@/src/entities/dashboard";
@@ -34,7 +34,7 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
   const [showControls, setShowControls] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const filterMode = schema.settings.filterMode ?? "auto";
-  const { appliedValues, setFilterValue, applyFilters, hasPendingChanges } = useFilterValues(schema.widgets ?? [], filterMode);
+  const { filterValues, appliedValues, setFilterValue, applyFilters, hasPendingChanges, hasFilterSubmitWidget } = useFilterValues(schema.widgets ?? [], filterMode);
   const formManager = useFormManager(schema.widgets ?? []);
 
   // 기본 해상도 설정 (1920x1080 기준)
@@ -192,13 +192,33 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
           width={targetWidth}
           isDraggable={false}
           isResizable={false}
-          compactType="vertical"
+          compactType={null}
           margin={[8, 8]}
           containerPadding={[8, 8]}
         >
           {schema.widgets.map((widget) => {
             const style = widget.style ?? {};
             const isFilter = widget.type.startsWith("filter-");
+            const isCard = widget.type === "card";
+
+            if (isCard) {
+              return (
+                <div key={widget.id}>
+                  <CardWidget
+                    widget={widget}
+                    canvasWidth={targetWidth}
+                    rowHeight={rowHeight}
+                    cols={cols}
+                    filterValues={filterValues}
+                    appliedFilterValues={appliedValues}
+                    onFilterChange={setFilterValue}
+                    formManager={formManager}
+                    dataSources={schema.dataSources}
+                    filterSubmitProps={{ applyFilters, hasPendingChanges }}
+                  />
+                </div>
+              );
+            }
 
             return (
               <div
@@ -222,7 +242,15 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
 
                 {/* Widget Content */}
                 <div className="flex-1 overflow-hidden">
-                  <WidgetRenderer widget={widget} filterValues={appliedValues} onFilterChange={setFilterValue} formManager={formManager} dataSources={schema.dataSources} />
+                  <WidgetRenderer
+                    widget={widget}
+                    filterValues={filterValues}
+                    appliedFilterValues={appliedValues}
+                    onFilterChange={setFilterValue}
+                    formManager={formManager}
+                    dataSources={schema.dataSources}
+                    filterSubmitProps={{ applyFilters, hasPendingChanges }}
+                  />
                 </div>
               </div>
             );
@@ -230,8 +258,8 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
         </GridLayout>
       </div>
 
-      {/* Manual 모드: 조회 FAB */}
-      {hasPendingChanges && (
+      {/* Manual 모드: 조회 FAB (filter-submit 위젯이 없을 때만) */}
+      {hasPendingChanges && !hasFilterSubmitWidget && (
         <button
           onClick={applyFilters}
           className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"

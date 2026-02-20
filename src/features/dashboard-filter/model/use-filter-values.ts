@@ -128,17 +128,22 @@ function getFixedKeys(configs: FilterConfig[]): Set<string> {
   return keys;
 }
 
-export function useFilterValues(widgets: Widget[], filterMode: "auto" | "manual" = "auto") {
+export function useFilterValues(widgets: Widget[], filterMode?: "auto" | "manual") {
   const configs = useMemo(() => extractFilterConfigs(widgets), [widgets]);
   const initialValues = useMemo(() => computeInitialValues(configs), [configs]);
   const fixedKeys = useMemo(() => getFixedKeys(configs), [configs]);
+
+  const hasFilterSubmitWidget = useMemo(
+    () => widgets.some((w) => w.type === "filter-submit"),
+    [widgets]
+  );
 
   // pending: FilterBar UI에 반영되는 값
   const [pendingValues, setPendingValues] = useState<Record<string, unknown>>(initialValues);
   // applied: 위젯 데이터 조회에 사용되는 값
   const [appliedValues, setAppliedValues] = useState<Record<string, unknown>>(initialValues);
 
-  const isManual = filterMode === "manual";
+  const isManual = hasFilterSubmitWidget || filterMode === "manual";
 
   const updateValues = useCallback(
     (updater: (prev: Record<string, unknown>) => Record<string, unknown>) => {
@@ -221,6 +226,7 @@ export function useFilterValues(widgets: Widget[], filterMode: "auto" | "manual"
     setFilterValue,
     applyFilters,
     hasPendingChanges,
+    hasFilterSubmitWidget,
     getFilterState,
   };
 }

@@ -20,7 +20,7 @@ export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
   const [resolution, setResolution] = useState<ResolutionKey>("1920x1080");
   const [showResolutionMenu, setShowResolutionMenu] = useState(false);
   const filterMode = schema.settings.filterMode ?? "auto";
-  const { filterValues, appliedValues, setFilterValue, applyFilters, hasPendingChanges } = useFilterValues(schema.widgets ?? [], filterMode);
+  const { filterValues, appliedValues, setFilterValue, applyFilters, hasPendingChanges, hasFilterSubmitWidget } = useFilterValues(schema.widgets ?? [], filterMode);
   const formManager = useFormManager(schema.widgets ?? []);
 
   // 캔버스 컨테이너 너비 계산
@@ -135,9 +135,12 @@ export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
           schema={schema}
           containerWidth={containerWidth}
           resolution={resolution}
-          filterValues={appliedValues}
+          filterValues={filterValues}
+          appliedFilterValues={appliedValues}
           onFilterChange={setFilterValue}
           formManager={formManager}
+          applyFilters={applyFilters}
+          hasPendingChanges={hasPendingChanges}
         />
 
         {/* Dashboard 정보 */}
@@ -166,8 +169,8 @@ export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
         </div>
       </main>
 
-      {/* Manual 모드: 조회 FAB */}
-      {hasPendingChanges && (
+      {/* Manual 모드: 조회 FAB (filter-submit 위젯이 없을 때만) */}
+      {hasPendingChanges && !hasFilterSubmitWidget && (
         <button
           onClick={applyFilters}
           className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
