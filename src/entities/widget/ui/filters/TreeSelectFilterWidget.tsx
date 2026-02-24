@@ -1,6 +1,8 @@
 "use client";
 
 import { FolderTree } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { resolveLabel } from "@/src/shared/lib";
 import type { Widget } from "@/src/entities/dashboard";
 
 interface TreeSelectFilterWidgetProps {
@@ -28,6 +30,9 @@ function flattenTree(options: TreeOption[], depth = 0): { value: string; label: 
 }
 
 export function TreeSelectFilterWidget({ widget, filterValues, onFilterChange }: TreeSelectFilterWidgetProps) {
+  const locale = useLocale();
+  const t = useTranslations("common");
+
   const opts = widget.options as {
     filterKey?: string;
     options?: TreeOption[];
@@ -45,7 +50,7 @@ export function TreeSelectFilterWidget({ widget, filterValues, onFilterChange }:
     return (
       <div className="flex h-full items-center gap-2 px-3 text-muted-foreground">
         <FolderTree className="h-4 w-4" />
-        <span className="text-xs">filterKey를 설정하세요</span>
+        <span className="text-xs">{t("setFilterKey")}</span>
       </div>
     );
   }
@@ -53,7 +58,7 @@ export function TreeSelectFilterWidget({ widget, filterValues, onFilterChange }:
   return (
     <div className="flex h-full flex-col justify-center gap-1 px-3">
       <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-        {widget.title}
+        {resolveLabel(widget.title, locale)}
       </label>
       <select
         value={currentValue}
@@ -61,7 +66,7 @@ export function TreeSelectFilterWidget({ widget, filterValues, onFilterChange }:
         disabled={isFixed}
         className="h-8 w-full rounded-md border border-border/50 bg-card px-2 text-sm shadow-sm transition-colors hover:border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
       >
-        <option value="">{opts?.placeholder ?? "선택..."}</option>
+        <option value="">{opts?.placeholder ?? t("select")}</option>
         {flatOptions.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {"  ".repeat(opt.depth)}{opt.depth > 0 ? "└ " : ""}{opt.label}

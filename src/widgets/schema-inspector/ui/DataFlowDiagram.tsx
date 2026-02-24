@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale } from "next-intl";
 import { Database, Server, ArrowRight, BarChart3, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import type { Widget } from "@/src/entities/dashboard";
+import { resolveLabel } from "@/src/shared/lib";
 import { JsonBlock } from "./JsonBlock";
 
 interface DataFlowDiagramProps {
@@ -89,6 +91,7 @@ function parseUrlParams(url: string): { path: string; params: Record<string, str
 }
 
 export function DataFlowDiagram({ widget }: DataFlowDiagramProps) {
+  const locale = useLocale();
   const dataBinding = widget.dataBinding as DataBinding | undefined;
   const [response, setResponse] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
@@ -137,7 +140,7 @@ export function DataFlowDiagram({ widget }: DataFlowDiagramProps) {
       id: "widget",
       icon: <BarChart3 className="h-5 w-5 text-blue-500" />,
       label: "Widget",
-      summary: `${widget.type} — "${widget.title}"`,
+      summary: `${widget.type} — "${resolveLabel(widget.title, locale)}"`,
       color: "border-blue-200 bg-blue-50",
       expandable: false,
     },
@@ -264,7 +267,7 @@ export function DataFlowDiagram({ widget }: DataFlowDiagramProps) {
       id: "rendered",
       icon: <BarChart3 className="h-5 w-5 text-rose-500" />,
       label: "Rendered",
-      summary: widget.title,
+      summary: resolveLabel(widget.title, locale),
       color: "border-rose-200 bg-rose-50",
       expandable: false,
     },

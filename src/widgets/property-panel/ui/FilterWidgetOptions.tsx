@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useBuilderStore } from "@/src/features/dashboard-builder/model/builder.store";
 import type { Widget } from "@/src/entities/dashboard";
 
@@ -11,6 +12,8 @@ interface FilterWidgetOptionsProps {
 
 export function FilterWidgetOptions({ widget }: FilterWidgetOptionsProps) {
   const { updateWidget } = useBuilderStore();
+  const tf = useTranslations("filter");
+  const tc = useTranslations("common");
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const opts = (widget.options ?? {}) as Record<string, unknown>;
@@ -60,7 +63,7 @@ export function FilterWidgetOptions({ widget }: FilterWidgetOptionsProps) {
     <div className="space-y-4">
       {/* Filter Key */}
       <div>
-        <label className="text-xs font-medium text-muted-foreground">Filter Key</label>
+        <label className="text-xs font-medium text-muted-foreground">{tf("filterKey")}</label>
         <input
           type="text"
           value={filterKey}
@@ -69,21 +72,67 @@ export function FilterWidgetOptions({ widget }: FilterWidgetOptionsProps) {
           className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
         />
         <p className="mt-1 text-[10px] text-muted-foreground">
-          {`위젯에서 {{filter.${filterKey || "KEY"}}} 로 참조됩니다`}
+          {tf("filterKeyHint", { key: filterKey || "KEY" })}
         </p>
       </div>
+
+      {/* Toggle 전용 옵션 */}
+      {widgetType === "filter-toggle" && (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{tf("onValue")}</label>
+              <input
+                type="text"
+                value={(opts.onValue as string) ?? "on"}
+                onChange={(e) => updateOption("onValue", e.target.value)}
+                className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{tf("offValue")}</label>
+              <input
+                type="text"
+                value={(opts.offValue as string) ?? "off"}
+                onChange={(e) => updateOption("offValue", e.target.value)}
+                className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{tf("onLabel")}</label>
+              <input
+                type="text"
+                value={(opts.onLabel as string) ?? "ON"}
+                onChange={(e) => updateOption("onLabel", e.target.value)}
+                className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{tf("offLabel")}</label>
+              <input
+                type="text"
+                value={(opts.offLabel as string) ?? "OFF"}
+                onChange={(e) => updateOption("offLabel", e.target.value)}
+                className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 옵션 목록 (select, multiselect, treeselect, tab) */}
       {["filter-select", "filter-multiselect", "filter-treeselect", "filter-tab"].includes(widgetType) && (
         <div>
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-muted-foreground">옵션 목록</label>
+            <label className="text-xs font-medium text-muted-foreground">{tf("optionsList")}</label>
             <button
               onClick={handleAddOption}
               className="flex items-center gap-1 rounded px-2 py-1 text-xs text-primary hover:bg-primary/10"
             >
               <Plus className="h-3 w-3" />
-              추가
+              {tc("add")}
             </button>
           </div>
           <div className="mt-2 space-y-2">
@@ -93,14 +142,14 @@ export function FilterWidgetOptions({ widget }: FilterWidgetOptionsProps) {
                   type="text"
                   value={opt.value}
                   onChange={(e) => handleOptionChange(idx, "value", e.target.value)}
-                  placeholder="값"
+                  placeholder={tf("valuePlaceholder")}
                   className="w-1/3 rounded border bg-background px-2 py-1 text-xs"
                 />
                 <input
                   type="text"
                   value={opt.label}
                   onChange={(e) => handleOptionChange(idx, "label", e.target.value)}
-                  placeholder="라벨"
+                  placeholder={tf("labelPlaceholder")}
                   className="flex-1 rounded border bg-background px-2 py-1 text-xs"
                 />
                 <button
@@ -113,7 +162,7 @@ export function FilterWidgetOptions({ widget }: FilterWidgetOptionsProps) {
             ))}
             {options.length === 0 && (
               <p className="py-2 text-center text-xs text-muted-foreground">
-                옵션이 없습니다
+                {tf("noOptions")}
               </p>
             )}
           </div>
@@ -139,7 +188,7 @@ export function FilterWidgetOptions({ widget }: FilterWidgetOptionsProps) {
       {/* Placeholder (input, select) */}
       {["filter-input", "filter-select", "filter-treeselect"].includes(widgetType) && (
         <div>
-          <label className="text-xs font-medium text-muted-foreground">Placeholder</label>
+          <label className="text-xs font-medium text-muted-foreground">{tf("placeholder")}</label>
           <input
             type="text"
             value={placeholder}
@@ -152,12 +201,12 @@ export function FilterWidgetOptions({ widget }: FilterWidgetOptionsProps) {
       {/* Default Value */}
       {widgetType !== "filter-datepicker" && (
         <div>
-          <label className="text-xs font-medium text-muted-foreground">기본값</label>
+          <label className="text-xs font-medium text-muted-foreground">{tf("defaultValue")}</label>
           <input
             type="text"
             value={String(defaultValue ?? "")}
             onChange={(e) => updateOption("defaultValue", e.target.value || undefined)}
-            placeholder="기본 선택값"
+            placeholder={tf("defaultValuePlaceholder")}
             className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm"
           />
         </div>
@@ -167,7 +216,7 @@ export function FilterWidgetOptions({ widget }: FilterWidgetOptionsProps) {
       {widgetType === "filter-datepicker" && (
         <>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">프리셋</label>
+            <label className="text-xs font-medium text-muted-foreground">{tf("presets")}</label>
             <div className="mt-1 flex flex-wrap gap-1">
               {["today", "yesterday", "last7days", "last30days", "thisMonth"].map((preset) => (
                 <button
@@ -185,7 +234,7 @@ export function FilterWidgetOptions({ widget }: FilterWidgetOptionsProps) {
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">기본 프리셋</label>
+            <label className="text-xs font-medium text-muted-foreground">{tf("defaultPreset")}</label>
             <select
               value={String(defaultValue ?? "today")}
               onChange={(e) => updateOption("defaultValue", e.target.value)}
@@ -226,7 +275,7 @@ export function FilterWidgetOptions({ widget }: FilterWidgetOptionsProps) {
           className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
           {showAdvanced ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-          고급 설정
+          {tf("advanced")}
         </button>
 
         {showAdvanced && (
@@ -241,18 +290,18 @@ export function FilterWidgetOptions({ widget }: FilterWidgetOptionsProps) {
                 className="h-4 w-4 rounded border"
               />
               <label htmlFor="filter-visible" className="text-xs text-muted-foreground">
-                뷰어에서 표시
+                {tf("showInViewer")}
               </label>
             </div>
 
             {/* fixedValue */}
             <div>
-              <label className="text-xs font-medium text-muted-foreground">고정값 (읽기 전용)</label>
+              <label className="text-xs font-medium text-muted-foreground">{tf("fixedValue")}</label>
               <input
                 type="text"
                 value={String(fixedValue ?? "")}
                 onChange={(e) => updateOption("fixedValue", e.target.value || undefined)}
-                placeholder="비워두면 사용자 변경 가능"
+                placeholder={tf("fixedValuePlaceholder")}
                 className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm"
               />
             </div>
@@ -260,7 +309,7 @@ export function FilterWidgetOptions({ widget }: FilterWidgetOptionsProps) {
             {/* dependsOn */}
             {["filter-select", "filter-treeselect"].includes(widgetType) && (
               <div>
-                <label className="text-xs font-medium text-muted-foreground">의존 필터 Key</label>
+                <label className="text-xs font-medium text-muted-foreground">{tf("dependsOnFilter")}</label>
                 <input
                   type="text"
                   value={(opts.dependsOn as { filterKey?: string } | undefined)?.filterKey ?? ""}
@@ -268,7 +317,7 @@ export function FilterWidgetOptions({ widget }: FilterWidgetOptionsProps) {
                     const currentDeps = (opts.dependsOn as { filterKey: string; optionsMap: Record<string, { value: string; label: string }[]> } | undefined) ?? { filterKey: "", optionsMap: {} };
                     updateOption("dependsOn", e.target.value ? { ...currentDeps, filterKey: e.target.value } : undefined);
                   }}
-                  placeholder="부모 filterKey"
+                  placeholder={tf("dependsOnPlaceholder")}
                   className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm"
                 />
               </div>

@@ -63,7 +63,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
       refreshInterval: 0,
       theme: "light",
       gridColumns: 24,
-      rowHeight: 40,
+      rowHeight: 1,
       filterMode: "auto",
     },
     dataSources: [],
@@ -211,8 +211,8 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
         (max, c) => Math.max(max, c.layout.y + c.layout.h),
         0
       );
-      const cardHeaderRows = 1;
-      const requiredH = maxChildBottom + cardHeaderRows;
+      const cardHeaderPx = 36;
+      const requiredH = maxChildBottom + cardHeaderPx;
       const newH = Math.max(w.layout.h, requiredH);
 
       return {
@@ -325,9 +325,9 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
     const topLevel = state.schema.widgets.find((w) => w.id === widgetId);
     if (topLevel) return { widget: topLevel, parentCardId: null };
 
-    // Card children에서 검색
+    // 컨테이너(card, conditional-slot 등) children에서 검색
     for (const w of state.schema.widgets) {
-      if (w.type === "card" && w.children) {
+      if (w.children?.length) {
         const child = w.children.find((c) => c.id === widgetId);
         if (child) return { widget: child, parentCardId: w.id };
       }

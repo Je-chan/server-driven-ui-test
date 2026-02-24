@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { i18nLabelSchema } from "@/src/shared/lib";
 
 // 데이터 소스 타입
 export const dataSourceTypeSchema = z.enum([
@@ -28,7 +29,7 @@ export const returnStructureSchema = z.object({
 export const dashboardDataSourceSchema = z.object({
   id: z.string(),
   type: dataSourceTypeSchema,
-  name: z.string(),
+  name: i18nLabelSchema,
   config: z.object({
     endpoint: z.string().optional(),
     model: z.string().optional(),
@@ -45,8 +46,8 @@ export type ReturnStructure = z.infer<typeof returnStructureSchema>;
 // Measurement 매핑 (차트 시리즈 설정)
 export const measurementMappingSchema = z.object({
   field: z.string(),
-  label: z.string(),
-  unit: z.string().optional(),
+  label: i18nLabelSchema,
+  unit: i18nLabelSchema.optional(),
   color: z.string().optional(),
   format: z.string().optional(),
   aggregation: z.enum(["sum", "avg", "min", "max", "count", "latest"]).optional(),

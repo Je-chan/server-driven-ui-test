@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Trash2, ChevronDown, ChevronRight, GripVertical } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useBuilderStore } from "@/src/features/dashboard-builder/model/builder.store";
 import type { Widget } from "@/src/entities/dashboard";
 
@@ -36,6 +37,8 @@ interface FormWidgetOptionsProps {
 
 export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
   const { updateWidget } = useBuilderStore();
+  const tc = useTranslations("common");
+  const tf = useTranslations("form");
   const [expandedField, setExpandedField] = useState<number | null>(null);
   const [showSubmitConfig, setShowSubmitConfig] = useState(false);
 
@@ -135,7 +138,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
 
   // ── Button CRUD ──
   const handleAddButton = () => {
-    updateButtons([...buttons, { label: "버튼", buttonType: "button", variant: "outline" }]);
+    updateButtons([...buttons, { label: tf("buttons"), buttonType: "button", variant: "outline" }]);
   };
 
   const handleRemoveButton = (index: number) => {
@@ -164,28 +167,28 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
 
       {/* Columns */}
       <div>
-        <label className="text-xs font-medium text-muted-foreground">컬럼 수</label>
+        <label className="text-xs font-medium text-muted-foreground">{tf("columns")}</label>
         <select
           value={columns}
           onChange={(e) => updateOption("columns", parseInt(e.target.value))}
           className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm"
         >
-          <option value={1}>1열</option>
-          <option value={2}>2열</option>
-          <option value={3}>3열</option>
+          <option value={1}>{tf("oneCol")}</option>
+          <option value={2}>{tf("twoCols")}</option>
+          <option value={3}>{tf("threeCols")}</option>
         </select>
       </div>
 
       {/* ── Fields ── */}
       <div className="border-t pt-3">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-medium text-muted-foreground">필드 ({fields.length})</label>
+          <label className="text-xs font-medium text-muted-foreground">{tf("fields") + " (" + fields.length + ")"}</label>
           <button
             onClick={handleAddField}
             className="flex items-center gap-1 rounded px-2 py-1 text-xs text-primary hover:bg-primary/10"
           >
             <Plus className="h-3 w-3" />
-            추가
+            {tc("add")}
           </button>
         </div>
 
@@ -200,7 +203,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                 <div className="flex items-center gap-1.5">
                   <GripVertical className="h-3 w-3 text-muted-foreground" />
                   <span className="text-xs font-medium">
-                    {field.label || field.fieldName || `필드 ${idx + 1}`}
+                    {field.label || field.fieldName || tf("fields") + " " + (idx + 1)}
                   </span>
                   <span className="rounded bg-muted px-1 py-0.5 text-[10px] text-muted-foreground">
                     {field.type}
@@ -234,7 +237,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
 
                   {/* Type */}
                   <div>
-                    <label className="text-[10px] text-muted-foreground">타입</label>
+                    <label className="text-[10px] text-muted-foreground">{tf("fieldType")}</label>
                     <select
                       value={field.type}
                       onChange={(e) => handleFieldChange(idx, "type", e.target.value)}
@@ -250,7 +253,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
 
                   {/* Label */}
                   <div>
-                    <label className="text-[10px] text-muted-foreground">라벨</label>
+                    <label className="text-[10px] text-muted-foreground">{tf("fieldLabel")}</label>
                     <input
                       type="text"
                       value={field.label ?? ""}
@@ -262,7 +265,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                   {/* colSpan */}
                   {columns > 1 && (
                     <div>
-                      <label className="text-[10px] text-muted-foreground">열 차지 (colSpan)</label>
+                      <label className="text-[10px] text-muted-foreground">{tf("colSpan")}</label>
                       <select
                         value={field.colSpan ?? 1}
                         onChange={(e) => handleFieldChange(idx, "colSpan", parseInt(e.target.value))}
@@ -324,7 +327,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                           onChange={(e) => handleFieldChange(idx, "multiple", e.target.checked)}
                           className="h-3.5 w-3.5 rounded border"
                         />
-                        <span className="text-[10px] text-muted-foreground">다중 선택</span>
+                        <span className="text-[10px] text-muted-foreground">{tf("multiSelect")}</span>
                       </div>
                     </>
                   )}
@@ -333,12 +336,12 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                   {["select", "radio", "checkbox"].includes(field.type) && (
                     <div>
                       <div className="flex items-center justify-between">
-                        <label className="text-[10px] text-muted-foreground">옵션 목록</label>
+                        <label className="text-[10px] text-muted-foreground">{tf("optionsList")}</label>
                         <button
                           onClick={() => handleAddFieldOption(idx)}
                           className="flex items-center gap-0.5 text-[10px] text-primary hover:underline"
                         >
-                          <Plus className="h-2.5 w-2.5" /> 추가
+                          <Plus className="h-2.5 w-2.5" /> {tc("add")}
                         </button>
                       </div>
                       <div className="mt-1 space-y-1">
@@ -373,14 +376,14 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                   {/* ── direction (radio/checkbox) ── */}
                   {["radio", "checkbox"].includes(field.type) && (
                     <div>
-                      <label className="text-[10px] text-muted-foreground">방향</label>
+                      <label className="text-[10px] text-muted-foreground">{tf("direction")}</label>
                       <select
                         value={field.direction ?? "vertical"}
                         onChange={(e) => handleFieldChange(idx, "direction", e.target.value)}
                         className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
                       >
-                        <option value="vertical">세로</option>
-                        <option value="horizontal">가로</option>
+                        <option value="vertical">{tf("vertical")}</option>
+                        <option value="horizontal">{tf("horizontal")}</option>
                       </select>
                     </div>
                   )}
@@ -389,19 +392,19 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                   {field.type === "checkbox" && (
                     <>
                       <div>
-                        <label className="text-[10px] text-muted-foreground">모드</label>
+                        <label className="text-[10px] text-muted-foreground">{tf("mode")}</label>
                         <select
                           value={field.mode ?? "single"}
                           onChange={(e) => handleFieldChange(idx, "mode", e.target.value)}
                           className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
                         >
-                          <option value="single">단일</option>
-                          <option value="group">그룹</option>
+                          <option value="single">{tf("single")}</option>
+                          <option value="group">{tf("group")}</option>
                         </select>
                       </div>
                       {(field.mode ?? "single") === "single" && (
                         <div>
-                          <label className="text-[10px] text-muted-foreground">체크박스 라벨</label>
+                          <label className="text-[10px] text-muted-foreground">{tf("checkboxLabel")}</label>
                           <input
                             type="text"
                             value={field.checkboxLabel ?? ""}
@@ -427,7 +430,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="text-[10px] text-muted-foreground">행 수</label>
+                          <label className="text-[10px] text-muted-foreground">{tf("rows")}</label>
                           <input
                             type="number"
                             value={field.rows ?? 4}
@@ -437,7 +440,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] text-muted-foreground">최대 글자</label>
+                          <label className="text-[10px] text-muted-foreground">{tf("maxLength")}</label>
                           <input
                             type="number"
                             value={field.maxLength ?? ""}
@@ -452,7 +455,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
 
                   {/* Default Value */}
                   <div>
-                    <label className="text-[10px] text-muted-foreground">기본값</label>
+                    <label className="text-[10px] text-muted-foreground">{tf("defaultValue")}</label>
                     <input
                       type="text"
                       value={String(field.defaultValue ?? "")}
@@ -469,20 +472,20 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                       onChange={(e) => handleFieldChange(idx, "disabled", e.target.checked)}
                       className="h-3.5 w-3.5 rounded border"
                     />
-                    <span className="text-[10px] text-muted-foreground">비활성화</span>
+                    <span className="text-[10px] text-muted-foreground">{tf("disabled")}</span>
                   </div>
 
                   {/* Validation */}
                   <div className="border-t pt-2">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-medium text-muted-foreground">
-                        검증 규칙 ({(field.validation ?? []).length})
+                        {tf("validation") + " (" + (field.validation ?? []).length + ")"}
                       </span>
                       <button
                         onClick={() => handleAddValidation(idx)}
                         className="flex items-center gap-0.5 text-[10px] text-primary hover:underline"
                       >
-                        <Plus className="h-2.5 w-2.5" /> 추가
+                        <Plus className="h-2.5 w-2.5" /> {tc("add")}
                       </button>
                     </div>
                     <div className="mt-1 space-y-1">
@@ -494,12 +497,12 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                               onChange={(e) => handleValidationChange(idx, ruleIdx, "type", e.target.value)}
                               className="rounded border px-1 py-0.5 text-[10px]"
                             >
-                              <option value="required">필수</option>
-                              <option value="min">최소값</option>
-                              <option value="max">최대값</option>
-                              <option value="minLength">최소 길이</option>
-                              <option value="maxLength">최대 길이</option>
-                              <option value="pattern">정규식</option>
+                              <option value="required">{tf("validationRequired")}</option>
+                              <option value="min">{tf("validationMin")}</option>
+                              <option value="max">{tf("validationMax")}</option>
+                              <option value="minLength">{tf("validationMinLength")}</option>
+                              <option value="maxLength">{tf("validationMaxLength")}</option>
+                              <option value="pattern">{tf("validationPattern")}</option>
                             </select>
                             <button
                               onClick={() => handleRemoveValidation(idx, ruleIdx)}
@@ -521,7 +524,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                             type="text"
                             value={rule.message}
                             onChange={(e) => handleValidationChange(idx, ruleIdx, "message", e.target.value)}
-                            placeholder="에러 메시지"
+                            placeholder={tf("errorMessage")}
                             className="mt-1 w-full rounded border px-1.5 py-0.5 text-[10px]"
                           />
                         </div>
@@ -535,7 +538,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
 
           {fields.length === 0 && (
             <p className="py-3 text-center text-xs text-muted-foreground">
-              필드가 없습니다. &quot;추가&quot;를 클릭하세요.
+              {tf("noFields")}
             </p>
           )}
         </div>
@@ -544,13 +547,13 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
       {/* ── Buttons ── */}
       <div className="border-t pt-3">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-medium text-muted-foreground">버튼 ({buttons.length})</label>
+          <label className="text-xs font-medium text-muted-foreground">{tf("buttons") + " (" + buttons.length + ")"}</label>
           <button
             onClick={handleAddButton}
             className="flex items-center gap-1 rounded px-2 py-1 text-xs text-primary hover:bg-primary/10"
           >
             <Plus className="h-3 w-3" />
-            추가
+            {tc("add")}
           </button>
         </div>
 
@@ -601,7 +604,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
           className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
           {showSubmitConfig ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-          Submit 설정
+          {tf("submitConfig")}
         </button>
 
         {showSubmitConfig && (
@@ -638,12 +641,12 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                   updateSubmitConfig("confirmation", {
                     ...((submitConfig.confirmation as Record<string, unknown>) ?? {}),
                     enabled: e.target.checked,
-                    message: ((submitConfig.confirmation as { message?: string } | undefined)?.message) ?? "제출하시겠습니까?",
+                    message: ((submitConfig.confirmation as { message?: string } | undefined)?.message) ?? tc("submitConfirm"),
                   })
                 }
                 className="h-3.5 w-3.5 rounded border"
               />
-              <span className="text-[10px] text-muted-foreground">제출 전 확인 다이얼로그</span>
+              <span className="text-[10px] text-muted-foreground">{tf("confirmDialog")}</span>
             </div>
             <div className="flex items-center gap-2">
               <input
@@ -657,7 +660,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                 }
                 className="h-3.5 w-3.5 rounded border"
               />
-              <span className="text-[10px] text-muted-foreground">성공 시 폼 초기화</span>
+              <span className="text-[10px] text-muted-foreground">{tf("resetOnSuccess")}</span>
             </div>
           </div>
         )}

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 import { ArrowLeft, Save, Eye, Undo, Redo, Loader2, Monitor, Grid3X3 } from "lucide-react";
 import { useBuilderStore } from "@/src/features/dashboard-builder";
 import { BuilderCanvas, RESOLUTION_PRESETS, type ResolutionKey } from "@/src/widgets/builder-canvas";
@@ -10,12 +10,15 @@ import { WidgetPalette } from "@/src/widgets/widget-palette";
 import { PropertyPanel } from "@/src/widgets/property-panel";
 import type { DashboardEntity } from "@/src/entities/dashboard";
 import { migrateFiltersToWidgets } from "@/src/entities/dashboard";
+import { LocaleToggle } from "@/src/shared/ui/LocaleToggle";
 
 interface DashboardBuilderPageProps {
   dashboard: DashboardEntity;
 }
 
 export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
+  const t = useTranslations("common");
+  const tb = useTranslations("builder");
   const router = useRouter();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(1200);
@@ -75,7 +78,7 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
       router.refresh();
     } catch (error) {
       console.error("Save failed:", error);
-      alert("저장에 실패했습니다.");
+      alert(t("saveFailed"));
     } finally {
       setIsSaving(false);
     }
@@ -112,13 +115,13 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
             className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            뒤로가기
+            {t("back")}
           </Link>
           <div className="h-6 w-px bg-border" />
           <h1 className="text-lg font-semibold">{dashboard.title}</h1>
           {isDirty && (
             <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
-              저장되지 않음
+              {t("unsaved")}
             </span>
           )}
         </div>
@@ -167,7 +170,7 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
             <button
               onClick={() => setShowGridSettings(!showGridSettings)}
               className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
-              title="그리드 설정"
+              title={tb("gridSettings")}
             >
               <Grid3X3 className="h-4 w-4" />
               Grid
@@ -188,9 +191,9 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
                         type="number"
                         min={1}
                         max={100}
-                        value={schema.settings?.rowHeight ?? 10}
+                        value={schema.settings?.rowHeight ?? 1}
                         onChange={(e) => {
-                          const v = Math.max(1, Math.min(100, Number(e.target.value) || 10));
+                          const v = Math.max(1, Math.min(100, Number(e.target.value) || 1));
                           updateSettings({ rowHeight: v });
                         }}
                         className="w-full rounded-md border px-2 py-1.5 text-sm"
@@ -224,7 +227,7 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
             onClick={undo}
             disabled={!canUndo()}
             className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
-            title="실행 취소 (Ctrl+Z)"
+            title={tb("undoTooltip")}
           >
             <Undo className="h-4 w-4" />
           </button>
@@ -232,7 +235,7 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
             onClick={redo}
             disabled={!canRedo()}
             className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
-            title="다시 실행 (Ctrl+Shift+Z)"
+            title={tb("redoTooltip")}
           >
             <Redo className="h-4 w-4" />
           </button>
@@ -242,7 +245,7 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
             className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
           >
             <Eye className="h-4 w-4" />
-            미리보기
+            {t("preview")}
           </Link>
           <button
             onClick={handleSave}
@@ -254,8 +257,9 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
             ) : (
               <Save className="h-4 w-4" />
             )}
-            저장
+            {t("save")}
           </button>
+          <LocaleToggle />
         </div>
       </header>
 
@@ -264,7 +268,7 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
         {/* Widget Palette */}
         <aside className="w-64 flex-shrink-0 overflow-y-auto border-r bg-card p-4">
           <h2 className="mb-4 text-sm font-semibold text-muted-foreground">
-            WIDGETS
+            {tb("widgetsPanelTitle")}
           </h2>
           <WidgetPalette />
         </aside>

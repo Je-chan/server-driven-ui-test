@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
+import { useLocale } from "next-intl";
 import ReactGridLayout from "react-grid-layout";
 import type { Widget } from "@/src/entities/dashboard";
+import { resolveLabel } from "@/src/shared/lib";
 import { WidgetRenderer } from "./WidgetRenderer";
 import type { FormManagerReturn } from "@/src/features/dashboard-form";
 import "react-grid-layout/css/styles.css";
@@ -44,6 +46,7 @@ export function CardWidget({
   dataSources,
   filterSubmitProps,
 }: CardWidgetProps) {
+  const locale = useLocale();
   const children = widget.children ?? [];
   const options = widget.options as { showHeader?: boolean; headerTitle?: string } | undefined;
   const style = widget.style ?? {};
@@ -89,7 +92,7 @@ export function CardWidget({
     >
       {showHeader && (
         <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-2">
-          <span className="text-sm font-medium">{headerTitle}</span>
+          <span className="text-sm font-medium">{resolveLabel(headerTitle, locale)}</span>
           <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
             card
           </span>
@@ -125,7 +128,7 @@ export function CardWidget({
                   {/* 자식 위젯 헤더 — 필터는 생략 */}
                   {!isFilter && (
                     <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-1.5">
-                      <span className="text-xs font-medium">{child.title}</span>
+                      <span className="text-xs font-medium">{resolveLabel(child.title, locale)}</span>
                       <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
                         {child.type}
                       </span>

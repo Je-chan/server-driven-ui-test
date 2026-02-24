@@ -14,8 +14,9 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { useLocale, useTranslations } from "next-intl";
 import type { Widget } from "@/src/entities/dashboard";
-import { resolveTemplateParams } from "@/src/shared/lib";
+import { resolveTemplateParams, resolveLabel, type I18nLabel } from "@/src/shared/lib";
 import { useWidgetData } from "@/src/shared/api";
 import {
   SelectFilterWidget,
@@ -23,6 +24,7 @@ import {
   TreeSelectFilterWidget,
   InputFilterWidget,
   TabFilterWidget,
+  ToggleFilterWidget,
   DatepickerFilterWidget,
   FilterSubmitWidget,
 } from "./filters";
@@ -52,6 +54,8 @@ interface DataResponse {
 }
 
 export function WidgetRenderer({ widget, filterValues, appliedFilterValues, onFilterChange, formManager, dataSources, filterSubmitProps }: WidgetRendererProps) {
+  const tw = useTranslations("widget");
+
   // filter-submit 위젯은 별도 처리
   if (widget.type === "filter-submit") {
     if (filterSubmitProps) {
@@ -60,7 +64,7 @@ export function WidgetRenderer({ widget, filterValues, appliedFilterValues, onFi
     return (
       <div className="flex h-full items-center justify-center p-2">
         <div className="flex h-full w-full items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/30 text-sm text-muted-foreground">
-          조회 버튼
+          {tw("submitButton")}
         </div>
       </div>
     );
@@ -95,6 +99,8 @@ function renderFilterWidget(
       return <InputFilterWidget widget={widget} filterValues={filterValues} onFilterChange={onFilterChange} />;
     case "filter-tab":
       return <TabFilterWidget widget={widget} filterValues={filterValues} onFilterChange={onFilterChange} />;
+    case "filter-toggle":
+      return <ToggleFilterWidget widget={widget} filterValues={filterValues} onFilterChange={onFilterChange} />;
     case "filter-datepicker":
       return <DatepickerFilterWidget widget={widget} filterValues={filterValues} onFilterChange={onFilterChange} />;
     default:
@@ -115,13 +121,16 @@ function DataWidgetRenderer({
   filterValues?: Record<string, unknown>;
   dataSources?: Record<string, unknown>[];
 }) {
+  const tw = useTranslations("widget");
+  const tc = useTranslations("common");
+
   const dataBinding = widget.dataBinding as {
     dataSourceId?: string;
     requestParams?: Record<string, unknown>;
     mapping?: {
       timeField?: string;
       dimensions?: string[];
-      measurements?: { field: string; label: string; unit?: string; color?: string }[];
+      measurements?: { field: string; label: I18nLabel; unit?: I18nLabel; color?: string }[];
     };
   } | undefined;
 
@@ -181,7 +190,7 @@ function DataWidgetRenderer({
   if (!dataBinding?.dataSourceId) {
     return (
       <div className="flex h-full items-center justify-center p-4 text-muted-foreground">
-        <span className="text-xs">No data source configured</span>
+        <span className="text-xs">{tw("noDataSource")}</span>
       </div>
     );
   }
@@ -199,7 +208,7 @@ function DataWidgetRenderer({
     default:
       return (
         <div className="flex h-full items-center justify-center p-4 text-muted-foreground">
-          <span className="text-xs">Unsupported widget type: {widget.type}</span>
+          <span className="text-xs">{tw("unsupportedType", { type: widget.type })}</span>
         </div>
       );
   }
@@ -212,16 +221,20 @@ function KpiCardContent({
 }: {
   data: DataResponse | null;
   mapping?: {
-    measurements?: { field: string; label: string; unit?: string; color?: string }[];
+    measurements?: { field: string; label: I18nLabel; unit?: I18nLabel; color?: string }[];
   };
 }) {
+  const locale = useLocale();
+  const tc = useTranslations("common");
+  const tw = useTranslations("widget");
+
   if (!data?.summary && !data?.data?.length) {
-    return <div className="text-center text-sm text-muted-foreground">No data</div>;
+    return <div className="text-center text-sm text-muted-foreground">{tc("noData")}</div>;
   }
 
   const measurement = mapping?.measurements?.[0];
   if (!measurement) {
-    return <div className="text-center text-sm text-muted-foreground">No measurement configured</div>;
+    return <div className="text-center text-sm text-muted-foreground">{tw("noMeasurement")}</div>;
   }
 
   // summary에서 값 찾기 또는 data에서 계산
@@ -264,7 +277,7 @@ function KpiCardContent({
         {value !== null ? formatNumber(value) : "-"}
       </div>
       <div className="mt-1 text-sm text-muted-foreground">
-        {measurement.unit ?? ""}
+        {resolveLabel(measurement.unit, locale)}
       </div>
     </div>
   );
@@ -278,11 +291,15 @@ function TableContent({
   data: DataResponse | null;
   mapping?: {
     dimensions?: string[];
-    measurements?: { field: string; label: string; unit?: string }[];
+    measurements?: { field: string; label: I18nLabel; unit?: I18nLabel }[];
   };
 }) {
+  const locale = useLocale();
+  const tc = useTranslations("common");
+  const tw = useTranslations("widget");
+
   if (!data?.data?.length) {
-    return <div className="text-center text-sm text-muted-foreground p-4">No data</div>;
+    return <div className="text-center text-sm text-muted-foreground p-4">{tc("noData")}</div>;
   }
 
   const dimensions = mapping?.dimensions ?? [];
@@ -290,7 +307,7 @@ function TableContent({
   const columns = [...dimensions, ...measurements.map((m) => m.field)];
   const headers: { field: string; label: string; unit?: string }[] = [
     ...dimensions.map((d) => ({ field: d, label: formatFieldName(d) })),
-    ...measurements.map((m) => ({ field: m.field, label: m.label, unit: m.unit })),
+    ...measurements.map((m) => ({ field: m.field, label: resolveLabel(m.label, locale), unit: resolveLabel(m.unit, locale) || undefined })),
   ];
 
   return (
@@ -320,7 +337,7 @@ function TableContent({
       </table>
       {data.data.length > 10 && (
         <div className="p-2 text-center text-xs text-muted-foreground">
-          +{data.data.length - 10} more rows
+          {tw("moreRows", { count: data.data.length - 10 })}
         </div>
       )}
     </div>
@@ -335,11 +352,14 @@ function LineChartContent({
   data: DataResponse | null;
   mapping?: {
     timeField?: string;
-    measurements?: { field: string; label: string; unit?: string; color?: string }[];
+    measurements?: { field: string; label: I18nLabel; unit?: I18nLabel; color?: string }[];
   };
 }) {
+  const locale = useLocale();
+  const tw = useTranslations("widget");
+
   if (!data?.data?.length) {
-    return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No data</div>;
+    return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{tw("noChartData")}</div>;
   }
 
   const measurements = mapping?.measurements ?? [];
@@ -349,7 +369,7 @@ function LineChartContent({
   const chartData = processChartData(data.data, timeField, measurements);
 
   if (chartData.length === 0) {
-    return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No chart data</div>;
+    return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{tw("noChartData")}</div>;
   }
 
   return (
@@ -373,7 +393,7 @@ function LineChartContent({
               key={m.field}
               type="monotone"
               dataKey={m.field}
-              name={m.label}
+              name={resolveLabel(m.label, locale)}
               stroke={m.color ?? "#3b82f6"}
               strokeWidth={2}
               dot={false}
@@ -395,11 +415,14 @@ function BarChartContent({
   mapping?: {
     timeField?: string;
     dimensions?: string[];
-    measurements?: { field: string; label: string; unit?: string; color?: string }[];
+    measurements?: { field: string; label: I18nLabel; unit?: I18nLabel; color?: string }[];
   };
 }) {
+  const locale = useLocale();
+  const tw = useTranslations("widget");
+
   if (!data?.data?.length) {
-    return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No data</div>;
+    return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{tw("noChartData")}</div>;
   }
 
   const measurements = mapping?.measurements ?? [];
@@ -410,7 +433,7 @@ function BarChartContent({
   const chartData = processBarChartData(data.data, categoryField, measurements);
 
   if (chartData.length === 0) {
-    return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No chart data</div>;
+    return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{tw("noChartData")}</div>;
   }
 
   return (
@@ -426,7 +449,7 @@ function BarChartContent({
             <Bar
               key={m.field}
               dataKey={m.field}
-              name={m.label}
+              name={resolveLabel(m.label, locale)}
               fill={m.color ?? "#3b82f6"}
             />
           ))}

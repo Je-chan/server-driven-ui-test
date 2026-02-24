@@ -1,23 +1,25 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+import { resolveLabel, type I18nLabel } from "@/src/shared/lib";
 import type { FormManagerReturn } from "@/src/features/dashboard-form";
 
 export interface FormFieldDef {
   fieldName: string;
   type: "input" | "select" | "radio" | "checkbox" | "textarea";
-  label?: string;
+  label?: I18nLabel;
   inputType?: "text" | "number" | "email" | "password" | "tel" | "url";
-  placeholder?: string;
-  options?: { value: string; label: string }[];
+  placeholder?: I18nLabel;
+  options?: { value: string; label: I18nLabel }[];
   multiple?: boolean;
   direction?: "horizontal" | "vertical";
   mode?: "single" | "group";
-  checkboxLabel?: string;
+  checkboxLabel?: I18nLabel;
   rows?: number;
   maxLength?: number;
   disabled?: boolean;
   defaultValue?: unknown;
-  validation?: { type: string; value?: unknown; message: string }[];
+  validation?: { type: string; value?: unknown; message: I18nLabel }[];
   colSpan?: number;
 }
 
@@ -28,6 +30,9 @@ interface FormFieldProps {
 }
 
 export function FormField({ field, formId, formManager }: FormFieldProps) {
+  const locale = useLocale();
+  const tc = useTranslations("common");
+  const rl = (v: I18nLabel | undefined) => resolveLabel(v, locale);
   const { fieldName } = field;
   const value = formManager.getFieldValue(formId, fieldName);
   const error = formManager.getFieldError(formId, fieldName);
@@ -41,7 +46,7 @@ export function FormField({ field, formId, formManager }: FormFieldProps) {
         <div className="flex flex-col gap-1">
           {field.label && (
             <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-              {field.label}
+              {rl(field.label)}
             </label>
           )}
           <input
@@ -53,7 +58,7 @@ export function FormField({ field, formId, formManager }: FormFieldProps) {
             }}
             onBlur={() => formManager.setFieldTouched(formId, fieldName)}
             disabled={field.disabled}
-            placeholder={field.placeholder ?? ""}
+            placeholder={rl(field.placeholder) ?? ""}
             className={`h-8 w-full rounded-md border bg-card px-2 text-sm shadow-sm transition-colors hover:border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 ${errorBorder}`}
           />
           {touched && error && <span className="text-[10px] text-destructive">{error}</span>}
@@ -76,7 +81,7 @@ export function FormField({ field, formId, formManager }: FormFieldProps) {
           <div className="flex flex-col gap-1">
             {field.label && (
               <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-                {field.label}
+                {rl(field.label)}
               </label>
             )}
             <div className={`flex flex-wrap gap-1 rounded-md border p-1.5 ${errorBorder}`}>
@@ -93,10 +98,10 @@ export function FormField({ field, formId, formManager }: FormFieldProps) {
                       : "bg-muted text-muted-foreground hover:bg-muted/80"
                   } disabled:opacity-50`}
                 >
-                  {opt.label}
+                  {rl(opt.label)}
                 </button>
               ))}
-              {options.length === 0 && <span className="text-xs text-muted-foreground">옵션 없음</span>}
+              {options.length === 0 && <span className="text-xs text-muted-foreground">{tc("noOptions")}</span>}
             </div>
             {touched && error && <span className="text-[10px] text-destructive">{error}</span>}
           </div>
@@ -107,7 +112,7 @@ export function FormField({ field, formId, formManager }: FormFieldProps) {
         <div className="flex flex-col gap-1">
           {field.label && (
             <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-              {field.label}
+              {rl(field.label)}
             </label>
           )}
           <select
@@ -117,9 +122,9 @@ export function FormField({ field, formId, formManager }: FormFieldProps) {
             disabled={field.disabled}
             className={`h-8 w-full rounded-md border bg-card px-2 text-sm shadow-sm transition-colors hover:border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 ${errorBorder}`}
           >
-            <option value="">{field.placeholder ?? "선택..."}</option>
+            <option value="">{rl(field.placeholder) ?? tc("select")}</option>
             {options.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+              <option key={opt.value} value={opt.value}>{rl(opt.label)}</option>
             ))}
           </select>
           {touched && error && <span className="text-[10px] text-destructive">{error}</span>}
@@ -135,7 +140,7 @@ export function FormField({ field, formId, formManager }: FormFieldProps) {
         <div className="flex flex-col gap-1">
           {field.label && (
             <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-              {field.label}
+              {rl(field.label)}
             </label>
           )}
           <div className={`flex gap-2 ${isHorizontal ? "flex-row flex-wrap" : "flex-col"}`}>
@@ -151,10 +156,10 @@ export function FormField({ field, formId, formManager }: FormFieldProps) {
                   disabled={field.disabled}
                   className="h-3.5 w-3.5 accent-primary disabled:opacity-50"
                 />
-                <span className="text-xs">{opt.label}</span>
+                <span className="text-xs">{rl(opt.label)}</span>
               </label>
             ))}
-            {options.length === 0 && <span className="text-xs text-muted-foreground">옵션 없음</span>}
+            {options.length === 0 && <span className="text-xs text-muted-foreground">{tc("noOptions")}</span>}
           </div>
           {touched && error && <span className="text-[10px] text-destructive">{error}</span>}
         </div>
@@ -170,7 +175,7 @@ export function FormField({ field, formId, formManager }: FormFieldProps) {
           <div className="flex flex-col gap-1">
             {field.label && (
               <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-                {field.label}
+                {rl(field.label)}
               </label>
             )}
             <label className="flex items-center gap-2 cursor-pointer">
@@ -182,7 +187,7 @@ export function FormField({ field, formId, formManager }: FormFieldProps) {
                 disabled={field.disabled}
                 className="h-4 w-4 rounded border accent-primary disabled:opacity-50"
               />
-              <span className="text-sm">{field.checkboxLabel ?? ""}</span>
+              <span className="text-sm">{rl(field.checkboxLabel) ?? ""}</span>
             </label>
             {touched && error && <span className="text-[10px] text-destructive">{error}</span>}
           </div>
@@ -202,7 +207,7 @@ export function FormField({ field, formId, formManager }: FormFieldProps) {
         <div className="flex flex-col gap-1">
           {field.label && (
             <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-              {field.label}
+              {rl(field.label)}
             </label>
           )}
           <div className={`flex gap-2 ${isHorizontal ? "flex-row flex-wrap" : "flex-col"}`}>
@@ -216,10 +221,10 @@ export function FormField({ field, formId, formManager }: FormFieldProps) {
                   disabled={field.disabled}
                   className="h-3.5 w-3.5 rounded border accent-primary disabled:opacity-50"
                 />
-                <span className="text-xs">{opt.label}</span>
+                <span className="text-xs">{rl(opt.label)}</span>
               </label>
             ))}
-            {options.length === 0 && <span className="text-xs text-muted-foreground">옵션 없음</span>}
+            {options.length === 0 && <span className="text-xs text-muted-foreground">{tc("noOptions")}</span>}
           </div>
           {touched && error && <span className="text-[10px] text-destructive">{error}</span>}
         </div>
@@ -233,7 +238,7 @@ export function FormField({ field, formId, formManager }: FormFieldProps) {
         <div className="flex flex-col gap-1">
           {field.label && (
             <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-              {field.label}
+              {rl(field.label)}
             </label>
           )}
           <textarea
@@ -241,7 +246,7 @@ export function FormField({ field, formId, formManager }: FormFieldProps) {
             onChange={(e) => formManager.setFieldValue(formId, fieldName, e.target.value)}
             onBlur={() => formManager.setFieldTouched(formId, fieldName)}
             disabled={field.disabled}
-            placeholder={field.placeholder ?? ""}
+            placeholder={rl(field.placeholder) ?? ""}
             rows={field.rows ?? 4}
             maxLength={field.maxLength}
             className={`w-full resize-none rounded-md border bg-card px-2 py-1.5 text-sm shadow-sm transition-colors hover:border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 ${errorBorder}`}

@@ -7,6 +7,7 @@ export {
 
 export { WidgetRenderer } from "./ui/WidgetRenderer";
 export { CardWidget } from "./ui/CardWidget";
+export { ConditionalSlotWidget } from "./ui/ConditionalSlotWidget";
 
 export {
   SelectFilterWidget,
@@ -14,6 +15,7 @@ export {
   TreeSelectFilterWidget,
   InputFilterWidget,
   TabFilterWidget,
+  ToggleFilterWidget,
   DatepickerFilterWidget,
 } from "./ui/filters";
 

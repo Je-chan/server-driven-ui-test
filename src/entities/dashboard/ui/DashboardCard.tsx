@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { LayoutDashboard, Calendar, Eye, Pencil, Presentation } from "lucide-react";
 import type { DashboardEntity } from "../model/types";
 
@@ -9,6 +10,7 @@ interface DashboardCardProps {
 }
 
 export function DashboardCard({ dashboard }: DashboardCardProps) {
+  const t = useTranslations("common");
   const widgetCount = dashboard.schema.widgets?.length ?? 0;
   const formattedDate = new Date(dashboard.updatedAt).toLocaleDateString("ko-KR", {
     year: "numeric",
@@ -34,7 +36,7 @@ export function DashboardCard({ dashboard }: DashboardCardProps) {
         </div>
         {dashboard.isPublished && (
           <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
-            게시됨
+            {t("published")}
           </span>
         )}
       </div>
@@ -56,21 +58,21 @@ export function DashboardCard({ dashboard }: DashboardCardProps) {
           className="flex items-center gap-1 rounded-md bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
         >
           <Eye className="h-4 w-4" />
-          보기
+          {t("view")}
         </Link>
         <Link
           href={`/builder/${dashboard.id}`}
           className="flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           <Pencil className="h-4 w-4" />
-          수정
+          {t("edit")}
         </Link>
         <Link
           href={`/presentation/${dashboard.id}`}
           className="flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100"
         >
           <Presentation className="h-4 w-4" />
-          발표
+          {t("presentation")}
         </Link>
       </div>
     </div>

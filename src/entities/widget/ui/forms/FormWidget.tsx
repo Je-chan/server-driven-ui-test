@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { ClipboardList, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { resolveLabel, type I18nLabel } from "@/src/shared/lib";
 import type { Widget } from "@/src/entities/dashboard";
 import type { FormManagerReturn, SubmitConfig } from "@/src/features/dashboard-form";
 import { FormField, type FormFieldDef } from "./FormField";
 
 interface FormButtonDef {
-  label: string;
+  label: I18nLabel;
   buttonType: "submit" | "reset" | "button";
   variant?: "primary" | "secondary" | "destructive" | "outline";
 }
@@ -22,9 +24,9 @@ interface FormWidgetOptions {
     method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
     headers?: Record<string, string>;
     contentType?: "application/json" | "multipart/form-data";
-    confirmation?: { enabled: boolean; title?: string; message: string };
-    onSuccess?: { message?: string; redirect?: string; resetForm?: boolean };
-    onError?: { message?: string };
+    confirmation?: { enabled: boolean; title?: I18nLabel; message: I18nLabel };
+    onSuccess?: { message?: I18nLabel; redirect?: string; resetForm?: boolean };
+    onError?: { message?: I18nLabel };
   };
 }
 
@@ -41,6 +43,9 @@ const variantClasses: Record<string, string> = {
 };
 
 export function FormWidget({ widget, formManager }: FormWidgetProps) {
+  const locale = useLocale();
+  const tc = useTranslations("common");
+  const rl = (v: I18nLabel | undefined) => resolveLabel(v, locale);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const opts = (widget.options ?? {}) as FormWidgetOptions;
@@ -54,7 +59,7 @@ export function FormWidget({ widget, formManager }: FormWidgetProps) {
     return (
       <div className="flex h-full items-center justify-center gap-2 p-4 text-muted-foreground">
         <ClipboardList className="h-5 w-5" />
-        <span className="text-sm">formId를 설정하세요</span>
+        <span className="text-sm">{tc("setFormId")}</span>
       </div>
     );
   }
@@ -63,7 +68,7 @@ export function FormWidget({ widget, formManager }: FormWidgetProps) {
     return (
       <div className="flex h-full items-center justify-center gap-2 p-4 text-muted-foreground">
         <ClipboardList className="h-5 w-5" />
-        <span className="text-sm">필드를 추가하세요</span>
+        <span className="text-sm">{tc("addFields")}</span>
       </div>
     );
   }
@@ -136,7 +141,7 @@ export function FormWidget({ widget, formManager }: FormWidgetProps) {
               {submitting && btn.buttonType === "submit" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : null}
-              {btn.label}
+              {rl(btn.label)}
             </button>
           ))}
         </div>
@@ -146,7 +151,7 @@ export function FormWidget({ widget, formManager }: FormWidgetProps) {
       {submitSuccess && (
         <div className="flex items-center gap-1.5 text-sm text-green-600">
           <CheckCircle2 className="h-4 w-4" />
-          <span>{submitConfig?.onSuccess?.message ?? "성공적으로 제출되었습니다"}</span>
+          <span>{rl(submitConfig?.onSuccess?.message) || tc("submitSuccess")}</span>
         </div>
       )}
       {submitError && (
@@ -161,10 +166,10 @@ export function FormWidget({ widget, formManager }: FormWidgetProps) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="w-80 rounded-lg bg-card p-6 shadow-xl">
             <h3 className="text-sm font-semibold">
-              {submitConfig?.confirmation?.title ?? "확인"}
+              {rl(submitConfig?.confirmation?.title) || tc("confirm")}
             </h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              {submitConfig?.confirmation?.message ?? "제출하시겠습니까?"}
+              {rl(submitConfig?.confirmation?.message) || tc("submitConfirm")}
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
@@ -172,14 +177,14 @@ export function FormWidget({ widget, formManager }: FormWidgetProps) {
                 onClick={() => setShowConfirm(false)}
                 className="rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-accent"
               >
-                취소
+                {tc("cancel")}
               </button>
               <button
                 type="button"
                 onClick={doSubmit}
                 className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
               >
-                확인
+                {tc("confirm")}
               </button>
             </div>
           </div>

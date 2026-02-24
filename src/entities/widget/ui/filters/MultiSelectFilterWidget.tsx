@@ -1,6 +1,8 @@
 "use client";
 
 import { ListChecks } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { resolveLabel } from "@/src/shared/lib";
 import type { Widget } from "@/src/entities/dashboard";
 
 interface MultiSelectFilterWidgetProps {
@@ -10,6 +12,9 @@ interface MultiSelectFilterWidgetProps {
 }
 
 export function MultiSelectFilterWidget({ widget, filterValues, onFilterChange }: MultiSelectFilterWidgetProps) {
+  const locale = useLocale();
+  const t = useTranslations("common");
+
   const opts = widget.options as {
     filterKey?: string;
     options?: { value: string; label: string }[];
@@ -26,7 +31,7 @@ export function MultiSelectFilterWidget({ widget, filterValues, onFilterChange }
     return (
       <div className="flex h-full items-center gap-2 px-3 text-muted-foreground">
         <ListChecks className="h-4 w-4" />
-        <span className="text-xs">filterKey를 설정하세요</span>
+        <span className="text-xs">{t("setFilterKey")}</span>
       </div>
     );
   }
@@ -42,7 +47,7 @@ export function MultiSelectFilterWidget({ widget, filterValues, onFilterChange }
   return (
     <div className="flex h-full flex-col justify-center gap-1 overflow-auto px-3">
       <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-        {widget.title}
+        {resolveLabel(widget.title, locale)}
       </label>
       <div className="flex flex-wrap gap-1">
         {options.map((opt) => {
@@ -58,12 +63,12 @@ export function MultiSelectFilterWidget({ widget, filterValues, onFilterChange }
                   : "bg-muted/60 text-muted-foreground hover:bg-muted"
               } disabled:opacity-50`}
             >
-              {opt.label}
+              {resolveLabel(opt.label, locale)}
             </button>
           );
         })}
         {options.length === 0 && (
-          <span className="text-xs text-muted-foreground">옵션을 설정하세요</span>
+          <span className="text-xs text-muted-foreground">{t("setOptions")}</span>
         )}
       </div>
     </div>

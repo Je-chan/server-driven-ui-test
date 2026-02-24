@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Calendar } from "lucide-react";
-import { formatLocalDate } from "@/src/shared/lib";
+import { useLocale, useTranslations } from "next-intl";
+import { formatLocalDate, resolveLabel } from "@/src/shared/lib";
 import type { Widget } from "@/src/entities/dashboard";
 
 interface DatepickerFilterWidgetProps {
@@ -10,14 +11,6 @@ interface DatepickerFilterWidgetProps {
   filterValues: Record<string, unknown>;
   onFilterChange: (key: string, value: unknown) => void;
 }
-
-const PRESET_LABELS: Record<string, string> = {
-  today: "오늘",
-  yesterday: "어제",
-  last7days: "최근 7일",
-  last30days: "최근 30일",
-  thisMonth: "이번 달",
-};
 
 function getDatePresetRange(preset: string): { start: string; end: string } {
   const now = new Date();
@@ -48,6 +41,10 @@ function getDatePresetRange(preset: string): { start: string; end: string } {
 }
 
 export function DatepickerFilterWidget({ widget, filterValues, onFilterChange }: DatepickerFilterWidgetProps) {
+  const locale = useLocale();
+  const t = useTranslations("common");
+  const tf = useTranslations("filter");
+
   const opts = widget.options as {
     filterKey?: string;
     presets?: string[];
@@ -80,7 +77,7 @@ export function DatepickerFilterWidget({ widget, filterValues, onFilterChange }:
     return (
       <div className="flex h-full items-center gap-2 px-3 text-muted-foreground">
         <Calendar className="h-4 w-4" />
-        <span className="text-xs">filterKey를 설정하세요</span>
+        <span className="text-xs">{t("setFilterKey")}</span>
       </div>
     );
   }
@@ -107,7 +104,7 @@ export function DatepickerFilterWidget({ widget, filterValues, onFilterChange }:
   return (
     <div className="flex h-full flex-col justify-center gap-1 overflow-auto px-3">
       <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-        {widget.title}
+        {resolveLabel(widget.title, locale)}
       </label>
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 p-1">
@@ -122,7 +119,7 @@ export function DatepickerFilterWidget({ widget, filterValues, onFilterChange }:
                   : "text-muted-foreground hover:text-foreground"
               } disabled:opacity-50`}
             >
-              {PRESET_LABELS[preset] ?? preset}
+              {tf.has(preset) ? tf(preset as "today" | "yesterday" | "last7days" | "last30days" | "thisMonth") : preset}
             </button>
           ))}
           <button
@@ -134,7 +131,7 @@ export function DatepickerFilterWidget({ widget, filterValues, onFilterChange }:
                 : "text-muted-foreground hover:text-foreground"
             } disabled:opacity-50`}
           >
-            직접입력
+            {tf("custom")}
           </button>
         </div>
 
@@ -160,7 +157,7 @@ export function DatepickerFilterWidget({ widget, filterValues, onFilterChange }:
               disabled={isFixed}
               className="shrink-0 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
             >
-              적용
+              {t("apply")}
             </button>
           </div>
         )}

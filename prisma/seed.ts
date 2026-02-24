@@ -581,57 +581,13 @@ function generateModuleData(siteId: string, timestamps: Date[], profile: SitePro
   return data;
 }
 
-// ====== 공통 필터 / 데이터소스 정의 ======
-
-function makeSiteFilter(siteOptions: { value: string; label: string }[]) {
-  return {
-    id: "filter_site",
-    type: "select",
-    key: "selectedSite",
-    label: "발전소 선택",
-    config: {
-      options: [{ value: "", label: "전체" }, ...siteOptions],
-      defaultValue: "",
-    },
-  };
-}
-
-const timeRangeFilter = {
-  id: "filter_time",
-  type: "date-range",
-  key: "timeRange",
-  label: "조회 기간",
-  config: {
-    presets: ["today", "yesterday", "last7days", "last30days", "thisMonth"],
-    defaultValue: "today",
-    maxRange: 365,
-    outputKeys: { start: "startTime", end: "endTime" },
-  },
-};
-
-const intervalFilter = {
-  id: "filter_interval",
-  type: "select",
-  key: "interval",
-  label: "집계 단위",
-  config: {
-    options: [
-      { value: "auto", label: "자동" },
-      { value: "1m", label: "1분" },
-      { value: "5m", label: "5분" },
-      { value: "15m", label: "15분" },
-      { value: "1h", label: "1시간" },
-      { value: "1d", label: "1일" },
-    ],
-    defaultValue: "auto",
-  },
-};
+// ====== 공통 데이터소스 정의 ======
 
 const allDataSources = [
   {
     id: "ds_inverter",
     type: "timeseries",
-    name: "인버터 데이터",
+    name: L("인버터 데이터", "Inverter Data"),
     config: { endpoint: "/api/data/inverter" },
     cache: { staleTime: 30000, gcTime: 300000 },
     returnStructure: {
@@ -642,7 +598,7 @@ const allDataSources = [
   {
     id: "ds_weather",
     type: "rest-api",
-    name: "기상 데이터",
+    name: L("기상 데이터", "Weather Data"),
     config: { endpoint: "/api/data/weather" },
     cache: { staleTime: 600000, gcTime: 1800000 },
     returnStructure: {
@@ -653,7 +609,7 @@ const allDataSources = [
   {
     id: "ds_kpi",
     type: "metric",
-    name: "KPI 지표",
+    name: L("KPI 지표", "KPI Metrics"),
     config: { endpoint: "/api/data/kpi" },
     cache: { staleTime: 300000, gcTime: 1800000 },
     returnStructure: {
@@ -664,7 +620,7 @@ const allDataSources = [
   {
     id: "ds_alarm",
     type: "rest-api",
-    name: "알람 데이터",
+    name: L("알람 데이터", "Alarm Data"),
     config: { endpoint: "/api/data/alarm" },
     cache: { staleTime: 60000, gcTime: 300000 },
     returnStructure: {
@@ -675,7 +631,7 @@ const allDataSources = [
   {
     id: "ds_revenue",
     type: "metric",
-    name: "수익 데이터",
+    name: L("수익 데이터", "Revenue Data"),
     config: { endpoint: "/api/data/revenue" },
     cache: { staleTime: 300000, gcTime: 1800000 },
     returnStructure: {
@@ -686,7 +642,7 @@ const allDataSources = [
   {
     id: "ds_battery",
     type: "timeseries",
-    name: "ESS 데이터",
+    name: L("ESS 데이터", "ESS Data"),
     config: { endpoint: "/api/data/battery" },
     cache: { staleTime: 30000, gcTime: 300000 },
     returnStructure: {
@@ -697,7 +653,7 @@ const allDataSources = [
   {
     id: "ds_grid",
     type: "timeseries",
-    name: "계통 데이터",
+    name: L("계통 데이터", "Grid Data"),
     config: { endpoint: "/api/data/grid" },
     cache: { staleTime: 30000, gcTime: 300000 },
     returnStructure: {
@@ -708,7 +664,7 @@ const allDataSources = [
   {
     id: "ds_price",
     type: "rest-api",
-    name: "전력 가격",
+    name: L("전력 가격", "Energy Price"),
     config: { endpoint: "/api/data/price" },
     cache: { staleTime: 600000, gcTime: 1800000 },
     returnStructure: {
@@ -719,7 +675,7 @@ const allDataSources = [
   {
     id: "ds_meter",
     type: "timeseries",
-    name: "계량기 데이터",
+    name: L("계량기 데이터", "Meter Data"),
     config: { endpoint: "/api/data/meter" },
     cache: { staleTime: 30000, gcTime: 300000 },
     returnStructure: {
@@ -730,7 +686,7 @@ const allDataSources = [
   {
     id: "ds_maintenance",
     type: "rest-api",
-    name: "유지보수 데이터",
+    name: L("유지보수 데이터", "Maintenance Data"),
     config: { endpoint: "/api/data/maintenance" },
     cache: { staleTime: 60000, gcTime: 300000 },
     returnStructure: {
@@ -741,7 +697,7 @@ const allDataSources = [
   {
     id: "ds_module",
     type: "timeseries",
-    name: "모듈/스트링 데이터",
+    name: L("모듈/스트링 데이터", "Module/String Data"),
     config: { endpoint: "/api/data/module" },
     cache: { staleTime: 30000, gcTime: 300000 },
     returnStructure: {
@@ -751,1342 +707,509 @@ const allDataSources = [
   },
 ];
 
-// ====== Card 컨테이너 래핑 유틸리티 ======
+// ====== 공통 유틸리티 ======
+
+// I18nLabel 헬퍼: seed에서 다국어 라벨을 간결하게 생성
+type I18nLabel = string | { defaultValue: string; i18nValue: Record<string, string> };
+function L(ko: string, en: string): I18nLabel {
+  return { defaultValue: ko, i18nValue: { ko, en } };
+}
 
 interface WidgetDef {
   id: string;
   type: string;
-  title: string;
+  title: I18nLabel;
   layout: { x: number; y: number; w: number; h: number; minW?: number; minH?: number };
   dataBinding?: Record<string, unknown>;
   style?: Record<string, unknown>;
   options?: Record<string, unknown>;
+  conditions?: { logic: "and" | "or"; rules: { variable: string; operator: string; value?: unknown }[] };
 }
 
-/**
- * 위젯 배열을 Card 컨테이너 구조로 변환
- * - 필터/submit 위젯은 최상위에 유지
- * - 같은 Y 행의 위젯들을 하나의 Card로 그룹화
- * - Card 내부의 자식 위젯은 Card 로컬 좌표로 변환
- */
-function wrapWidgetsInCards(widgets: WidgetDef[], dashboardPrefix: string) {
-  const filterWidgets: WidgetDef[] = [];
-  const dataWidgets: WidgetDef[] = [];
+// ====== 공통 필터 위젯 팩토리 ======
 
-  for (const w of widgets) {
-    if (w.type.startsWith("filter-")) {
-      filterWidgets.push(w);
-    } else {
-      dataWidgets.push(w);
-    }
-  }
+const FILTER_STYLE = { backgroundColor: "#ffffff", borderRadius: 4, padding: 8, shadow: "none" };
 
-  // Y 값으로 그룹핑
-  const rowGroups = new Map<number, WidgetDef[]>();
-  for (const w of dataWidgets) {
-    const y = w.layout.y;
-    if (!rowGroups.has(y)) rowGroups.set(y, []);
-    rowGroups.get(y)!.push(w);
-  }
+function makeSiteFilterWidget(id: string, x: number, y: number, w: number, siteOptions: { value: string; label: string }[]): WidgetDef {
+  return {
+    id, type: "filter-select", title: L("발전소 선택", "Select Site"),
+    layout: { x, y, w, h: 2, minW: 3, minH: 2 },
+    style: FILTER_STYLE,
+    options: { filterKey: "selectedSite", options: [{ value: "", label: L("전체", "All") }, ...siteOptions], defaultValue: "" },
+  };
+}
 
-  const cardWidgets: WidgetDef[] = [];
-  let cardIdx = 1;
+function makeDatepickerWidget(id: string, x: number, y: number, w: number): WidgetDef {
+  return {
+    id, type: "filter-datepicker", title: L("조회 기간", "Date Range"),
+    layout: { x, y, w, h: 2, minW: 3, minH: 2 },
+    style: FILTER_STYLE,
+    options: {
+      filterKey: "timeRange",
+      presets: ["today", "yesterday", "last7days", "last30days", "thisMonth"],
+      defaultValue: "today",
+      outputKeys: { start: "startTime", end: "endTime" },
+    },
+  };
+}
 
-  // 정렬된 Y 순서대로 Card 생성
-  const sortedYs = Array.from(rowGroups.keys()).sort((a, b) => a - b);
-
-  for (const y of sortedYs) {
-    const group = rowGroups.get(y)!;
-    // 그룹의 전체 너비와 높이 계산
-    const minX = Math.min(...group.map((w) => w.layout.x));
-    const maxXW = Math.max(...group.map((w) => w.layout.x + w.layout.w));
-    const cardW = maxXW - minX;
-    const cardH = Math.max(...group.map((w) => w.layout.h));
-
-    // 자식 위젯: Card 로컬 좌표로 변환
-    const children = group.map((w) => ({
-      id: w.id,
-      type: w.type,
-      title: w.title,
-      layout: {
-        x: w.layout.x - minX,
-        y: 0,
-        w: w.layout.w,
-        h: w.layout.h,
-      },
-      dataBinding: w.dataBinding,
-      style: {},
-      options: w.options,
-    }));
-
-    cardWidgets.push({
-      id: `${dashboardPrefix}_card${cardIdx}`,
-      type: "card",
-      title: group.length === 1 ? group[0].title : `Card ${cardIdx}`,
-      layout: { x: minX, y, w: cardW, h: cardH },
-      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      options: { showHeader: false, headerTitle: "" },
-      // children은 Widget 스키마에 추가 — 타입 안전을 위해 any로 캐스팅
-      ...({ children } as Record<string, unknown>),
-    });
-
-    cardIdx++;
-  }
-
-  return [...filterWidgets, ...cardWidgets];
+function makeIntervalWidget(id: string, x: number, y: number, w: number): WidgetDef {
+  return {
+    id, type: "filter-select", title: L("집계 단위", "Interval"),
+    layout: { x, y, w, h: 2, minW: 3, minH: 2 },
+    style: FILTER_STYLE,
+    options: {
+      filterKey: "interval",
+      options: [
+        { value: "auto", label: L("자동", "Auto") },
+        { value: "1m", label: L("1분", "1 min") },
+        { value: "5m", label: L("5분", "5 min") },
+        { value: "15m", label: L("15분", "15 min") },
+        { value: "1h", label: L("1시간", "1 hour") },
+        { value: "1d", label: L("1일", "1 day") },
+      ],
+      defaultValue: "auto",
+    },
+  };
 }
 
 // ====== 대시보드 스키마 ======
 
 // Dashboard 1: 태양광 발전소 종합 모니터링
 function createMainDashboardSchema(siteOptions: { value: string; label: string }[]) {
-  const rawWidgets: WidgetDef[] = [
-      {
-        id: "w_main_kpi1",
-        type: "kpi-card",
-        title: "현재 총 출력",
-        layout: { x: 0, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_inverter",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "activePower", label: "총 출력", unit: "kW", color: "#10b981" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+  const widgets: (WidgetDef | Record<string, unknown>)[] = [
+    // ── 필터 위젯 ──
+    makeSiteFilterWidget("widget_migrated_filter_site", 0, 0, 3, siteOptions),
+    makeDatepickerWidget("widget_migrated_filter_time", 3, 0, 5),
+    makeIntervalWidget("widget_migrated_filter_interval", 8, 0, 3),
+
+    // ── KPI 카드 ──
+    {
+      id: "w_main_kpi1",
+      type: "kpi-card",
+      title: L("현재 총 출력", "Current Total Output"),
+      layout: { x: 0, y: 2, w: 3, h: 2 },
+      dataBinding: {
+        dataSourceId: "ds_inverter",
+        requestParams: { siteId: "{{filter.selectedSite}}" },
+        mapping: { measurements: [{ field: "activePower", label: L("총 출력", "Total Output"), unit: "kW", color: "#10b981" }] },
       },
-      {
-        id: "w_main_kpi2",
-        type: "kpi-card",
-        title: "금일 발전량",
-        layout: { x: 3, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_inverter",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "dailyEnergy", label: "일발전량", unit: "kWh", color: "#f59e0b" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+    },
+    {
+      id: "w_main_kpi2",
+      type: "kpi-card",
+      title: L("금일 발전량", "Today's Generation"),
+      layout: { x: 3, y: 2, w: 3, h: 2 },
+      dataBinding: {
+        dataSourceId: "ds_inverter",
+        requestParams: { siteId: "{{filter.selectedSite}}" },
+        mapping: { measurements: [{ field: "dailyEnergy", label: L("일발전량", "Daily Generation"), unit: "kWh", color: "#f59e0b" }] },
       },
-      {
-        id: "w_main_kpi3",
-        type: "kpi-card",
-        title: "평균 효율",
-        layout: { x: 6, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_inverter",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "efficiency", label: "효율", unit: "%", color: "#3b82f6" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+    },
+    {
+      id: "w_main_kpi3",
+      type: "kpi-card",
+      title: L("평균 효율", "Avg. Efficiency"),
+      layout: { x: 6, y: 2, w: 3, h: 2 },
+      dataBinding: {
+        dataSourceId: "ds_inverter",
+        requestParams: { siteId: "{{filter.selectedSite}}" },
+        mapping: { measurements: [{ field: "efficiency", label: L("효율", "Efficiency"), unit: "%", color: "#3b82f6" }] },
       },
-      {
-        id: "w_main_kpi4",
-        type: "kpi-card",
-        title: "현재 일사량",
-        layout: { x: 9, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_weather",
-          requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-          mapping: { measurements: [{ field: "irradiance", label: "일사량", unit: "W/m²", color: "#ef4444" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+    },
+    {
+      id: "w_main_kpi4",
+      type: "kpi-card",
+      title: L("현재 일사량", "Current Irradiance"),
+      layout: { x: 9, y: 2, w: 3, h: 2 },
+      dataBinding: {
+        dataSourceId: "ds_weather",
+        requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
+        mapping: { measurements: [{ field: "irradiance", label: L("일사량", "Irradiance"), unit: "W/m²", color: "#ef4444" }] },
       },
-      {
-        id: "w_main_chart1",
-        type: "line-chart",
-        title: "실시간 발전 출력",
-        layout: { x: 0, y: 2, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_inverter",
-          requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-          mapping: {
-            timeField: "timestamp",
-            measurements: [
-              { field: "activePower", label: "유효전력", unit: "kW", color: "#3b82f6" },
-            ],
-          },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+    },
+
+    // ── 차트 ──
+    {
+      id: "w_main_chart1",
+      type: "line-chart",
+      title: L("실시간 발전 출력", "Real-time Power Output"),
+      layout: { x: 0, y: 4, w: 4, h: 4 },
+      dataBinding: {
+        dataSourceId: "ds_inverter",
+        requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
+        mapping: {
+          timeField: "timestamp",
+          measurements: [
+            { field: "activePower", label: L("유효전력", "Active Power"), unit: "kW", color: "#3b82f6" },
+          ],
         },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, smooth: true },
       },
-      {
-        id: "w_main_chart2",
-        type: "line-chart",
-        title: "일사량 & 온도 추이",
-        layout: { x: 6, y: 2, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_weather",
-          requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-          mapping: {
-            timeField: "timestamp",
-            measurements: [
-              { field: "irradiance", label: "일사량", unit: "W/m²", color: "#f59e0b" },
-              { field: "temperature", label: "온도", unit: "°C", color: "#ef4444" },
-            ],
-          },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      options: { showLegend: true, smooth: true },
+    },
+    {
+      id: "w_main_chart2",
+      type: "line-chart",
+      title: L("일사량 & 온도 추이", "Irradiance & Temperature Trend"),
+      layout: { x: 4, y: 4, w: 4, h: 4 },
+      dataBinding: {
+        dataSourceId: "ds_weather",
+        requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
+        mapping: {
+          timeField: "timestamp",
+          measurements: [
+            { field: "irradiance", label: L("일사량", "Irradiance"), unit: "W/m²", color: "#f59e0b" },
+            { field: "temperature", label: L("온도", "Temperature"), unit: "°C", color: "#ef4444" },
+          ],
         },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, smooth: true },
       },
-      {
-        id: "w_main_table1",
-        type: "table",
-        title: "인버터별 현황",
-        layout: { x: 0, y: 5, w: 7, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_inverter",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: {
-            dimensions: ["assetName", "siteName"],
-            measurements: [
-              { field: "activePower", label: "현재출력", unit: "kW" },
-              { field: "dailyEnergy", label: "일발전량", unit: "kWh" },
-              { field: "efficiency", label: "효율", unit: "%" },
-            ],
-          },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      options: { showLegend: true, smooth: true },
+    },
+
+    // ── 바차트 ──
+    {
+      id: "w_main_bar1",
+      type: "bar-chart",
+      title: L("사이트별 수익 비교", "Revenue by Site"),
+      layout: { x: 8, y: 4, w: 4, h: 4 },
+      dataBinding: {
+        dataSourceId: "ds_revenue",
+        requestParams: { siteId: "{{filter.selectedSite}}" },
+        mapping: {
+          timeField: "siteId",
+          measurements: [
+            { field: "energySales", label: L("전력판매", "Energy Sales"), unit: L("원", "KRW"), color: "#3b82f6" },
+            { field: "recSales", label: "REC", unit: L("원", "KRW"), color: "#10b981" },
+          ],
         },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
       },
-      {
-        id: "w_main_bar1",
-        type: "bar-chart",
-        title: "사이트별 수익 비교",
-        layout: { x: 7, y: 5, w: 5, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_revenue",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: {
-            timeField: "siteId",
-            measurements: [
-              { field: "energySales", label: "전력판매", unit: "원", color: "#3b82f6" },
-              { field: "recSales", label: "REC", unit: "원", color: "#10b981" },
-            ],
-          },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      options: { showLegend: true, horizontal: false },
+    },
+
+    // ── 테이블 ──
+    {
+      id: "w_main_table1",
+      type: "table",
+      title: L("인버터별 현황", "Inverter Status"),
+      layout: { x: 0, y: 8, w: 12, h: 6 },
+      dataBinding: {
+        dataSourceId: "ds_inverter",
+        requestParams: { siteId: "{{filter.selectedSite}}" },
+        mapping: {
+          dimensions: ["assetName", "siteName"],
+          measurements: [
+            { field: "activePower", label: L("현재출력", "Current Output"), unit: "kW" },
+            { field: "dailyEnergy", label: L("일발전량", "Daily Generation"), unit: "kWh" },
+            { field: "efficiency", label: L("효율", "Efficiency"), unit: "%" },
+          ],
         },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, horizontal: false },
       },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+    },
   ];
 
   return {
     version: "1.0.0",
-    settings: { refreshInterval: 30000, theme: "light", gridColumns: 24, rowHeight: 40 },
+    settings: { refreshInterval: 30000, theme: "light", gridColumns: 24, rowHeight: 30, filterMode: "auto" as const },
     dataSources: allDataSources,
-    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
-    widgets: wrapWidgetsInCards(rawWidgets, "w_main"),
-    linkages: [],
-  };
-}
-
-// Dashboard 2: ESS 배터리 모니터링
-function createEssDashboardSchema(siteOptions: { value: string; label: string }[]) {
-  const rawWidgets: WidgetDef[] = [
-      {
-        id: "w_ess_kpi1",
-        type: "kpi-card",
-        title: "평균 SOC",
-        layout: { x: 0, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_battery",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "avgSoc", label: "SOC", unit: "%", color: "#10b981" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_ess_kpi2",
-        type: "kpi-card",
-        title: "총 충방전 전력",
-        layout: { x: 3, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_battery",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "totalPower", label: "전력", unit: "kW", color: "#3b82f6" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_ess_kpi3",
-        type: "kpi-card",
-        title: "충전 중",
-        layout: { x: 6, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_battery",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "chargingCount", label: "충전", unit: "대", color: "#f59e0b" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_ess_kpi4",
-        type: "kpi-card",
-        title: "방전 중",
-        layout: { x: 9, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_battery",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "dischargingCount", label: "방전", unit: "대", color: "#ef4444" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_ess_chart1",
-        type: "line-chart",
-        title: "SOC 추이",
-        layout: { x: 0, y: 2, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_battery",
-          requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-          mapping: {
-            timeField: "timestamp",
-            measurements: [{ field: "soc", label: "SOC", unit: "%", color: "#10b981" }],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, smooth: true, showArea: true },
-      },
-      {
-        id: "w_ess_chart2",
-        type: "line-chart",
-        title: "충방전 전력 추이",
-        layout: { x: 6, y: 2, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_battery",
-          requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-          mapping: {
-            timeField: "timestamp",
-            measurements: [
-              { field: "power", label: "충방전 전력", unit: "kW", color: "#3b82f6" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, smooth: true },
-      },
-      {
-        id: "w_ess_chart3",
-        type: "line-chart",
-        title: "SMP 가격 추이",
-        layout: { x: 0, y: 5, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_price",
-          requestParams: { startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-          mapping: {
-            timeField: "timestamp",
-            measurements: [{ field: "smp", label: "SMP", unit: "원/kWh", color: "#f59e0b" }],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, smooth: true },
-      },
-      {
-        id: "w_ess_chart4",
-        type: "line-chart",
-        title: "계통 역송/수전 추이",
-        layout: { x: 6, y: 5, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_grid",
-          requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-          mapping: {
-            timeField: "timestamp",
-            measurements: [
-              { field: "exportPower", label: "역송전력", unit: "kW", color: "#10b981" },
-              { field: "importPower", label: "수전전력", unit: "kW", color: "#ef4444" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, smooth: true },
-      },
-      {
-        id: "w_ess_table1",
-        type: "table",
-        title: "배터리 상태",
-        layout: { x: 0, y: 8, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_battery",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: {
-            dimensions: ["batteryId", "siteId"],
-            measurements: [
-              { field: "soc", label: "SOC", unit: "%" },
-              { field: "power", label: "전력", unit: "kW" },
-              { field: "temperature", label: "온도", unit: "°C" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_ess_table2",
-        type: "table",
-        title: "계통 현황",
-        layout: { x: 6, y: 8, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_grid",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: {
-            dimensions: ["siteId"],
-            measurements: [
-              { field: "gridVoltage", label: "전압", unit: "V" },
-              { field: "gridFrequency", label: "주파수", unit: "Hz" },
-              { field: "exportPower", label: "역송", unit: "kW" },
-              { field: "importPower", label: "수전", unit: "kW" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-  ];
-
-  return {
-    version: "1.0.0",
-    settings: { refreshInterval: 15000, theme: "light", gridColumns: 24, rowHeight: 40 },
-    dataSources: allDataSources,
-    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
-    widgets: wrapWidgetsInCards(rawWidgets, "w_ess"),
-    linkages: [],
-  };
-}
-
-// Dashboard 3: 수익/정산 분석
-function createRevenueDashboardSchema(siteOptions: { value: string; label: string }[]) {
-  const rawWidgets: WidgetDef[] = [
-      {
-        id: "w_rev_kpi1",
-        type: "kpi-card",
-        title: "총 수익",
-        layout: { x: 0, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_revenue",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "totalRevenue", label: "총 수익", unit: "원", color: "#10b981" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_rev_kpi2",
-        type: "kpi-card",
-        title: "전력 판매 수익",
-        layout: { x: 3, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_revenue",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "totalEnergySales", label: "전력판매", unit: "원", color: "#3b82f6" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_rev_kpi3",
-        type: "kpi-card",
-        title: "REC 수익",
-        layout: { x: 6, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_revenue",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "totalRecSales", label: "REC", unit: "원", color: "#f59e0b" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_rev_kpi4",
-        type: "kpi-card",
-        title: "총 발전량",
-        layout: { x: 9, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_revenue",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "totalGeneration", label: "발전량", unit: "kWh", color: "#8b5cf6" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_rev_chart1",
-        type: "line-chart",
-        title: "수익 추이",
-        layout: { x: 0, y: 2, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_revenue",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: {
-            timeField: "date",
-            measurements: [
-              { field: "totalRevenue", label: "총수익", unit: "원", color: "#10b981" },
-              { field: "energySales", label: "전력판매", unit: "원", color: "#3b82f6" },
-              { field: "recSales", label: "REC", unit: "원", color: "#f59e0b" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, smooth: true },
-      },
-      {
-        id: "w_rev_chart2",
-        type: "line-chart",
-        title: "SMP 추이",
-        layout: { x: 6, y: 2, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_price",
-          requestParams: { startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-          mapping: {
-            timeField: "timestamp",
-            measurements: [{ field: "smp", label: "SMP", unit: "원/kWh", color: "#ef4444" }],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, smooth: true },
-      },
-      {
-        id: "w_rev_bar1",
-        type: "bar-chart",
-        title: "사이트별 발전량 비교",
-        layout: { x: 0, y: 5, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_kpi",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: {
-            timeField: "siteName",
-            measurements: [
-              { field: "dailyGeneration", label: "발전량", unit: "kWh", color: "#3b82f6" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, horizontal: false },
-      },
-      {
-        id: "w_rev_bar2",
-        type: "bar-chart",
-        title: "사이트별 수익 비교",
-        layout: { x: 6, y: 5, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_revenue",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: {
-            timeField: "siteId",
-            measurements: [
-              { field: "energySales", label: "전력판매", unit: "원", color: "#3b82f6" },
-              { field: "recSales", label: "REC", unit: "원", color: "#10b981" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, horizontal: false },
-      },
-      {
-        id: "w_rev_table1",
-        type: "table",
-        title: "수익 상세",
-        layout: { x: 0, y: 8, w: 12, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_revenue",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: {
-            dimensions: ["siteId"],
-            measurements: [
-              { field: "generationKwh", label: "발전량", unit: "kWh" },
-              { field: "energySales", label: "전력판매", unit: "원" },
-              { field: "recSales", label: "REC", unit: "원" },
-              { field: "totalRevenue", label: "총수익", unit: "원" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_rev_submit",
-        type: "filter-submit",
-        title: "조회",
-        layout: { x: 16, y: 0, w: 2, h: 2 },
-        style: { backgroundColor: "#ffffff", borderRadius: 4, shadow: "none" },
-        options: { label: "조회", variant: "primary" },
-      },
-  ];
-
-  return {
-    version: "1.0.0",
-    settings: { refreshInterval: 60000, theme: "light", gridColumns: 24, rowHeight: 40, filterMode: "manual" as const },
-    dataSources: allDataSources,
-    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
-    widgets: wrapWidgetsInCards(rawWidgets, "w_rev"),
-    linkages: [],
-  };
-}
-
-// Dashboard 4: 설비 유지보수 현황
-function createMaintenanceDashboardSchema(siteOptions: { value: string; label: string }[]) {
-  const rawWidgets: WidgetDef[] = [
-      {
-        id: "w_mnt_kpi1",
-        type: "kpi-card",
-        title: "활성 알람",
-        layout: { x: 0, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_alarm",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "totalActive", label: "활성", unit: "건", color: "#ef4444" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_mnt_kpi2",
-        type: "kpi-card",
-        title: "긴급 알람",
-        layout: { x: 3, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_alarm",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "critical", label: "긴급", unit: "건", color: "#dc2626" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_mnt_kpi3",
-        type: "kpi-card",
-        title: "예정 정비",
-        layout: { x: 6, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_maintenance",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "scheduled", label: "예정", unit: "건", color: "#f59e0b" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_mnt_kpi4",
-        type: "kpi-card",
-        title: "정비 비용",
-        layout: { x: 9, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_maintenance",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "totalCost", label: "비용", unit: "원", color: "#8b5cf6" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_mnt_table1",
-        type: "table",
-        title: "알람 목록",
-        layout: { x: 0, y: 2, w: 12, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_alarm",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: {
-            dimensions: ["siteId", "severity", "category"],
-            measurements: [
-              { field: "message", label: "메시지" },
-              { field: "status", label: "상태" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_mnt_table2",
-        type: "table",
-        title: "정비 기록",
-        layout: { x: 0, y: 5, w: 7, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_maintenance",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: {
-            dimensions: ["siteId", "type"],
-            measurements: [
-              { field: "description", label: "내용" },
-              { field: "status", label: "상태" },
-              { field: "cost", label: "비용", unit: "원" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_mnt_table3",
-        type: "table",
-        title: "인버터 상태",
-        layout: { x: 7, y: 5, w: 5, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_inverter",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: {
-            dimensions: ["assetName", "siteName"],
-            measurements: [
-              { field: "activePower", label: "출력", unit: "kW" },
-              { field: "temperature", label: "온도", unit: "°C" },
-              { field: "efficiency", label: "효율", unit: "%" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_mnt_chart1",
-        type: "line-chart",
-        title: "인버터 온도 추이",
-        layout: { x: 0, y: 8, w: 12, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_inverter",
-          requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-          mapping: {
-            timeField: "timestamp",
-            measurements: [
-              { field: "temperature", label: "인버터 온도", unit: "°C", color: "#ef4444" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, smooth: true },
-      },
-  ];
-
-  return {
-    version: "1.0.0",
-    settings: { refreshInterval: 60000, theme: "light", gridColumns: 24, rowHeight: 40 },
-    dataSources: allDataSources,
-    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
-    widgets: wrapWidgetsInCards(rawWidgets, "w_mnt"),
-    linkages: [],
-  };
-}
-
-// Dashboard 5: 날씨 & 발전 상관관계
-function createWeatherDashboardSchema(siteOptions: { value: string; label: string }[]) {
-  const rawWidgets: WidgetDef[] = [
-      {
-        id: "w_wth_kpi1",
-        type: "kpi-card",
-        title: "현재 일사량",
-        layout: { x: 0, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_weather",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "irradiance", label: "일사량", unit: "W/m²", color: "#f59e0b" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_wth_kpi2",
-        type: "kpi-card",
-        title: "외기 온도",
-        layout: { x: 3, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_weather",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "temperature", label: "온도", unit: "°C", color: "#ef4444" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_wth_kpi3",
-        type: "kpi-card",
-        title: "습도",
-        layout: { x: 6, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_weather",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "avgHumidity", label: "습도", unit: "%", color: "#3b82f6" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_wth_kpi4",
-        type: "kpi-card",
-        title: "금일 발전량",
-        layout: { x: 9, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_inverter",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "dailyEnergy", label: "발전량", unit: "kWh", color: "#10b981" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_wth_chart1",
-        type: "line-chart",
-        title: "일사량 추이",
-        layout: { x: 0, y: 2, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_weather",
-          requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-          mapping: {
-            timeField: "timestamp",
-            measurements: [
-              { field: "irradiance", label: "일사량", unit: "W/m²", color: "#f59e0b" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, smooth: true, showArea: true },
-      },
-      {
-        id: "w_wth_chart2",
-        type: "line-chart",
-        title: "발전 출력 추이",
-        layout: { x: 6, y: 2, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_inverter",
-          requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-          mapping: {
-            timeField: "timestamp",
-            measurements: [
-              { field: "activePower", label: "유효전력", unit: "kW", color: "#3b82f6" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, smooth: true },
-      },
-      {
-        id: "w_wth_chart3",
-        type: "line-chart",
-        title: "풍속 & 습도 추이",
-        layout: { x: 0, y: 5, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_weather",
-          requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-          mapping: {
-            timeField: "timestamp",
-            measurements: [
-              { field: "windSpeed", label: "풍속", unit: "m/s", color: "#8b5cf6" },
-              { field: "humidity", label: "습도", unit: "%", color: "#06b6d4" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, smooth: true },
-      },
-      {
-        id: "w_wth_bar1",
-        type: "bar-chart",
-        title: "사이트별 발전량 vs PR",
-        layout: { x: 6, y: 5, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_kpi",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: {
-            timeField: "siteName",
-            measurements: [
-              { field: "dailyGeneration", label: "발전량", unit: "kWh", color: "#3b82f6" },
-              { field: "pr", label: "PR", unit: "%", color: "#10b981" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, horizontal: false },
-      },
-      {
-        id: "w_wth_table1",
-        type: "table",
-        title: "기상 상세 데이터",
-        layout: { x: 0, y: 8, w: 12, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_weather",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: {
-            dimensions: ["siteId", "siteName"],
-            measurements: [
-              { field: "irradiance", label: "일사량", unit: "W/m²" },
-              { field: "temperature", label: "온도", unit: "°C" },
-              { field: "humidity", label: "습도", unit: "%" },
-              { field: "windSpeed", label: "풍속", unit: "m/s" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-  ];
-
-  return {
-    version: "1.0.0",
-    settings: { refreshInterval: 30000, theme: "light", gridColumns: 24, rowHeight: 40 },
-    dataSources: allDataSources,
-    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
-    widgets: wrapWidgetsInCards(rawWidgets, "w_wth"),
-    linkages: [],
-  };
-}
-
-// Dashboard 6: 전력 거래 현황
-function createGridDashboardSchema(siteOptions: { value: string; label: string }[]) {
-  const rawWidgets: WidgetDef[] = [
-      {
-        id: "w_grd_kpi1",
-        type: "kpi-card",
-        title: "역송 전력",
-        layout: { x: 0, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_grid",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "totalExport", label: "역송", unit: "kW", color: "#10b981" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_grd_kpi2",
-        type: "kpi-card",
-        title: "수전 전력",
-        layout: { x: 3, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_grid",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "totalImport", label: "수전", unit: "kW", color: "#ef4444" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_grd_kpi3",
-        type: "kpi-card",
-        title: "평균 역률",
-        layout: { x: 6, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_meter",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "avgPowerFactor", label: "역률", unit: "%", color: "#3b82f6" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_grd_kpi4",
-        type: "kpi-card",
-        title: "현재 SMP",
-        layout: { x: 9, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_price",
-          requestParams: {},
-          mapping: { measurements: [{ field: "avgSmp", label: "SMP", unit: "원/kWh", color: "#f59e0b" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_grd_chart1",
-        type: "line-chart",
-        title: "역송/수전 추이",
-        layout: { x: 0, y: 2, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_grid",
-          requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-          mapping: {
-            timeField: "timestamp",
-            measurements: [
-              { field: "exportPower", label: "역송전력", unit: "kW", color: "#10b981" },
-              { field: "importPower", label: "수전전력", unit: "kW", color: "#ef4444" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, smooth: true },
-      },
-      {
-        id: "w_grd_chart2",
-        type: "line-chart",
-        title: "SMP 추이",
-        layout: { x: 6, y: 2, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_price",
-          requestParams: { startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-          mapping: {
-            timeField: "timestamp",
-            measurements: [{ field: "smp", label: "SMP", unit: "원/kWh", color: "#f59e0b" }],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, smooth: true },
-      },
-      {
-        id: "w_grd_chart3",
-        type: "line-chart",
-        title: "계통 전압 & 주파수",
-        layout: { x: 0, y: 5, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_grid",
-          requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-          mapping: {
-            timeField: "timestamp",
-            measurements: [
-              { field: "gridVoltage", label: "전압", unit: "V", color: "#8b5cf6" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, smooth: true },
-      },
-      {
-        id: "w_grd_table1",
-        type: "table",
-        title: "계량기 데이터",
-        layout: { x: 6, y: 5, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_meter",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: {
-            dimensions: ["meterId", "siteId"],
-            measurements: [
-              { field: "activeExport", label: "유출", unit: "kWh" },
-              { field: "activeImport", label: "유입", unit: "kWh" },
-              { field: "powerFactor", label: "역률", unit: "%" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_grd_bar1",
-        type: "bar-chart",
-        title: "지역별 SMP 비교",
-        layout: { x: 0, y: 8, w: 12, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_price",
-          requestParams: {},
-          mapping: {
-            timeField: "region",
-            measurements: [
-              { field: "smp", label: "SMP", unit: "원/kWh", color: "#f59e0b" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, horizontal: false },
-      },
-  ];
-
-  return {
-    version: "1.0.0",
-    settings: { refreshInterval: 30000, theme: "light", gridColumns: 24, rowHeight: 40 },
-    dataSources: allDataSources,
-    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
-    widgets: wrapWidgetsInCards(rawWidgets, "w_grid"),
+    filters: [],
+    widgets,
     linkages: [],
   };
 }
 
 // Dashboard 7: 발전소 비교 분석
-function createComparisonDashboardSchema() {
-  const rawWidgets: WidgetDef[] = [
-      {
-        id: "w_cmp_kpi1",
-        type: "kpi-card",
-        title: "총 발전량",
-        layout: { x: 0, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_kpi",
-          requestParams: {},
-          mapping: { measurements: [{ field: "totalGeneration", label: "총발전량", unit: "kWh", color: "#10b981" }] },
+function createComparisonDashboardSchema(siteOptions: { value: string; label: string }[]) {
+  const widgets: (WidgetDef | Record<string, unknown>)[] = [
+    // ── 필터 위젯 ──
+    makeDatepickerWidget("widget_migrated_filter_time", 0, 0, 8),
+
+    {
+      id: "w_cmp_submit",
+      type: "filter-submit",
+      title: L("조회", "Search"),
+      layout: { x: 8, y: 0, w: 3, h: 2 },
+      style: { backgroundColor: "#ffffff", borderRadius: 4, shadow: "none" },
+      options: { label: L("조회", "Search"), variant: "primary" },
+    },
+
+    // ── 바 차트 ──
+    {
+      id: "w_cmp_bar1",
+      type: "bar-chart",
+      title: L("사이트별 발전량", "Generation by Site"),
+      layout: { x: 0, y: 2, w: 6, h: 3 },
+      dataBinding: {
+        dataSourceId: "ds_kpi",
+        requestParams: {},
+        mapping: {
+          timeField: "siteName",
+          measurements: [
+            { field: "dailyGeneration", label: L("발전량", "Generation"), unit: "kWh", color: "#3b82f6" },
+            { field: "peakPower", label: L("피크출력", "Peak Output"), unit: "kW", color: "#10b981" },
+          ],
         },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
       },
-      {
-        id: "w_cmp_kpi2",
-        type: "kpi-card",
-        title: "평균 PR",
-        layout: { x: 3, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_kpi",
-          requestParams: {},
-          mapping: { measurements: [{ field: "avgPr", label: "PR", unit: "%", color: "#3b82f6" }] },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      options: { showLegend: true, horizontal: false },
+    },
+    {
+      id: "w_cmp_bar2",
+      type: "bar-chart",
+      title: L("사이트별 수익", "Revenue by Site"),
+      layout: { x: 6, y: 2, w: 6, h: 3 },
+      dataBinding: {
+        dataSourceId: "ds_revenue",
+        requestParams: {},
+        mapping: {
+          timeField: "siteId",
+          measurements: [
+            { field: "energySales", label: L("전력판매", "Energy Sales"), unit: L("원", "KRW"), color: "#3b82f6" },
+            { field: "recSales", label: "REC", unit: L("원", "KRW"), color: "#f59e0b" },
+            { field: "totalRevenue", label: L("총수익", "Total Revenue"), unit: L("원", "KRW"), color: "#10b981" },
+          ],
         },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
       },
-      {
-        id: "w_cmp_kpi3",
-        type: "kpi-card",
-        title: "평균 가동률",
-        layout: { x: 6, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_kpi",
-          requestParams: {},
-          mapping: { measurements: [{ field: "avgAvailability", label: "가동률", unit: "%", color: "#f59e0b" }] },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      options: { showLegend: true, horizontal: false },
+    },
+
+    // ── 테이블 ──
+    {
+      id: "w_cmp_table1",
+      type: "table",
+      title: L("사이트별 KPI 비교", "KPI Comparison by Site"),
+      layout: { x: 0, y: 5, w: 6, h: 4 },
+      dataBinding: {
+        dataSourceId: "ds_kpi",
+        requestParams: {},
+        mapping: {
+          dimensions: ["siteId", "siteName"],
+          measurements: [
+            { field: "dailyGeneration", label: L("발전량", "Generation"), unit: "kWh" },
+            { field: "pr", label: "PR", unit: "%" },
+            { field: "availability", label: L("가동률", "Availability"), unit: "%" },
+            { field: "capacityFactor", label: L("이용률", "Capacity Factor"), unit: "%" },
+          ],
         },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
       },
-      {
-        id: "w_cmp_kpi4",
-        type: "kpi-card",
-        title: "최대 피크 출력",
-        layout: { x: 9, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_kpi",
-          requestParams: {},
-          mapping: { measurements: [{ field: "maxPeakPower", label: "피크", unit: "kW", color: "#8b5cf6" }] },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+    },
+    {
+      id: "w_cmp_table2",
+      type: "table",
+      title: L("인버터 현황 종합", "Inverter Overview"),
+      layout: { x: 6, y: 5, w: 6, h: 4 },
+      dataBinding: {
+        dataSourceId: "ds_inverter",
+        requestParams: {},
+        mapping: {
+          dimensions: ["assetName", "siteName"],
+          measurements: [
+            { field: "activePower", label: L("출력", "Output"), unit: "kW" },
+            { field: "efficiency", label: L("효율", "Efficiency"), unit: "%" },
+          ],
         },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
       },
-      {
-        id: "w_cmp_bar1",
-        type: "bar-chart",
-        title: "사이트별 발전량",
-        layout: { x: 0, y: 2, w: 6, h: 4 },
-        dataBinding: {
-          dataSourceId: "ds_kpi",
-          requestParams: {},
-          mapping: {
-            timeField: "siteName",
-            measurements: [
-              { field: "dailyGeneration", label: "발전량", unit: "kWh", color: "#3b82f6" },
-              { field: "peakPower", label: "피크출력", unit: "kW", color: "#10b981" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, horizontal: false },
-      },
-      {
-        id: "w_cmp_bar2",
-        type: "bar-chart",
-        title: "사이트별 수익",
-        layout: { x: 6, y: 2, w: 6, h: 4 },
-        dataBinding: {
-          dataSourceId: "ds_revenue",
-          requestParams: {},
-          mapping: {
-            timeField: "siteId",
-            measurements: [
-              { field: "energySales", label: "전력판매", unit: "원", color: "#3b82f6" },
-              { field: "recSales", label: "REC", unit: "원", color: "#f59e0b" },
-              { field: "totalRevenue", label: "총수익", unit: "원", color: "#10b981" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, horizontal: false },
-      },
-      {
-        id: "w_cmp_table1",
-        type: "table",
-        title: "사이트별 KPI 비교",
-        layout: { x: 0, y: 6, w: 7, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_kpi",
-          requestParams: {},
-          mapping: {
-            dimensions: ["siteId", "siteName"],
-            measurements: [
-              { field: "dailyGeneration", label: "발전량", unit: "kWh" },
-              { field: "pr", label: "PR", unit: "%" },
-              { field: "availability", label: "가동률", unit: "%" },
-              { field: "capacityFactor", label: "이용률", unit: "%" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_cmp_table2",
-        type: "table",
-        title: "인버터 현황 종합",
-        layout: { x: 7, y: 6, w: 5, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_inverter",
-          requestParams: {},
-          mapping: {
-            dimensions: ["assetName", "siteName"],
-            measurements: [
-              { field: "activePower", label: "출력", unit: "kW" },
-              { field: "efficiency", label: "효율", unit: "%" },
-            ],
-          },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_cmp_submit",
-        type: "filter-submit",
-        title: "조회",
-        layout: { x: 12, y: 0, w: 2, h: 2 },
-        style: { backgroundColor: "#ffffff", borderRadius: 4, shadow: "none" },
-        options: { label: "조회", variant: "primary" },
-      },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+    },
   ];
 
   return {
     version: "1.0.0",
-    settings: { refreshInterval: 60000, theme: "light", gridColumns: 24, rowHeight: 40, filterMode: "manual" as const },
+    settings: { refreshInterval: 60000, theme: "light", gridColumns: 24, rowHeight: 30, filterMode: "manual" as const },
     dataSources: allDataSources,
-    filters: [timeRangeFilter, intervalFilter],
-    widgets: wrapWidgetsInCards(rawWidgets, "w_cmp"),
+    filters: [],
+    widgets,
     linkages: [],
   };
 }
 
 // Dashboard 8: 인버터 상세 분석
 function createInverterDetailDashboardSchema(siteOptions: { value: string; label: string }[]) {
-  const rawWidgets: WidgetDef[] = [
-      {
-        id: "w_inv_kpi1",
-        type: "kpi-card",
-        title: "총 출력",
-        layout: { x: 0, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_inverter",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "activePower", label: "총출력", unit: "kW", color: "#10b981" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+  const widgets: (WidgetDef | Record<string, unknown>)[] = [
+    // ── 필터 위젯 ──
+    makeSiteFilterWidget("widget_migrated_filter_site", 0, 0, 3, siteOptions),
+    makeIntervalWidget("widget_migrated_filter_interval", 3, 0, 3),
+    makeDatepickerWidget("widget_migrated_filter_time", 6, 0, 4),
+
+    // ── KPI 카드 ──
+    {
+      id: "w_inv_kpi1",
+      type: "kpi-card",
+      title: L("총 출력", "Total Output"),
+      layout: { x: 0, y: 2, w: 3, h: 2 },
+      dataBinding: {
+        dataSourceId: "ds_inverter",
+        requestParams: { siteId: "{{filter.selectedSite}}" },
+        mapping: { measurements: [{ field: "activePower", label: L("총출력", "Total Output"), unit: "kW", color: "#10b981" }] },
       },
-      {
-        id: "w_inv_kpi2",
-        type: "kpi-card",
-        title: "평균 효율",
-        layout: { x: 3, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_inverter",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "efficiency", label: "효율", unit: "%", color: "#3b82f6" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+    },
+    {
+      id: "w_inv_kpi2",
+      type: "kpi-card",
+      title: L("평균 효율", "Avg. Efficiency"),
+      layout: { x: 3, y: 2, w: 3, h: 2 },
+      dataBinding: {
+        dataSourceId: "ds_inverter",
+        requestParams: { siteId: "{{filter.selectedSite}}" },
+        mapping: { measurements: [{ field: "efficiency", label: L("효율", "Efficiency"), unit: "%", color: "#3b82f6" }] },
       },
-      {
-        id: "w_inv_kpi3",
-        type: "kpi-card",
-        title: "가동 인버터",
-        layout: { x: 6, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_inverter",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "activeCount", label: "가동", unit: "대", color: "#f59e0b" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+    },
+    {
+      id: "w_inv_kpi3",
+      type: "kpi-card",
+      title: L("가동 인버터", "Active Inverters"),
+      layout: { x: 6, y: 2, w: 3, h: 2 },
+      dataBinding: {
+        dataSourceId: "ds_inverter",
+        requestParams: { siteId: "{{filter.selectedSite}}" },
+        mapping: { measurements: [{ field: "activeCount", label: L("가동", "Active"), unit: L("대", "units"), color: "#f59e0b" }] },
       },
-      {
-        id: "w_inv_kpi4",
-        type: "kpi-card",
-        title: "전체 인버터",
-        layout: { x: 9, y: 0, w: 3, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_inverter",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: { measurements: [{ field: "totalCount", label: "전체", unit: "대", color: "#8b5cf6" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+    },
+    {
+      id: "w_inv_kpi4",
+      type: "kpi-card",
+      title: L("전체 인버터", "Total Inverters"),
+      layout: { x: 9, y: 2, w: 3, h: 2 },
+      dataBinding: {
+        dataSourceId: "ds_inverter",
+        requestParams: { siteId: "{{filter.selectedSite}}" },
+        mapping: { measurements: [{ field: "totalCount", label: L("전체", "Total"), unit: L("대", "units"), color: "#8b5cf6" }] },
       },
-      {
-        id: "w_inv_chart1",
-        type: "line-chart",
-        title: "유효/무효 전력 추이",
-        layout: { x: 0, y: 2, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_inverter",
-          requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-          mapping: {
-            timeField: "timestamp",
-            measurements: [
-              { field: "activePower", label: "유효전력", unit: "kW", color: "#3b82f6" },
-              { field: "reactivePower", label: "무효전력", unit: "kVar", color: "#f59e0b" },
-            ],
-          },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+    },
+
+    // ── 차트 ──
+    {
+      id: "w_inv_chart1",
+      type: "line-chart",
+      title: L("유효/무효 전력 추이", "Active/Reactive Power Trend"),
+      layout: { x: 0, y: 4, w: 4, h: 3 },
+      dataBinding: {
+        dataSourceId: "ds_inverter",
+        requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
+        mapping: {
+          timeField: "timestamp",
+          measurements: [
+            { field: "activePower", label: L("유효전력", "Active Power"), unit: "kW", color: "#3b82f6" },
+            { field: "reactivePower", label: L("무효전력", "Reactive Power"), unit: "kVar", color: "#f59e0b" },
+          ],
         },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, smooth: true },
       },
-      {
-        id: "w_inv_chart2",
-        type: "line-chart",
-        title: "인버터 온도 추이",
-        layout: { x: 6, y: 2, w: 6, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_inverter",
-          requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-          mapping: {
-            timeField: "timestamp",
-            measurements: [
-              { field: "temperature", label: "온도", unit: "°C", color: "#ef4444" },
-            ],
-          },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      options: { showLegend: true, smooth: true },
+    },
+    {
+      id: "w_inv_chart2",
+      type: "line-chart",
+      title: L("인버터 온도 추이", "Inverter Temperature Trend"),
+      layout: { x: 4, y: 4, w: 4, h: 3 },
+      dataBinding: {
+        dataSourceId: "ds_inverter",
+        requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
+        mapping: {
+          timeField: "timestamp",
+          measurements: [
+            { field: "temperature", label: L("온도", "Temperature"), unit: "°C", color: "#ef4444" },
+          ],
         },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, smooth: true },
       },
-      {
-        id: "w_inv_chart3",
-        type: "line-chart",
-        title: "스트링 출력 추이",
-        layout: { x: 0, y: 5, w: 12, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_module",
-          requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-          mapping: {
-            timeField: "timestamp",
-            measurements: [
-              { field: "power", label: "스트링 출력", unit: "kW", color: "#10b981" },
-              { field: "current", label: "스트링 전류", unit: "A", color: "#8b5cf6" },
-            ],
-          },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      options: { showLegend: true, smooth: true },
+    },
+    {
+      id: "w_inv_chart3",
+      type: "line-chart",
+      title: L("스트링 출력 추이", "String Output Trend"),
+      layout: { x: 8, y: 4, w: 4, h: 3 },
+      dataBinding: {
+        dataSourceId: "ds_module",
+        requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
+        mapping: {
+          timeField: "timestamp",
+          measurements: [
+            { field: "power", label: L("스트링 출력", "String Power"), unit: "kW", color: "#10b981" },
+            { field: "current", label: L("스트링 전류", "String Current"), unit: "A", color: "#8b5cf6" },
+          ],
         },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-        options: { showLegend: true, smooth: true },
       },
-      {
-        id: "w_inv_table1",
-        type: "table",
-        title: "인버터 상세 데이터",
-        layout: { x: 0, y: 8, w: 12, h: 3 },
-        dataBinding: {
-          dataSourceId: "ds_inverter",
-          requestParams: { siteId: "{{filter.selectedSite}}" },
-          mapping: {
-            dimensions: ["assetName", "siteName"],
-            measurements: [
-              { field: "activePower", label: "유효전력", unit: "kW" },
-              { field: "reactivePower", label: "무효전력", unit: "kVar" },
-              { field: "dailyEnergy", label: "일발전량", unit: "kWh" },
-              { field: "efficiency", label: "효율", unit: "%" },
-              { field: "temperature", label: "온도", unit: "°C" },
-            ],
-          },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+      options: { showLegend: true, smooth: true },
+    },
+
+    // ── 테이블 ──
+    {
+      id: "w_inv_table1",
+      type: "table",
+      title: L("인버터 상세 데이터", "Inverter Detail Data"),
+      layout: { x: 0, y: 7, w: 12, h: 4 },
+      dataBinding: {
+        dataSourceId: "ds_inverter",
+        requestParams: { siteId: "{{filter.selectedSite}}" },
+        mapping: {
+          dimensions: ["assetName", "siteName"],
+          measurements: [
+            { field: "activePower", label: L("유효전력", "Active Power"), unit: "kW" },
+            { field: "reactivePower", label: L("무효전력", "Reactive Power"), unit: "kVar" },
+            { field: "dailyEnergy", label: L("일발전량", "Daily Generation"), unit: "kWh" },
+            { field: "efficiency", label: L("효율", "Efficiency"), unit: "%" },
+            { field: "temperature", label: L("온도", "Temperature"), unit: "°C" },
+          ],
         },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
       },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+    },
   ];
 
   return {
     version: "1.0.0",
-    settings: { refreshInterval: 15000, theme: "light", gridColumns: 24, rowHeight: 40 },
+    settings: { refreshInterval: 15000, theme: "light", gridColumns: 24, rowHeight: 30, filterMode: "auto" as const },
     dataSources: allDataSources,
-    filters: [makeSiteFilter(siteOptions), timeRangeFilter, intervalFilter],
-    widgets: wrapWidgetsInCards(rawWidgets, "w_inv"),
+    filters: [],
+    widgets,
     linkages: [],
   };
 }
 
-// Dashboard 9: 테스트 대시보드 (기존)
 // Dashboard 9: 설비 점검 보고서 (Form 위젯 데모)
 function createInspectionFormDashboardSchema(siteOptions: { value: string; label: string }[]) {
   return {
     version: "1.0.0",
-    settings: { refreshInterval: 0, theme: "light", gridColumns: 24, rowHeight: 40 },
+    settings: { refreshInterval: 0, theme: "light", gridColumns: 24, rowHeight: 30, filterMode: "auto" as const },
     dataSources: allDataSources,
     filters: [],
     widgets: [
-      // ── 제목 영역: KPI 카드로 폼 안내 ──
+      // ── 제목 영역: KPI 카드 ──
       {
         id: "w_form_header",
         type: "kpi-card",
-        title: "설비 점검 보고서",
-        layout: { x: 0, y: 0, w: 12, h: 2 },
+        title: L("설비 점검 보고서", "Equipment Inspection Report"),
+        layout: { x: 0, y: 0, w: 2, h: 2 },
         dataBinding: {
           dataSourceId: "ds_maintenance",
           requestParams: {},
-          mapping: { measurements: [{ field: "scheduled", label: "예정 점검", unit: "건", color: "#3b82f6" }] },
-        },
-        style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
-      },
-      {
-        id: "w_form_header2",
-        type: "kpi-card",
-        title: "최근 알람",
-        layout: { x: 12, y: 0, w: 12, h: 2 },
-        dataBinding: {
-          dataSourceId: "ds_alarm",
-          requestParams: {},
-          mapping: { measurements: [{ field: "totalActive", label: "활성 알람", unit: "건", color: "#ef4444" }] },
+          mapping: { measurements: [{ field: "scheduled", label: L("예정 점검", "Scheduled"), unit: L("건", "cases"), color: "#3b82f6" }] },
         },
         style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
       },
 
-      // ── 폼 영역 (컨테이너 카드) ──
+      // ── 폼 영역 ──
       {
         id: "w_form_inspection",
         type: "form",
-        title: "설비 점검 보고서",
-        layout: { x: 0, y: 2, w: 24, h: 18 },
+        title: L("설비 점검 보고서", "Equipment Inspection Report"),
+        layout: { x: 0, y: 2, w: 12, h: 4 },
         style: { backgroundColor: "#ffffff", borderRadius: 8, padding: 16, shadow: "sm" },
         options: {
           formId: "inspection",
@@ -2095,137 +1218,137 @@ function createInspectionFormDashboardSchema(siteOptions: { value: string; label
             {
               fieldName: "siteId",
               type: "select",
-              label: "점검 대상 발전소",
+              label: L("점검 대상 발전소", "Target Site"),
               options: siteOptions,
-              placeholder: "발전소를 선택하세요",
-              validation: [{ type: "required", message: "발전소를 선택해주세요" }],
+              placeholder: L("발전소를 선택하세요", "Select a site"),
+              validation: [{ type: "required", message: L("발전소를 선택해주세요", "Please select a site") }],
             },
             {
               fieldName: "inspectionType",
               type: "radio",
-              label: "점검 유형",
+              label: L("점검 유형", "Inspection Type"),
               options: [
-                { value: "routine", label: "정기 점검" },
-                { value: "emergency", label: "긴급 점검" },
-                { value: "preventive", label: "예방 정비" },
+                { value: "routine", label: L("정기 점검", "Routine") },
+                { value: "emergency", label: L("긴급 점검", "Emergency") },
+                { value: "preventive", label: L("예방 정비", "Preventive") },
               ],
               direction: "horizontal",
               defaultValue: "routine",
-              validation: [{ type: "required", message: "점검 유형을 선택해주세요" }],
+              validation: [{ type: "required", message: L("점검 유형을 선택해주세요", "Please select an inspection type") }],
             },
             {
               fieldName: "inspectorName",
               type: "input",
-              label: "점검자명",
+              label: L("점검자명", "Inspector Name"),
               inputType: "text",
-              placeholder: "이름을 입력하세요",
+              placeholder: L("이름을 입력하세요", "Enter name"),
               validation: [
-                { type: "required", message: "점검자명을 입력해주세요" },
-                { type: "minLength", value: 2, message: "2자 이상 입력해주세요" },
+                { type: "required", message: L("점검자명을 입력해주세요", "Please enter inspector name") },
+                { type: "minLength", value: 2, message: L("2자 이상 입력해주세요", "Minimum 2 characters") },
               ],
             },
             {
               fieldName: "phone",
               type: "input",
-              label: "연락처",
+              label: L("연락처", "Phone"),
               inputType: "tel",
               placeholder: "010-0000-0000",
               validation: [
-                { type: "required", message: "연락처를 입력해주세요" },
-                { type: "pattern", value: "^\\d{2,3}-\\d{3,4}-\\d{4}$", message: "올바른 전화번호 형식이 아닙니다" },
+                { type: "required", message: L("연락처를 입력해주세요", "Please enter phone number") },
+                { type: "pattern", value: "^\\d{2,3}-\\d{3,4}-\\d{4}$", message: L("올바른 전화번호 형식이 아닙니다", "Invalid phone format") },
               ],
             },
             {
               fieldName: "checklist",
               type: "checkbox",
-              label: "점검 항목 (해당 항목 선택)",
+              label: L("점검 항목 (해당 항목 선택)", "Checklist (select applicable)"),
               mode: "group",
               options: [
-                { value: "panel", label: "태양광 패널 상태" },
-                { value: "inverter", label: "인버터 동작 확인" },
-                { value: "wiring", label: "배선 및 커넥터" },
-                { value: "structure", label: "구조물/마운트" },
-                { value: "grounding", label: "접지 상태" },
-                { value: "monitoring", label: "모니터링 시스템" },
+                { value: "panel", label: L("태양광 패널 상태", "Solar Panel Condition") },
+                { value: "inverter", label: L("인버터 동작 확인", "Inverter Operation") },
+                { value: "wiring", label: L("배선 및 커넥터", "Wiring & Connectors") },
+                { value: "structure", label: L("구조물/마운트", "Structure/Mount") },
+                { value: "grounding", label: L("접지 상태", "Grounding") },
+                { value: "monitoring", label: L("모니터링 시스템", "Monitoring System") },
               ],
               direction: "vertical",
-              validation: [{ type: "required", message: "하나 이상의 항목을 선택해주세요" }],
+              validation: [{ type: "required", message: L("하나 이상의 항목을 선택해주세요", "Please select at least one item") }],
             },
             {
               fieldName: "conditionScore",
               type: "input",
-              label: "설비 상태 점수 (0~100)",
+              label: L("설비 상태 점수 (0~100)", "Condition Score (0-100)"),
               inputType: "number",
               placeholder: "0~100",
               validation: [
-                { type: "required", message: "점수를 입력해주세요" },
-                { type: "min", value: 0, message: "0 이상이어야 합니다" },
-                { type: "max", value: 100, message: "100 이하여야 합니다" },
+                { type: "required", message: L("점수를 입력해주세요", "Please enter a score") },
+                { type: "min", value: 0, message: L("0 이상이어야 합니다", "Must be 0 or above") },
+                { type: "max", value: 100, message: L("100 이하여야 합니다", "Must be 100 or below") },
               ],
             },
             {
               fieldName: "isUrgent",
               type: "checkbox",
-              label: "긴급 여부",
+              label: L("긴급 여부", "Urgency"),
               mode: "single",
-              checkboxLabel: "긴급 조치가 필요합니다",
+              checkboxLabel: L("긴급 조치가 필요합니다", "Urgent action required"),
             },
             {
               fieldName: "severity",
               type: "select",
-              label: "발견 이상 심각도",
+              label: L("발견 이상 심각도", "Issue Severity"),
               options: [
-                { value: "none", label: "이상 없음" },
-                { value: "low", label: "경미" },
-                { value: "medium", label: "보통" },
-                { value: "high", label: "심각" },
-                { value: "critical", label: "긴급" },
+                { value: "none", label: L("이상 없음", "None") },
+                { value: "low", label: L("경미", "Low") },
+                { value: "medium", label: L("보통", "Medium") },
+                { value: "high", label: L("심각", "High") },
+                { value: "critical", label: L("긴급", "Critical") },
               ],
-              placeholder: "심각도 선택",
+              placeholder: L("심각도 선택", "Select severity"),
               defaultValue: "none",
             },
             {
               fieldName: "nextInspectionDate",
               type: "input",
-              label: "다음 점검 희망일",
+              label: L("다음 점검 희망일", "Next Inspection Date"),
               inputType: "text",
               placeholder: "YYYY-MM-DD",
               validation: [
-                { type: "pattern", value: "^\\d{4}-\\d{2}-\\d{2}$", message: "YYYY-MM-DD 형식으로 입력해주세요" },
+                { type: "pattern", value: "^\\d{4}-\\d{2}-\\d{2}$", message: L("YYYY-MM-DD 형식으로 입력해주세요", "Please enter in YYYY-MM-DD format") },
               ],
             },
             {
               fieldName: "notes",
               type: "textarea",
-              label: "점검 소견 및 특이사항",
-              placeholder: "점검 결과를 상세히 기록해주세요...",
+              label: L("점검 소견 및 특이사항", "Inspection Findings & Notes"),
+              placeholder: L("점검 결과를 상세히 기록해주세요...", "Please describe the inspection results in detail..."),
               rows: 5,
               maxLength: 500,
               colSpan: 3,
               validation: [
-                { type: "required", message: "점검 소견을 입력해주세요" },
-                { type: "minLength", value: 10, message: "10자 이상 입력해주세요" },
+                { type: "required", message: L("점검 소견을 입력해주세요", "Please enter inspection findings") },
+                { type: "minLength", value: 10, message: L("10자 이상 입력해주세요", "Minimum 10 characters") },
               ],
             },
           ],
           buttons: [
-            { label: "점검 보고서 제출", buttonType: "submit", variant: "primary" },
-            { label: "초기화", buttonType: "reset", variant: "outline" },
+            { label: L("점검 보고서 제출", "Submit Report"), buttonType: "submit", variant: "primary" },
+            { label: L("초기화", "Reset"), buttonType: "reset", variant: "outline" },
           ],
           submitConfig: {
             endpoint: "/api/data/maintenance",
             method: "POST",
             confirmation: {
               enabled: true,
-              title: "보고서 제출",
-              message: "점검 보고서를 제출하시겠습니까? 제출 후에는 수정할 수 없습니다.",
+              title: L("보고서 제출", "Submit Report"),
+              message: L("점검 보고서를 제출하시겠습니까? 제출 후에는 수정할 수 없습니다.", "Submit the inspection report? It cannot be modified after submission."),
             },
             onSuccess: {
-              message: "점검 보고서가 성공적으로 제출되었습니다",
+              message: L("점검 보고서가 성공적으로 제출되었습니다", "Inspection report submitted successfully"),
               resetForm: true,
             },
             onError: {
-              message: "제출에 실패했습니다. 다시 시도해주세요.",
+              message: L("제출에 실패했습니다. 다시 시도해주세요.", "Submission failed. Please try again."),
             },
           },
         },
@@ -2235,16 +1358,16 @@ function createInspectionFormDashboardSchema(siteOptions: { value: string; label
       {
         id: "w_form_ref_alarms",
         type: "table",
-        title: "최근 알람 내역 (참고)",
-        layout: { x: 0, y: 15, w: 12, h: 3 },
+        title: L("최근 알람 내역 (참고)", "Recent Alarms (Reference)"),
+        layout: { x: 2, y: 0, w: 5, h: 2 },
         dataBinding: {
           dataSourceId: "ds_alarm",
           requestParams: {},
           mapping: {
             dimensions: ["siteId", "severity", "category"],
             measurements: [
-              { field: "message", label: "메시지" },
-              { field: "status", label: "상태" },
+              { field: "message", label: L("메시지", "Message") },
+              { field: "status", label: L("상태", "Status") },
             ],
           },
         },
@@ -2253,23 +1376,233 @@ function createInspectionFormDashboardSchema(siteOptions: { value: string; label
       {
         id: "w_form_ref_maint",
         type: "table",
-        title: "최근 정비 기록 (참고)",
-        layout: { x: 12, y: 15, w: 12, h: 3 },
+        title: L("최근 정비 기록 (참고)", "Recent Maintenance (Reference)"),
+        layout: { x: 7, y: 0, w: 5, h: 2 },
         dataBinding: {
           dataSourceId: "ds_maintenance",
           requestParams: {},
           mapping: {
             dimensions: ["siteId", "type"],
             measurements: [
-              { field: "description", label: "내용" },
-              { field: "status", label: "상태" },
-              { field: "cost", label: "비용", unit: "원" },
+              { field: "description", label: L("내용", "Description") },
+              { field: "status", label: L("상태", "Status") },
+              { field: "cost", label: L("비용", "Cost"), unit: L("원", "KRW") },
             ],
           },
         },
         style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
       },
     ],
+    linkages: [],
+  };
+}
+
+// Dashboard: 조건부 렌더링 데모
+function createConditionalDashboardSchema(siteOptions: { value: string; label: string }[]) {
+  // ── 필터 위젯 (최상위) ──
+  const filterWidgets: WidgetDef[] = [
+    {
+      id: "w_cond_toggle",
+      type: "filter-toggle",
+      title: L("보기 모드", "View Mode"),
+      layout: { x: 0, y: 0, w: 3, h: 2 },
+      options: {
+        filterKey: "viewMode",
+        onValue: "detail",
+        offValue: "summary",
+        defaultValue: "summary",
+        onLabel: L("상세", "Detail"),
+        offLabel: L("요약", "Summary"),
+      },
+    },
+    {
+      id: "w_cond_tab",
+      type: "filter-tab",
+      title: L("카테고리", "Category"),
+      layout: { x: 3, y: 0, w: 2, h: 2 },
+      options: {
+        filterKey: "dataCategory",
+        defaultValue: "power",
+        variant: "pill",
+        options: [
+          { value: "power", label: L("발전", "Power") },
+          { value: "revenue", label: L("수익", "Revenue") },
+          { value: "weather", label: L("기상", "Weather") },
+        ],
+      },
+    },
+    {
+      id: "w_cond_site",
+      type: "filter-select",
+      title: L("발전소", "Site"),
+      layout: { x: 5, y: 0, w: 4, h: 2 },
+      options: { filterKey: "selectedSite", options: siteOptions },
+    },
+  ];
+
+  // ── KPI 카드 (항상 표시, 조건 없음) ──
+  const kpiWidgets: WidgetDef[] = [
+    {
+      id: "w_cond_kpi1",
+      type: "kpi-card",
+      title: L("현재 총 출력", "Current Total Output"),
+      layout: { x: 0, y: 2, w: 3, h: 2 },
+      dataBinding: {
+        dataSourceId: "ds_inverter",
+        requestParams: { siteId: "{{filter.selectedSite}}" },
+        mapping: { measurements: [{ field: "activePower", label: L("총 출력", "Total Output"), unit: "kW", color: "#10b981" }] },
+      },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+    },
+    {
+      id: "w_cond_kpi2",
+      type: "kpi-card",
+      title: L("금일 발전량", "Today's Generation"),
+      layout: { x: 3, y: 2, w: 3, h: 2 },
+      dataBinding: {
+        dataSourceId: "ds_inverter",
+        requestParams: { siteId: "{{filter.selectedSite}}" },
+        mapping: { measurements: [{ field: "dailyEnergy", label: L("일발전량", "Daily Gen."), unit: "kWh", color: "#f59e0b" }] },
+      },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+    },
+    {
+      id: "w_cond_kpi3",
+      type: "kpi-card",
+      title: L("평균 효율", "Avg. Efficiency"),
+      layout: { x: 6, y: 2, w: 5, h: 2 },
+      dataBinding: {
+        dataSourceId: "ds_inverter",
+        requestParams: { siteId: "{{filter.selectedSite}}" },
+        mapping: { measurements: [{ field: "efficiency", label: L("효율", "Efficiency"), unit: "%", color: "#3b82f6" }] },
+      },
+      style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+    },
+  ];
+
+  // ── Conditional Slot A: 카테고리별 차트 전환 (탭 필터 연동) ──
+  const slotA: WidgetDef = {
+    id: "w_cond_slot_chart",
+    type: "conditional-slot",
+    title: L("데이터 차트", "Data Chart"),
+    layout: { x: 0, y: 4, w: 6, h: 2 },
+    style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+    ...({
+      children: [
+        {
+          id: "w_cond_power_chart",
+          type: "line-chart",
+          title: L("발전량 추이", "Generation Trend"),
+          layout: { x: 0, y: 0, w: 24, h: 10 },
+          dataBinding: {
+            dataSourceId: "ds_inverter",
+            requestParams: { siteId: "{{filter.selectedSite}}" },
+            mapping: {
+              timeField: "timestamp",
+              measurements: [
+                { field: "activePower", label: L("유효전력", "Active Power"), unit: "kW", color: "#3b82f6" },
+                { field: "dailyEnergy", label: L("일발전량", "Daily Energy"), unit: "kWh", color: "#10b981" },
+              ],
+            },
+          },
+          style: {},
+          conditions: { logic: "and", rules: [{ variable: "dataCategory", operator: "eq", value: "power" }] },
+        },
+        {
+          id: "w_cond_revenue_chart",
+          type: "bar-chart",
+          title: L("사이트별 수익", "Revenue by Site"),
+          layout: { x: 0, y: 0, w: 24, h: 10 },
+          dataBinding: {
+            dataSourceId: "ds_revenue",
+            requestParams: { siteId: "{{filter.selectedSite}}" },
+            mapping: {
+              timeField: "siteId",
+              measurements: [
+                { field: "energySales", label: L("전력판매", "Energy Sales"), unit: L("원", "KRW"), color: "#3b82f6" },
+                { field: "recSales", label: "REC", unit: L("원", "KRW"), color: "#10b981" },
+              ],
+            },
+          },
+          style: {},
+          conditions: { logic: "and", rules: [{ variable: "dataCategory", operator: "eq", value: "revenue" }] },
+        },
+        {
+          id: "w_cond_weather_chart",
+          type: "line-chart",
+          title: L("기상 데이터", "Weather Data"),
+          layout: { x: 0, y: 0, w: 24, h: 10 },
+          dataBinding: {
+            dataSourceId: "ds_weather",
+            requestParams: { siteId: "{{filter.selectedSite}}" },
+            mapping: {
+              timeField: "timestamp",
+              measurements: [
+                { field: "irradiance", label: L("일사량", "Irradiance"), unit: "W/m²", color: "#f59e0b" },
+                { field: "temperature", label: L("온도", "Temperature"), unit: "°C", color: "#ef4444" },
+              ],
+            },
+          },
+          style: {},
+          // 조건 없음 → fallback
+        },
+      ],
+    } as Record<string, unknown>),
+  };
+
+  // ── Conditional Slot B: 뷰 모드별 위젯 전환 (토글 연동) ──
+  const slotB: WidgetDef = {
+    id: "w_cond_slot_view",
+    type: "conditional-slot",
+    title: L("상세/요약 보기", "Detail/Summary View"),
+    layout: { x: 6, y: 4, w: 6, h: 2 },
+    style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
+    ...({
+      children: [
+        {
+          id: "w_cond_detail_table",
+          type: "table",
+          title: L("인버터 상세 데이터", "Inverter Detail Data"),
+          layout: { x: 0, y: 0, w: 24, h: 10 },
+          dataBinding: {
+            dataSourceId: "ds_inverter",
+            requestParams: { siteId: "{{filter.selectedSite}}" },
+            mapping: {
+              dimensions: ["assetId", "timestamp"],
+              measurements: [
+                { field: "activePower", label: L("유효전력", "Active Power"), unit: "kW" },
+                { field: "dailyEnergy", label: L("일발전량", "Daily Energy"), unit: "kWh" },
+                { field: "efficiency", label: L("효율", "Efficiency"), unit: "%" },
+                { field: "temperature", label: L("온도", "Temperature"), unit: "°C" },
+              ],
+            },
+          },
+          style: {},
+          conditions: { logic: "and", rules: [{ variable: "viewMode", operator: "eq", value: "detail" }] },
+        },
+        {
+          id: "w_cond_summary_kpi",
+          type: "kpi-card",
+          title: L("발전 요약", "Generation Summary"),
+          layout: { x: 0, y: 0, w: 24, h: 10 },
+          dataBinding: {
+            dataSourceId: "ds_inverter",
+            requestParams: { siteId: "{{filter.selectedSite}}" },
+            mapping: { measurements: [{ field: "dailyEnergy", label: L("총 발전량", "Total Generation"), unit: "kWh", color: "#10b981" }] },
+          },
+          style: {},
+          // 조건 없음 → fallback (summary 모드)
+        },
+      ],
+    } as Record<string, unknown>),
+  };
+
+  return {
+    version: "1.0.0",
+    settings: { refreshInterval: 30000, theme: "light", gridColumns: 24, rowHeight: 30, filterMode: "auto" as const },
+    dataSources: allDataSources,
+    filters: [],
+    widgets: [...filterWidgets, ...kpiWidgets, slotA, slotB],
     linkages: [],
   };
 }
@@ -2438,39 +1771,9 @@ async function main() {
       isPublished: true,
     },
     {
-      title: "ESS 배터리 모니터링",
-      description: "에너지저장장치 충방전 현황 및 계통 연계 대시보드",
-      schema: createEssDashboardSchema(siteOptions),
-      isPublished: true,
-    },
-    {
-      title: "수익/정산 분석",
-      description: "발전 수익, SMP, REC 현황 분석 대시보드",
-      schema: createRevenueDashboardSchema(siteOptions),
-      isPublished: true,
-    },
-    {
-      title: "설비 유지보수 현황",
-      description: "알람, 정비 기록, 설비 상태 모니터링 대시보드",
-      schema: createMaintenanceDashboardSchema(siteOptions),
-      isPublished: true,
-    },
-    {
-      title: "날씨 & 발전 상관관계",
-      description: "기상 조건과 발전 성능의 상관관계 분석 대시보드",
-      schema: createWeatherDashboardSchema(siteOptions),
-      isPublished: true,
-    },
-    {
-      title: "전력 거래 현황",
-      description: "역송/수전 전력, 계량, SMP 가격 현황 대시보드",
-      schema: createGridDashboardSchema(siteOptions),
-      isPublished: true,
-    },
-    {
       title: "발전소 비교 분석",
       description: "전체 발전소 KPI, 발전량, 수익 비교 대시보드",
-      schema: createComparisonDashboardSchema(),
+      schema: createComparisonDashboardSchema(siteOptions),
       isPublished: true,
     },
     {
@@ -2483,6 +1786,12 @@ async function main() {
       title: "설비 점검 보고서",
       description: "현장 설비 점검 결과를 입력하고 제출하는 폼 대시보드",
       schema: createInspectionFormDashboardSchema(siteOptions),
+      isPublished: true,
+    },
+    {
+      title: "조건부 렌더링 데모",
+      description: "토글/탭 필터로 위젯을 조건부 표시하는 데모 대시보드",
+      schema: createConditionalDashboardSchema(siteOptions),
       isPublished: true,
     },
   ];

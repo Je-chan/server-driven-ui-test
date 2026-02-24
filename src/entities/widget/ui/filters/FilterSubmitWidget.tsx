@@ -1,6 +1,8 @@
 "use client";
 
 import { Search } from "lucide-react";
+import { useLocale } from "next-intl";
+import { resolveLabel } from "@/src/shared/lib";
 import type { Widget } from "@/src/entities/dashboard";
 
 interface FilterSubmitWidgetProps {
@@ -10,12 +12,14 @@ interface FilterSubmitWidgetProps {
 }
 
 export function FilterSubmitWidget({ widget, applyFilters, hasPendingChanges }: FilterSubmitWidgetProps) {
+  const locale = useLocale();
+
   const opts = widget.options as {
     label?: string;
     variant?: "primary" | "outline";
   } | undefined;
 
-  const label = opts?.label ?? "조회";
+  const rawLabel = opts?.label ?? "조회";
   const variant = opts?.variant ?? "primary";
 
   const baseClasses =
@@ -34,7 +38,7 @@ export function FilterSubmitWidget({ widget, applyFilters, hasPendingChanges }: 
         className={`${baseClasses} ${variantClasses}`}
       >
         <Search className="h-4 w-4" />
-        {label}
+        {resolveLabel(rawLabel, locale)}
       </button>
     </div>
   );

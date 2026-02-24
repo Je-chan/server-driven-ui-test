@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import ReactGridLayout from "react-grid-layout";
-import { WidgetRenderer, CardWidget } from "@/src/entities/widget";
+import { WidgetRenderer, CardWidget, ConditionalSlotWidget } from "@/src/entities/widget";
+import { resolveLabel, evaluateConditions } from "@/src/shared/lib";
 import type { DashboardJson } from "@/src/entities/dashboard";
 import type { FormManagerReturn } from "@/src/features/dashboard-form";
 import "react-grid-layout/css/styles.css";
@@ -44,10 +46,16 @@ interface LayoutItem {
 const GridLayout = ReactGridLayout as any;
 
 export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080", filterValues, appliedFilterValues, onFilterChange, formManager, applyFilters, hasPendingChanges }: ViewerCanvasProps) {
-  const { widgets } = schema;
+  const locale = useLocale();
+  const td = useTranslations("dashboard");
   const cols = schema.settings?.gridColumns ?? 24;
+  const rowHeight = schema.settings?.rowHeight ?? 30;
 
-  const rowHeight = schema.settings?.rowHeight ?? 10;
+  // 조건부 렌더링: filterValues 기반으로 표시할 위젯 필터링
+  const visibleWidgets = useMemo(() => {
+    if (!filterValues) return schema.widgets;
+    return schema.widgets.filter((w) => evaluateConditions(w.conditions, filterValues));
+  }, [schema.widgets, filterValues]);
 
   // 해상도 기반 캔버스 너비 계산
   const { canvasWidth, scale } = useMemo(() => {
@@ -64,7 +72,7 @@ export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080",
   }, [containerWidth, resolution]);
 
   // 레이아웃 생성 (static으로 설정하여 드래그/리사이즈 불가)
-  const layouts: LayoutItem[] = widgets.map((widget) => ({
+  const layouts: LayoutItem[] = visibleWidgets.map((widget) => ({
     i: widget.id,
     x: widget.layout.x,
     y: widget.layout.y,
@@ -89,14 +97,14 @@ export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080",
     }
   };
 
-  if (widgets.length === 0) {
+  if (visibleWidgets.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-32">
         <p className="text-lg font-medium text-muted-foreground">
-          이 Dashboard에 Widget이 없습니다
+          {td("noWidgets")}
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Dashboard를 수정하여 Widget을 추가하세요
+          {td("editToAdd")}
         </p>
       </div>
     );
@@ -106,7 +114,7 @@ export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080",
     <div className="flex flex-col items-center">
       {/* 해상도 정보 */}
       <div className="mb-2 text-xs text-muted-foreground">
-        {RESOLUTION_PRESETS[resolution].label} • 배율: {Math.round(scale * 100)}%
+        {RESOLUTION_PRESETS[resolution].label} • {Math.round(scale * 100)}%
       </div>
 
       {/* 캔버스 컨테이너 */}
@@ -125,18 +133,38 @@ export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080",
           isDraggable={false}
           isResizable={false}
           compactType={null}
-          margin={[8, 8]}
+          margin={[8, 0]}
           containerPadding={[8, 8]}
         >
-          {widgets.map((widget) => {
+          {visibleWidgets.map((widget) => {
             const style = widget.style ?? {};
             const isFilter = widget.type.startsWith("filter-");
             const isCard = widget.type === "card";
+            const isConditionalSlot = widget.type === "conditional-slot";
 
             if (isCard) {
               return (
                 <div key={widget.id}>
                   <CardWidget
+                    widget={widget}
+                    canvasWidth={canvasWidth}
+                    rowHeight={rowHeight}
+                    cols={cols}
+                    filterValues={filterValues}
+                    appliedFilterValues={appliedFilterValues}
+                    onFilterChange={onFilterChange}
+                    formManager={formManager}
+                    dataSources={schema.dataSources}
+                    filterSubmitProps={applyFilters ? { applyFilters, hasPendingChanges: hasPendingChanges ?? false } : undefined}
+                  />
+                </div>
+              );
+            }
+
+            if (isConditionalSlot) {
+              return (
+                <div key={widget.id}>
+                  <ConditionalSlotWidget
                     widget={widget}
                     canvasWidth={canvasWidth}
                     rowHeight={rowHeight}
@@ -165,7 +193,7 @@ export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080",
                 {/* Widget Header — 필터 위젯은 헤더 생략 */}
                 {!isFilter && (
                   <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-2">
-                    <span className="text-sm font-medium">{widget.title}</span>
+                    <span className="text-sm font-medium">{resolveLabel(widget.title, locale)}</span>
                     <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                       {widget.type}
                     </span>

@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import ReactGridLayout from "react-grid-layout";
 import { X, ArrowLeft, Settings, RefreshCw, Search } from "lucide-react";
-import { WidgetRenderer, CardWidget } from "@/src/entities/widget";
+import { WidgetRenderer, CardWidget, ConditionalSlotWidget } from "@/src/entities/widget";
+import { resolveLabel, evaluateConditions } from "@/src/shared/lib";
 import { useFilterValues } from "@/src/features/dashboard-filter";
 import { useFormManager } from "@/src/features/dashboard-form";
 import type { DashboardEntity } from "@/src/entities/dashboard";
 import { migrateFiltersToWidgets } from "@/src/entities/dashboard";
+import { LocaleToggle } from "@/src/shared/ui/LocaleToggle";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
@@ -29,6 +32,9 @@ interface LayoutItem {
 const GridLayout = ReactGridLayout as any;
 
 export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
+  const locale = useLocale();
+  const t = useTranslations("common");
+  const td = useTranslations("dashboard");
   const router = useRouter();
   const schema = useMemo(() => migrateFiltersToWidgets(dashboard.schema), [dashboard.schema]);
   const [showControls, setShowControls] = useState(false);
@@ -37,10 +43,15 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
   const { filterValues, appliedValues, setFilterValue, applyFilters, hasPendingChanges, hasFilterSubmitWidget } = useFilterValues(schema.widgets ?? [], filterMode);
   const formManager = useFormManager(schema.widgets ?? []);
 
+  // 조건부 렌더링: filterValues 기반으로 표시할 위젯 필터링
+  const visibleWidgets = useMemo(() => {
+    return schema.widgets.filter((w) => evaluateConditions(w.conditions, filterValues));
+  }, [schema.widgets, filterValues]);
+
   // 기본 해상도 설정 (1920x1080 기준)
   const targetWidth = 1920;
   const cols = schema.settings?.gridColumns ?? 24;
-  const rowHeight = schema.settings?.rowHeight ?? 10;
+  const rowHeight = schema.settings?.rowHeight ?? 1;
 
   // ESC 키로 나가기
   useEffect(() => {
@@ -76,7 +87,7 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
   };
 
   // 레이아웃 생성
-  const layouts: LayoutItem[] = schema.widgets.map((widget) => ({
+  const layouts: LayoutItem[] = visibleWidgets.map((widget) => ({
     i: widget.id,
     x: widget.layout.x,
     y: widget.layout.y,
@@ -101,17 +112,17 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
     }
   };
 
-  if (schema.widgets.length === 0) {
+  if (visibleWidgets.length === 0) {
     return (
       <div className="flex h-screen w-screen flex-col items-center justify-center bg-background">
         <p className="text-lg font-medium text-muted-foreground">
-          이 Dashboard에 Widget이 없습니다
+          {td("noWidgets")}
         </p>
         <button
           onClick={handleExit}
           className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
         >
-          뒤로가기
+          {t("back")}
         </button>
       </div>
     );
@@ -137,7 +148,7 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
               className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
-              홈으로
+              {t("home")}
             </button>
             <div className="h-6 w-px bg-border" />
             <h1 className="text-sm font-semibold">{dashboard.title}</h1>
@@ -147,24 +158,25 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
             <button
               onClick={handleRefresh}
               className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              title="새로고침"
+              title={t("refresh")}
             >
               <RefreshCw className="h-4 w-4" />
             </button>
             <button
               onClick={() => router.push(`/builder/${dashboard.id}`)}
               className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              title="편집"
+              title={t("edit")}
             >
               <Settings className="h-4 w-4" />
             </button>
+            <LocaleToggle />
             <button
               onClick={handleExit}
               className="flex items-center gap-2 rounded-md bg-destructive px-3 py-1.5 text-sm font-medium text-destructive-foreground transition-colors hover:bg-destructive/90"
-              title="나가기 (ESC)"
+              title={t("close")}
             >
               <X className="h-4 w-4" />
-              나가기
+              {t("close")}
             </button>
           </div>
         </div>
@@ -172,7 +184,7 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
 
       {/* ESC 힌트 (우측 하단) */}
       <div className="fixed bottom-4 right-4 z-50 rounded-md bg-muted/80 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-sm">
-        ESC를 눌러 나가기
+        {td("escToExit")}
       </div>
 
       {/* 대시보드 캔버스 */}
@@ -193,18 +205,35 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
           isDraggable={false}
           isResizable={false}
           compactType={null}
-          margin={[8, 8]}
+          margin={[8, 0]}
           containerPadding={[8, 8]}
         >
-          {schema.widgets.map((widget) => {
+          {visibleWidgets.map((widget) => {
             const style = widget.style ?? {};
             const isFilter = widget.type.startsWith("filter-");
-            const isCard = widget.type === "card";
-
-            if (isCard) {
+            if (widget.type === "card") {
               return (
                 <div key={widget.id}>
                   <CardWidget
+                    widget={widget}
+                    canvasWidth={targetWidth}
+                    rowHeight={rowHeight}
+                    cols={cols}
+                    filterValues={filterValues}
+                    appliedFilterValues={appliedValues}
+                    onFilterChange={setFilterValue}
+                    formManager={formManager}
+                    dataSources={schema.dataSources}
+                    filterSubmitProps={{ applyFilters, hasPendingChanges }}
+                  />
+                </div>
+              );
+            }
+
+            if (widget.type === "conditional-slot") {
+              return (
+                <div key={widget.id}>
+                  <ConditionalSlotWidget
                     widget={widget}
                     canvasWidth={targetWidth}
                     rowHeight={rowHeight}
@@ -233,7 +262,7 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
                 {/* Widget Header — 필터 위젯은 헤더 생략 */}
                 {!isFilter && (
                   <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-2">
-                    <span className="text-sm font-medium">{widget.title}</span>
+                    <span className="text-sm font-medium">{resolveLabel(widget.title, locale)}</span>
                     <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                       {widget.type}
                     </span>
@@ -265,7 +294,7 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
           className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
         >
           <Search className="h-4 w-4" />
-          조회
+          {t("search")}
         </button>
       )}
     </div>

@@ -9,6 +9,8 @@ export type {
   ChildWidget,
   WidgetLayout,
   WidgetStyle,
+  ConditionRule,
+  WidgetConditions,
   Filter,
   FilterDependency,
 } from "./model/types";
@@ -20,6 +22,8 @@ export {
   childWidgetSchema,
   widgetLayoutSchema,
   widgetStyleSchema,
+  conditionRuleSchema,
+  widgetConditionsSchema,
   filterSchema,
   filterDependencySchema,
 } from "./model/types";

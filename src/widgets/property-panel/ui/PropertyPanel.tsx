@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Settings, Database, Palette, Trash2, Plus } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useBuilderStore } from "@/src/features/dashboard-builder/model/builder.store";
 import { getWidgetType } from "@/src/entities/widget";
 import {
@@ -9,13 +10,18 @@ import {
   type DashboardDataSource,
   type MeasurementMapping,
 } from "@/src/entities/data-source";
+import { resolveLabel, type I18nLabel } from "@/src/shared/lib";
 import { FilterWidgetOptions } from "./FilterWidgetOptions";
 import { FormWidgetOptions } from "./FormWidgetOptions";
+import { ConditionsEditor } from "./ConditionsEditor";
 
 type TabType = "style" | "data" | "options";
 
 export function PropertyPanel() {
   const [activeTab, setActiveTab] = useState<TabType>("data");
+  const locale = useLocale();
+  const tb = useTranslations("builder");
+  const tc = useTranslations("common");
   const {
     schema,
     selectedWidgetId,
@@ -51,7 +57,7 @@ export function PropertyPanel() {
           </h2>
         </div>
         <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-          Widget을 선택하여 속성을 편집하세요
+          {tb("selectWidgetHint")}
         </div>
       </div>
     );
@@ -188,7 +194,7 @@ export function PropertyPanel() {
         <button
           onClick={handleDelete}
           className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-          title="Widget 삭제"
+          title={tb("deleteWidget")}
         >
           <Trash2 className="h-4 w-4" />
         </button>
@@ -205,7 +211,7 @@ export function PropertyPanel() {
           }`}
         >
           <Database className="h-3.5 w-3.5" />
-          Data
+          {tb("tabData")}
         </button>
         <button
           onClick={() => setActiveTab("style")}
@@ -216,7 +222,7 @@ export function PropertyPanel() {
           }`}
         >
           <Palette className="h-3.5 w-3.5" />
-          스타일
+          {tb("tabStyle")}
         </button>
         <button
           onClick={() => setActiveTab("options")}
@@ -227,7 +233,7 @@ export function PropertyPanel() {
           }`}
         >
           <Settings className="h-3.5 w-3.5" />
-          옵션
+          {tb("tabOptions")}
         </button>
       </div>
 
@@ -246,10 +252,10 @@ export function PropertyPanel() {
                 onChange={(e) => handleDataSourceChange(e.target.value)}
                 className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               >
-                <option value="">Data Source 선택...</option>
+                <option value="">{tb("selectDataSource")}</option>
                 {availableDataSources.map((ds) => (
                   <option key={ds.id} value={ds.id}>
-                    {ds.name} ({ds.type})
+                    {resolveLabel(ds.name, locale)} ({ds.type})
                   </option>
                 ))}
               </select>
@@ -259,7 +265,7 @@ export function PropertyPanel() {
               <>
                 {/* Available Fields Info */}
                 <div className="rounded-md bg-muted/50 p-3">
-                  <p className="text-xs font-medium text-muted-foreground">사용 가능한 Fields</p>
+                  <p className="text-xs font-medium text-muted-foreground">{tb("availableFields")}</p>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {currentDataSource.returnStructure.dimensions.map((field) => (
                       <span
@@ -284,14 +290,14 @@ export function PropertyPanel() {
                 {["line-chart", "bar-chart"].includes(selectedWidget.type) && (
                   <div>
                     <label className="text-xs font-medium text-muted-foreground">
-                      Time Field (X축)
+                      {tb("timeField")}
                     </label>
                     <select
                       value={currentBinding?.mapping?.timeField ?? ""}
                       onChange={(e) => handleTimeFieldChange(e.target.value)}
                       className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     >
-                      <option value="">Field 선택...</option>
+                      <option value="">{tb("selectField")}</option>
                       {currentDataSource.returnStructure.dimensions.map((field) => (
                         <option key={field} value={field}>
                           {field}
@@ -305,14 +311,14 @@ export function PropertyPanel() {
                 <div>
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-medium text-muted-foreground">
-                      Measurements (Y축 / 값)
+                      {tb("measurements")}
                     </label>
                     <button
                       onClick={handleAddMeasurement}
                       className="flex items-center gap-1 rounded px-2 py-1 text-xs text-primary hover:bg-primary/10"
                     >
                       <Plus className="h-3 w-3" />
-                      추가
+                      {tc("add")}
                     </button>
                   </div>
 
@@ -320,7 +326,7 @@ export function PropertyPanel() {
                     {(currentBinding?.mapping?.measurements ?? []).map((m, idx) => (
                       <div key={idx} className="rounded-md border bg-muted/30 p-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium">시리즈 {idx + 1}</span>
+                          <span className="text-xs font-medium">{tb("series")} {idx + 1}</span>
                           <button
                             onClick={() => handleRemoveMeasurement(idx)}
                             className="rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
@@ -336,7 +342,7 @@ export function PropertyPanel() {
                               onChange={(e) => handleMeasurementChange(idx, "field", e.target.value)}
                               className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
                             >
-                              <option value="">선택...</option>
+                              <option value="">{tc("select")}</option>
                               {currentDataSource.returnStructure.measurements.map((field) => (
                                 <option key={field} value={field}>
                                   {field}
@@ -346,20 +352,20 @@ export function PropertyPanel() {
                           </div>
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <label className="text-[10px] text-muted-foreground">라벨</label>
+                              <label className="text-[10px] text-muted-foreground">{tb("fieldLabel")}</label>
                               <input
                                 type="text"
-                                value={m.label}
+                                value={resolveLabel(m.label, locale)}
                                 onChange={(e) => handleMeasurementChange(idx, "label", e.target.value)}
-                                placeholder="표시명"
+                                placeholder={tb("fieldLabel")}
                                 className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] text-muted-foreground">단위</label>
+                              <label className="text-[10px] text-muted-foreground">{tb("fieldUnit")}</label>
                               <input
                                 type="text"
-                                value={m.unit ?? ""}
+                                value={resolveLabel(m.unit, locale)}
                                 onChange={(e) => handleMeasurementChange(idx, "unit", e.target.value)}
                                 placeholder="kW, %, 등"
                                 className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
@@ -367,7 +373,7 @@ export function PropertyPanel() {
                             </div>
                           </div>
                           <div>
-                            <label className="text-[10px] text-muted-foreground">색상</label>
+                            <label className="text-[10px] text-muted-foreground">{tb("fieldColor")}</label>
                             <div className="mt-0.5 flex gap-1">
                               <input
                                 type="color"
@@ -389,7 +395,7 @@ export function PropertyPanel() {
 
                     {(currentBinding?.mapping?.measurements ?? []).length === 0 && (
                       <p className="py-4 text-center text-xs text-muted-foreground">
-                        Measurements가 없습니다. &quot;추가&quot;를 클릭하여 데이터 필드를 추가하세요.
+                        {tb("noMeasurements")}
                       </p>
                     )}
                   </div>
@@ -399,7 +405,7 @@ export function PropertyPanel() {
 
             {!currentDataSourceId && (
               <p className="py-4 text-center text-xs text-muted-foreground">
-                Data Source를 선택하여 데이터 바인딩을 설정하세요
+                {tb("selectDataSourceHint")}
               </p>
             )}
           </div>
@@ -410,10 +416,10 @@ export function PropertyPanel() {
           <div className="space-y-4">
             {/* Title */}
             <div>
-              <label className="text-xs font-medium text-muted-foreground">제목</label>
+              <label className="text-xs font-medium text-muted-foreground">{tb("title")}</label>
               <input
                 type="text"
-                value={selectedWidget.title}
+                value={typeof selectedWidget.title === "string" ? selectedWidget.title : resolveLabel(selectedWidget.title, locale)}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               />
@@ -421,7 +427,7 @@ export function PropertyPanel() {
 
             {/* Layout */}
             <div>
-              <label className="text-xs font-medium text-muted-foreground">레이아웃</label>
+              <label className="text-xs font-medium text-muted-foreground">{tb("layout")}</label>
               <div className="mt-1 grid grid-cols-4 gap-2">
                 <div>
                   <label className="text-[10px] text-muted-foreground">X</label>
@@ -466,7 +472,7 @@ export function PropertyPanel() {
 
             {/* Background */}
             <div>
-              <label className="text-xs font-medium text-muted-foreground">배경색</label>
+              <label className="text-xs font-medium text-muted-foreground">{tb("backgroundColor")}</label>
               <div className="mt-1 flex gap-2">
                 <input
                   type="color"
@@ -485,7 +491,7 @@ export function PropertyPanel() {
 
             {/* Border Radius */}
             <div>
-              <label className="text-xs font-medium text-muted-foreground">테두리 반경</label>
+              <label className="text-xs font-medium text-muted-foreground">{tb("borderRadius")}</label>
               <input
                 type="number"
                 value={selectedWidget.style?.borderRadius ?? 8}
@@ -497,16 +503,16 @@ export function PropertyPanel() {
 
             {/* Shadow */}
             <div>
-              <label className="text-xs font-medium text-muted-foreground">그림자</label>
+              <label className="text-xs font-medium text-muted-foreground">{tb("shadow")}</label>
               <select
                 value={selectedWidget.style?.shadow ?? "sm"}
                 onChange={(e) => handleStyleChange("shadow", e.target.value)}
                 className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm"
               >
-                <option value="none">없음</option>
-                <option value="sm">작게</option>
-                <option value="md">중간</option>
-                <option value="lg">크게</option>
+                <option value="none">{tb("shadowNone")}</option>
+                <option value="sm">{tb("shadowSm")}</option>
+                <option value="md">{tb("shadowMd")}</option>
+                <option value="lg">{tb("shadowLg")}</option>
               </select>
             </div>
           </div>
@@ -515,7 +521,12 @@ export function PropertyPanel() {
         {/* Options Tab */}
         {activeTab === "options" && (
           <div className="space-y-4">
-            {selectedWidget.type === "card" ? (
+            {selectedWidget.type === "conditional-slot" ? (
+              <ConditionalSlotOptions
+                widget={selectedWidget}
+                onUpdate={handleUpdate}
+              />
+            ) : selectedWidget.type === "card" ? (
               <CardWidgetOptions
                 widget={selectedWidget}
                 onUpdate={handleUpdate}
@@ -527,17 +538,81 @@ export function PropertyPanel() {
             ) : (
               <>
                 <p className="text-xs text-muted-foreground">
-                  {widgetDef?.label ?? selectedWidget.type} Widget 옵션
+                  {tb("widgetOptions", { widget: widgetDef?.label ?? selectedWidget.type })}
                 </p>
                 <div className="rounded-md bg-muted/50 p-4 text-center text-xs text-muted-foreground">
-                  Widget 옵션이 여기에 표시됩니다
+                  {tb("widgetOptionsPlaceholder")}
                 </div>
               </>
             )}
+
+            {/* 조건부 표시 — 모든 위젯 타입에서 사용 가능 */}
+            <ConditionsEditor widget={selectedWidget} parentCardId={parentCardId} />
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+// Conditional Slot 위젯 전용 옵션 컴포넌트
+function ConditionalSlotOptions({
+  widget,
+}: {
+  widget: { children?: Array<{ id: string; title: I18nLabel; type: string; conditions?: { rules?: unknown[] } }>; options?: Record<string, unknown> };
+  onUpdate: (updates: Record<string, unknown>) => void;
+}) {
+  const locale = useLocale();
+  const tb = useTranslations("builder");
+  const children = widget.children ?? [];
+
+  return (
+    <>
+      <p className="text-xs text-muted-foreground">
+        {tb("conditionalSlotHint")}
+      </p>
+
+      <div>
+        <label className="text-xs font-medium text-muted-foreground">
+          {tb("slotCount", { count: children.length })}
+        </label>
+        <div className="mt-2 space-y-1.5">
+          {children.map((child, idx) => {
+            const hasConditions = (child.conditions?.rules?.length ?? 0) > 0;
+            return (
+              <div
+                key={child.id}
+                className="flex items-center gap-2 rounded-md border bg-muted/30 px-2.5 py-1.5"
+              >
+                <span className="text-xs font-medium text-muted-foreground">
+                  {idx + 1}.
+                </span>
+                <span className="flex-1 truncate text-xs">
+                  {resolveLabel(child.title, locale)}
+                </span>
+                <span className="rounded bg-muted px-1 py-0.5 text-[9px] text-muted-foreground">
+                  {child.type}
+                </span>
+                {hasConditions ? (
+                  <span className="rounded bg-amber-100 px-1 py-0.5 text-[9px] text-amber-700">
+                    {tb("conditional")}
+                  </span>
+                ) : (
+                  <span className="rounded bg-gray-100 px-1 py-0.5 text-[9px] text-gray-500">
+                    {tb("slotFallback")}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+          {children.length === 0 && (
+            <p className="py-2 text-center text-xs text-muted-foreground">
+              {tb("emptyConditionalSlot")}
+            </p>
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -549,11 +624,12 @@ function CardWidgetOptions({
   widget: { options?: Record<string, unknown> };
   onUpdate: (updates: Record<string, unknown>) => void;
 }) {
+  const tb = useTranslations("builder");
   const options = (widget.options ?? {}) as { showHeader?: boolean; headerTitle?: string };
 
   return (
     <>
-      <p className="text-xs text-muted-foreground">Card 컨테이너 옵션</p>
+      <p className="text-xs text-muted-foreground">{tb("cardOptions")}</p>
 
       <div>
         <label className="flex items-center gap-2 text-sm">
@@ -565,20 +641,20 @@ function CardWidgetOptions({
             }
             className="rounded border"
           />
-          헤더 표시
+          {tb("showHeader")}
         </label>
       </div>
 
       {(options.showHeader ?? true) && (
         <div>
-          <label className="text-xs font-medium text-muted-foreground">헤더 제목</label>
+          <label className="text-xs font-medium text-muted-foreground">{tb("headerTitle")}</label>
           <input
             type="text"
             value={options.headerTitle ?? ""}
             onChange={(e) =>
               onUpdate({ options: { ...options, headerTitle: e.target.value } })
             }
-            placeholder="Card 제목"
+            placeholder={tb("headerTitlePlaceholder")}
             className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>

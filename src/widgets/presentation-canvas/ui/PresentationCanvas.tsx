@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import ReactGridLayout from "react-grid-layout";
 import { Database } from "lucide-react";
-import { WidgetRenderer, CardWidget } from "@/src/entities/widget";
+import { WidgetRenderer } from "@/src/entities/widget";
+import { resolveLabel } from "@/src/shared/lib";
 import type { DashboardJson } from "@/src/entities/dashboard";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -41,24 +43,26 @@ export function PresentationCanvas({
   onWidgetClick,
   onBackgroundClick,
 }: PresentationCanvasProps) {
+  const locale = useLocale();
+  const td = useTranslations("dashboard");
   const { widgets } = schema;
   const cols = schema.settings?.gridColumns ?? 24;
+
+  const schemaRowHeight = schema.settings?.rowHeight ?? 30;
 
   const { canvasWidth, canvasHeight, rowHeight, scale } = useMemo(() => {
     const maxWidth = containerWidth - 32;
     const scaledWidth = Math.min(maxWidth, CANVAS_WIDTH);
     const currentScale = scaledWidth / CANVAS_WIDTH;
     const scaledHeight = scaledWidth / (CANVAS_WIDTH / CANVAS_HEIGHT);
-    const rows = 24;
-    const calculatedRowHeight = Math.floor(scaledHeight / rows);
 
     return {
       canvasWidth: scaledWidth,
       canvasHeight: scaledHeight,
-      rowHeight: calculatedRowHeight,
+      rowHeight: schemaRowHeight * currentScale,
       scale: currentScale,
     };
-  }, [containerWidth]);
+  }, [containerWidth, schemaRowHeight]);
 
   const layouts: LayoutItem[] = widgets.map((widget) => ({
     i: widget.id,
@@ -86,7 +90,7 @@ export function PresentationCanvas({
     return (
       <div className="flex flex-col items-center justify-center py-32">
         <p className="text-lg font-medium text-muted-foreground">
-          이 Dashboard에 Widget이 없습니다
+          {td("noWidgets")}
         </p>
       </div>
     );
@@ -95,7 +99,7 @@ export function PresentationCanvas({
   return (
     <div className="flex flex-col items-center">
       <div className="mb-2 text-xs text-muted-foreground">
-        Full HD (1920x1080) / 배율: {Math.round(scale * 100)}%
+        Full HD (1920x1080) / {Math.round(scale * 100)}%
       </div>
 
       <div
@@ -114,43 +118,13 @@ export function PresentationCanvas({
           isDraggable={false}
           isResizable={false}
           compactType={null}
-          margin={[8, 8]}
+          margin={[8, 0]}
           containerPadding={[8, 8]}
         >
           {widgets.map((widget) => {
             const style = widget.style ?? {};
             const isSelected = selectedWidgetId === widget.id;
             const hasDataBinding = !!widget.dataBinding;
-            const isCard = widget.type === "card";
-
-            if (isCard) {
-              return (
-                <div
-                  key={widget.id}
-                  className={`transition-all duration-200 ${
-                    isSelected
-                      ? "ring-2 ring-blue-500 ring-offset-2"
-                      : selectedWidgetId
-                        ? "opacity-40"
-                        : ""
-                  }`}
-                  style={{ cursor: "pointer" }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onWidgetClick(widget.id);
-                  }}
-                >
-                  <CardWidget
-                    widget={widget}
-                    canvasWidth={canvasWidth}
-                    rowHeight={rowHeight}
-                    cols={cols}
-                    dataSources={schema.dataSources}
-                  />
-                </div>
-              );
-            }
-
             return (
               <div
                 key={widget.id}
@@ -174,7 +148,7 @@ export function PresentationCanvas({
               >
                 {/* Widget Header */}
                 <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-2">
-                  <span className="text-sm font-medium">{widget.title}</span>
+                  <span className="text-sm font-medium">{resolveLabel(widget.title, locale)}</span>
                   <div className="flex items-center gap-1.5">
                     {showDataBindingIcon && (
                       <span

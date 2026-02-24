@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { i18nLabelSchema } from "@/src/shared/lib";
 
 // 위젯 레이아웃 스키마
 export const widgetLayoutSchema = z.object({
@@ -18,27 +19,41 @@ export const widgetStyleSchema = z.object({
   shadow: z.enum(["none", "sm", "md", "lg"]).optional(),
 });
 
+// 조건부 렌더링 스키마
+export const conditionRuleSchema = z.object({
+  variable: z.string(),
+  operator: z.enum(["eq", "neq", "in", "notIn", "exists", "notExists"]),
+  value: z.unknown().optional(),
+});
+
+export const widgetConditionsSchema = z.object({
+  logic: z.enum(["and", "or"]).default("and"),
+  rules: z.array(conditionRuleSchema),
+});
+
 // 자식 위젯 스키마 (Card 컨테이너 내부용, children 필드 없음)
 export const childWidgetSchema = z.object({
   id: z.string(),
   type: z.string(),
-  title: z.string(),
+  title: i18nLabelSchema,
   layout: widgetLayoutSchema,
   dataBinding: z.record(z.string(), z.unknown()).optional(),
   style: widgetStyleSchema.optional(),
   options: z.record(z.string(), z.unknown()).optional(),
+  conditions: widgetConditionsSchema.optional(),
 });
 
 // 위젯 스키마
 export const widgetSchema = z.object({
   id: z.string(),
   type: z.string(),
-  title: z.string(),
+  title: i18nLabelSchema,
   layout: widgetLayoutSchema,
   dataBinding: z.record(z.string(), z.unknown()).optional(),
   style: widgetStyleSchema.optional(),
   options: z.record(z.string(), z.unknown()).optional(),
   children: z.array(childWidgetSchema).optional(),
+  conditions: widgetConditionsSchema.optional(),
 });
 
 // 필터 의존관계 스키마
@@ -46,7 +61,7 @@ export const filterDependencySchema = z.object({
   filterKey: z.string(),
   optionsMap: z.record(
     z.string(),
-    z.array(z.object({ value: z.string(), label: z.string() }))
+    z.array(z.object({ value: z.string(), label: i18nLabelSchema }))
   ),
 });
 
@@ -55,7 +70,7 @@ export const filterSchema = z.object({
   id: z.string(),
   type: z.enum(["select", "multi-select", "tree-select", "date-range", "input"]),
   key: z.string(),
-  label: z.string(),
+  label: i18nLabelSchema,
   config: z.record(z.string(), z.unknown()),
   visible: z.boolean().optional(),
   fixedValue: z.unknown().optional(),
@@ -67,7 +82,7 @@ export const dashboardSettingsSchema = z.object({
   refreshInterval: z.number().default(0),
   theme: z.enum(["light", "dark", "system"]).default("light"),
   gridColumns: z.number().default(24),
-  rowHeight: z.number().default(10),
+  rowHeight: z.number().default(1),
   breakpoints: z.object({
     lg: z.number().default(1200),
     md: z.number().default(996),
@@ -88,6 +103,8 @@ export const dashboardJsonSchema = z.object({
 
 export type WidgetLayout = z.infer<typeof widgetLayoutSchema>;
 export type WidgetStyle = z.infer<typeof widgetStyleSchema>;
+export type ConditionRule = z.infer<typeof conditionRuleSchema>;
+export type WidgetConditions = z.infer<typeof widgetConditionsSchema>;
 export type ChildWidget = z.infer<typeof childWidgetSchema>;
 export type Widget = z.infer<typeof widgetSchema>;
 export type Filter = z.infer<typeof filterSchema>;

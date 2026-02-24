@@ -1,12 +1,19 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { useRouter, usePathname } from "@/i18n/navigation";
 import type { Widget } from "@/src/entities/dashboard";
-import { formatLocalDate } from "@/src/shared/lib";
+import {
+  formatLocalDate,
+  serializeFiltersToParams,
+  deserializeParamsToFilters,
+} from "@/src/shared/lib";
+import type { I18nLabel } from "@/src/shared/lib";
 
 interface FilterConfig {
   filterKey: string;
-  label: string;
+  label: I18nLabel;
   type: string;
   defaultValue?: unknown;
   outputKeys?: { start: string; end: string };
@@ -128,35 +135,145 @@ function getFixedKeys(configs: FilterConfig[]): Set<string> {
   return keys;
 }
 
+/** 모든 필터 관련 URL 키를 수집 */
+function collectAllFilterKeys(configs: FilterConfig[]): Set<string> {
+  const keys = new Set<string>();
+  for (const config of configs) {
+    keys.add(config.filterKey);
+    if (config.type === "filter-datepicker") {
+      const outputKeys = config.outputKeys ?? { start: "startTime", end: "endTime" };
+      keys.add(outputKeys.start);
+      keys.add(outputKeys.end);
+      keys.add(`__preset_${config.filterKey}`);
+    }
+  }
+  return keys;
+}
+
+/** multi-select 필터의 키를 수집 (URL 역직렬화 시 배열로 복원) */
+function collectArrayKeys(configs: FilterConfig[]): Set<string> {
+  const keys = new Set<string>();
+  for (const config of configs) {
+    if (config.type === "filter-multiselect") {
+      keys.add(config.filterKey);
+    }
+  }
+  return keys;
+}
+
 export function useFilterValues(widgets: Widget[], filterMode?: "auto" | "manual") {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
   const configs = useMemo(() => extractFilterConfigs(widgets), [widgets]);
   const initialValues = useMemo(() => computeInitialValues(configs), [configs]);
   const fixedKeys = useMemo(() => getFixedKeys(configs), [configs]);
+  const allFilterKeys = useMemo(() => collectAllFilterKeys(configs), [configs]);
+  const arrayKeys = useMemo(() => collectArrayKeys(configs), [configs]);
 
   const hasFilterSubmitWidget = useMemo(
     () => widgets.some((w) => w.type === "filter-submit"),
     [widgets]
   );
 
-  // pending: FilterBar UI에 반영되는 값
-  const [pendingValues, setPendingValues] = useState<Record<string, unknown>>(initialValues);
-  // applied: 위젯 데이터 조회에 사용되는 값
-  const [appliedValues, setAppliedValues] = useState<Record<string, unknown>>(initialValues);
-
   const isManual = hasFilterSubmitWidget || filterMode === "manual";
 
-  const updateValues = useCallback(
-    (updater: (prev: Record<string, unknown>) => Record<string, unknown>) => {
-      setPendingValues((prev) => {
-        const next = updater(prev);
-        if (!isManual) {
-          setAppliedValues(next);
+  // URL에서 appliedValues 역직렬화 (fixedValue 우선)
+  const appliedValues = useMemo(() => {
+    const urlValues = deserializeParamsToFilters(searchParams, arrayKeys);
+
+    // URL에 필터 파라미터가 하나도 없으면 defaults 사용
+    const hasAnyFilterParam = Array.from(allFilterKeys).some((key) =>
+      searchParams.has(key)
+    );
+
+    const base = hasAnyFilterParam ? { ...initialValues, ...urlValues } : { ...initialValues };
+
+    // fixedValue 항상 우선
+    for (const config of configs) {
+      if (config.fixedValue !== undefined && config.fixedValue !== null) {
+        if (config.type === "filter-datepicker") {
+          const outputKeys = config.outputKeys ?? { start: "startTime", end: "endTime" };
+          if (typeof config.fixedValue === "string") {
+            const range = getDatePresetRange(config.fixedValue);
+            base[outputKeys.start] = range.start;
+            base[outputKeys.end] = range.end;
+            base[`__preset_${config.filterKey}`] = config.fixedValue;
+          }
+        } else {
+          base[config.filterKey] = config.fixedValue;
         }
-        return next;
-      });
+      }
+    }
+
+    return base;
+  }, [searchParams, arrayKeys, allFilterKeys, initialValues, configs]);
+
+  // pending: FilterBar UI에 반영되는 값
+  const [pendingValues, setPendingValues] = useState<Record<string, unknown>>(appliedValues);
+
+  // appliedValues가 변경되면 pendingValues 동기화 (URL 직접 변경 등)
+  const prevAppliedRef = useRef(appliedValues);
+  useEffect(() => {
+    if (prevAppliedRef.current !== appliedValues) {
+      prevAppliedRef.current = appliedValues;
+      setPendingValues(appliedValues);
+    }
+  }, [appliedValues]);
+
+  // URL 업데이트 배치 처리 (DatepickerFilterWidget의 연속 호출 대응)
+  const pendingUrlUpdateRef = useRef<Record<string, unknown> | null>(null);
+  const urlUpdateScheduledRef = useRef(false);
+
+  const flushUrlUpdate = useCallback(() => {
+    urlUpdateScheduledRef.current = false;
+    const valuesToWrite = pendingUrlUpdateRef.current;
+    if (!valuesToWrite) return;
+    pendingUrlUpdateRef.current = null;
+
+    const filterParams = serializeFiltersToParams(valuesToWrite);
+
+    // 비필터 URL 파라미터 보존
+    const newParams = new URLSearchParams();
+    searchParams.forEach((value, key) => {
+      if (!allFilterKeys.has(key)) {
+        newParams.set(key, value);
+      }
+    });
+    filterParams.forEach((value, key) => {
+      newParams.set(key, value);
+    });
+
+    const qs = newParams.toString();
+    const newUrl = qs ? `${pathname}?${qs}` : pathname;
+    router.replace(newUrl, { scroll: false });
+  }, [searchParams, allFilterKeys, pathname, router]);
+
+  const scheduleUrlUpdate = useCallback(
+    (values: Record<string, unknown>) => {
+      pendingUrlUpdateRef.current = values;
+      if (!urlUpdateScheduledRef.current) {
+        urlUpdateScheduledRef.current = true;
+        queueMicrotask(flushUrlUpdate);
+      }
     },
-    [isManual]
+    [flushUrlUpdate]
   );
+
+  // 초기 로드 시 URL에 필터 파라미터가 없으면 defaults를 URL에 기록
+  const initializedRef = useRef(false);
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    const hasAnyFilterParam = Array.from(allFilterKeys).some((key) =>
+      searchParams.has(key)
+    );
+    if (!hasAnyFilterParam) {
+      scheduleUrlUpdate(initialValues);
+    }
+  }, [allFilterKeys, searchParams, initialValues, scheduleUrlUpdate]);
 
   // 의존 필터의 자식 값 리셋
   const resetDependentFilters = useCallback(
@@ -182,18 +299,24 @@ export function useFilterValues(widgets: Widget[], filterMode?: "auto" | "manual
     (key: string, value: unknown) => {
       if (fixedKeys.has(key)) return;
 
-      updateValues((prev) => {
-        const next = { ...prev, [key]: value };
-        return resetDependentFilters(key, next);
+      setPendingValues((prev) => {
+        const next = resetDependentFilters(key, { ...prev, [key]: value });
+
+        // auto 모드: 즉시 URL 업데이트
+        if (!isManual) {
+          scheduleUrlUpdate(next);
+        }
+
+        return next;
       });
     },
-    [updateValues, fixedKeys, resetDependentFilters]
+    [fixedKeys, resetDependentFilters, isManual, scheduleUrlUpdate]
   );
 
   // manual 모드: "조회" 버튼 클릭 시 호출
   const applyFilters = useCallback(() => {
-    setAppliedValues(pendingValues);
-  }, [pendingValues]);
+    scheduleUrlUpdate(pendingValues);
+  }, [pendingValues, scheduleUrlUpdate]);
 
   // 각 필터의 상태 계산 (disabled, overrideOptions)
   const getFilterState = useCallback(

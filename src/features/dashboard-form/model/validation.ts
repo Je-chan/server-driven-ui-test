@@ -1,43 +1,45 @@
+import { resolveLabel, type I18nLabel } from "@/src/shared/lib";
+
 export interface ValidationRule {
   type: "required" | "min" | "max" | "minLength" | "maxLength" | "pattern";
   value?: unknown;
-  message: string;
+  message: I18nLabel;
 }
 
-export function runValidation(value: unknown, rules: ValidationRule[]): string | null {
+export function runValidation(value: unknown, rules: ValidationRule[], locale: string): string | null {
   for (const rule of rules) {
     switch (rule.type) {
       case "required": {
         if (value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0)) {
-          return rule.message;
+          return resolveLabel(rule.message, locale);
         }
         break;
       }
       case "min": {
         const num = Number(value);
         if (!isNaN(num) && num < Number(rule.value)) {
-          return rule.message;
+          return resolveLabel(rule.message, locale);
         }
         break;
       }
       case "max": {
         const num = Number(value);
         if (!isNaN(num) && num > Number(rule.value)) {
-          return rule.message;
+          return resolveLabel(rule.message, locale);
         }
         break;
       }
       case "minLength": {
         const str = String(value ?? "");
         if (str.length < Number(rule.value)) {
-          return rule.message;
+          return resolveLabel(rule.message, locale);
         }
         break;
       }
       case "maxLength": {
         const str = String(value ?? "");
         if (str.length > Number(rule.value)) {
-          return rule.message;
+          return resolveLabel(rule.message, locale);
         }
         break;
       }
@@ -46,10 +48,10 @@ export function runValidation(value: unknown, rules: ValidationRule[]): string |
         try {
           const regex = new RegExp(String(rule.value));
           if (!regex.test(str)) {
-            return rule.message;
+            return resolveLabel(rule.message, locale);
           }
         } catch {
-          return rule.message;
+          return resolveLabel(rule.message, locale);
         }
         break;
       }

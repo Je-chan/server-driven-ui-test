@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
+import { useLocale } from "next-intl";
+import type { I18nLabel } from "@/src/shared/lib";
 import type { Widget } from "@/src/entities/dashboard";
 import { useFormSubmit } from "@/src/shared/api";
 import { runValidation, type ValidationRule } from "./validation";
@@ -29,8 +31,8 @@ export interface SubmitConfig {
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   headers?: Record<string, string>;
   contentType?: "application/json" | "multipart/form-data";
-  onSuccess?: { message?: string; redirect?: string; resetForm?: boolean };
-  onError?: { message?: string };
+  onSuccess?: { message?: I18nLabel; redirect?: string; resetForm?: boolean };
+  onError?: { message?: I18nLabel };
 }
 
 export interface FormManagerReturn {
@@ -97,6 +99,7 @@ function buildInitialFormStates(configs: Record<string, FieldConfig[]>): Record<
 }
 
 export function useFormManager(widgets: Widget[]): FormManagerReturn {
+  const locale = useLocale();
   const formConfigs = useMemo(() => extractFormConfigs(widgets), [widgets]);
   const initialStates = useMemo(() => buildInitialFormStates(formConfigs), [formConfigs]);
 
@@ -112,8 +115,8 @@ export function useFormManager(widgets: Widget[]): FormManagerReturn {
     if (!configs) return null;
     const config = configs.find((c) => c.fieldName === fieldName);
     if (!config || config.validation.length === 0) return null;
-    return runValidation(value, config.validation);
-  }, [formConfigs]);
+    return runValidation(value, config.validation, locale);
+  }, [formConfigs, locale]);
 
   const getFieldValue = useCallback((formId: string, fieldName: string): unknown => {
     return ensureForm(formId).fields[fieldName]?.value ?? "";
@@ -182,7 +185,7 @@ export function useFormManager(widgets: Widget[]): FormManagerReturn {
 
       for (const c of configs) {
         const field = updatedFields[c.fieldName] ?? { value: "", error: null, touched: false };
-        const error = runValidation(field.value, c.validation);
+        const error = runValidation(field.value, c.validation, locale);
         if (error) hasErrors = true;
         updatedFields[c.fieldName] = { ...field, touched: true, error };
       }

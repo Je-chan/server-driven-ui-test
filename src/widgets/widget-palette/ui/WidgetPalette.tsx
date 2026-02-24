@@ -1,11 +1,16 @@
 "use client";
 
 import { X } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useBuilderStore } from "@/src/features/dashboard-builder/model/builder.store";
 import { WIDGET_TYPES, type WidgetTypeDefinition } from "@/src/entities/widget";
+import { resolveLabel } from "@/src/shared/lib";
 
 export function WidgetPalette() {
   const { addWidget, addChildWidget, selectedCardId, selectCard, schema } = useBuilderStore();
+  const locale = useLocale();
+  const tw = useTranslations("widget");
+  const tb = useTranslations("builder");
 
   // selectedCardId가 있으면 Card 이름 찾기
   const selectedCard = selectedCardId
@@ -15,10 +20,32 @@ export function WidgetPalette() {
   const handleAddWidget = (widgetDef: WidgetTypeDefinition) => {
     const isFilter = widgetDef.category === "filter";
 
-    // Card가 선택되어 있으면 자식으로 추가
+    // 컨테이너(Card/Conditional Slot)가 선택되어 있으면 자식으로 추가
     if (selectedCardId && selectedCard) {
       const children = selectedCard.children ?? [];
+      const isConditionalSlot = selectedCard.type === "conditional-slot";
       const cardCols = selectedCard.layout.w;
+
+      // conditional-slot의 자식은 부모 전체를 채움 (그리드 레이아웃 무의미)
+      if (isConditionalSlot) {
+        addChildWidget(selectedCardId, {
+          type: widgetDef.type,
+          title: `${widgetDef.label} ${children.length + 1}`,
+          layout: {
+            x: 0,
+            y: 0,
+            w: selectedCard.layout.w,
+            h: selectedCard.layout.h,
+            minW: widgetDef.minSize.w,
+            minH: widgetDef.minSize.h,
+          },
+          style: isFilter
+            ? { backgroundColor: "transparent", borderRadius: 0, padding: 0, shadow: "none" }
+            : {},
+          options: widgetDef.defaultOptions,
+        });
+        return;
+      }
 
       // Card 내부 cols에 비례하여 기본 크기 스케일링 (24-col 기준 → cardCols 기준)
       const scaledW = Math.max(
@@ -91,15 +118,15 @@ export function WidgetPalette() {
   };
 
   const categories = [
-    { key: "container", label: "Containers" },
-    { key: "filter", label: "Filters" },
-    { key: "form", label: "Forms" },
-    { key: "card", label: "Cards" },
-    { key: "chart", label: "Charts" },
-    { key: "table", label: "Tables" },
-    { key: "map", label: "Maps" },
-    { key: "status", label: "Status" },
-  ] as const;
+    { key: "container" as const, label: tw("catContainers") },
+    { key: "filter" as const, label: tw("catFilters") },
+    { key: "form" as const, label: tw("catForms") },
+    { key: "card" as const, label: tw("catCards") },
+    { key: "chart" as const, label: tw("catCharts") },
+    { key: "table" as const, label: tw("catTables") },
+    { key: "map" as const, label: tw("catMaps") },
+    { key: "status" as const, label: tw("catStatus") },
+  ];
 
   return (
     <div className="space-y-6">
@@ -107,7 +134,7 @@ export function WidgetPalette() {
       {selectedCardId && selectedCard && (
         <div className="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
           <span className="text-xs font-medium text-blue-700">
-            [{selectedCard.title}]에 추가 중
+            {tb("addToCard", { card: resolveLabel(selectedCard.title, locale) })}
           </span>
           <button
             onClick={() => selectCard(null)}
@@ -121,9 +148,9 @@ export function WidgetPalette() {
       {categories.map((category) => {
         let categoryWidgets = WIDGET_TYPES.filter((w) => w.category === category.key);
 
-        // Card 내부에 추가할 때는 card 타입(컨테이너) 숨김 (중첩 불가)
+        // 컨테이너 내부에 추가할 때는 컨테이너 타입 숨김 (중첩 불가)
         if (selectedCardId) {
-          categoryWidgets = categoryWidgets.filter((w) => w.type !== "card");
+          categoryWidgets = categoryWidgets.filter((w) => w.type !== "card" && w.type !== "conditional-slot");
         }
 
         if (categoryWidgets.length === 0) return null;

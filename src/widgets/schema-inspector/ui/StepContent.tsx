@@ -1,6 +1,8 @@
 "use client";
 
 import type { DashboardJson, Widget } from "@/src/entities/dashboard";
+import { useLocale, useTranslations } from "next-intl";
+import { resolveLabel } from "@/src/shared/lib";
 import { JsonBlock } from "./JsonBlock";
 import { DataFlowDiagram } from "./DataFlowDiagram";
 
@@ -29,6 +31,9 @@ export function StepContent({ stepId, schema, selectedWidget }: StepContentProps
 
 // Step 1: Schema Overview
 function OverviewContent({ schema }: { schema: DashboardJson }) {
+  const locale = useLocale();
+  const tp = useTranslations("presentation");
+
   // 전체 스키마의 최상위 키만 보여주는 요약
   const schemaOverview = {
     version: schema.version,
@@ -42,18 +47,17 @@ function OverviewContent({ schema }: { schema: DashboardJson }) {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border-l-4 border-blue-500 bg-blue-50 p-4">
-        <h4 className="text-sm font-semibold text-blue-900">Server-Driven UI란?</h4>
+        <h4 className="text-sm font-semibold text-blue-900">{tp("serverDrivenUi")}</h4>
         <p className="mt-1 text-sm text-blue-800">
-          서버가 JSON 스키마로 화면 구성을 정의하고, 프론트엔드는 범용 렌더러로 이를 동적 렌더링합니다.
-          코드 배포 없이 대시보드를 수정할 수 있습니다.
+          {tp("serverDrivenUiDesc")}
         </p>
       </div>
 
-      <h4 className="text-sm font-medium text-foreground">스키마 최상위 구조</h4>
+      <h4 className="text-sm font-medium text-foreground">{tp("schemaTopLevel")}</h4>
       <JsonBlock data={schemaOverview} title="DashboardJson" />
 
       <div className="rounded-lg border-l-4 border-blue-500 bg-blue-50 p-4">
-        <h4 className="text-sm font-semibold text-blue-900">구성 요소</h4>
+        <h4 className="text-sm font-semibold text-blue-900">{tp("components")}</h4>
         <ul className="mt-2 space-y-1 text-sm text-blue-800">
           <li><strong>settings</strong> — 그리드 레이아웃, 테마, 자동 갱신 주기</li>
           <li><strong>dataSources</strong> — API 엔드포인트와 캐시 설정 정의</li>
@@ -76,13 +80,15 @@ function OverviewContent({ schema }: { schema: DashboardJson }) {
 
 // Step 2: Settings
 function SettingsContent({ schema }: { schema: DashboardJson }) {
+  const locale = useLocale();
+  const tp = useTranslations("presentation");
+
   return (
     <div className="space-y-4">
       <div className="rounded-lg border-l-4 border-blue-500 bg-blue-50 p-4">
-        <h4 className="text-sm font-semibold text-blue-900">Settings</h4>
+        <h4 className="text-sm font-semibold text-blue-900">{tp("settings")}</h4>
         <p className="mt-1 text-sm text-blue-800">
-          대시보드의 기본 레이아웃과 동작을 제어하는 설정입니다.
-          react-grid-layout이 이 값을 사용하여 위젯 배치를 계산합니다.
+          {tp("settingsDesc")}
         </p>
       </div>
 
@@ -96,8 +102,8 @@ function SettingsContent({ schema }: { schema: DashboardJson }) {
         />
         <FieldExplanation
           field="rowHeight"
-          value={`${schema.settings?.rowHeight ?? 40}px`}
-          description="그리드 1행의 높이. 위젯의 h 값에 곱해져 실제 픽셀 높이가 결정됩니다."
+          value={`${schema.settings?.rowHeight ?? 1}px`}
+          description="그리드 1행의 높이. rowHeight=1이면 h 값이 곧 픽셀 높이입니다."
         />
         <FieldExplanation
           field="theme"
@@ -122,12 +128,15 @@ function WidgetsContent({
   schema: DashboardJson;
   selectedWidget: Widget | null;
 }) {
+  const locale = useLocale();
+  const tp = useTranslations("presentation");
+
   if (selectedWidget) {
     return (
       <div className="space-y-4">
         <div className="rounded-lg border-l-4 border-blue-500 bg-blue-50 p-4">
           <h4 className="text-sm font-semibold text-blue-900">
-            선택된 위젯: {selectedWidget.title}
+            {tp("selectedWidget", { title: resolveLabel(selectedWidget.title, locale) })}
           </h4>
           <p className="mt-1 text-sm text-blue-800">
             타입: <code className="rounded bg-blue-200 px-1">{selectedWidget.type}</code>
@@ -144,14 +153,14 @@ function WidgetsContent({
   return (
     <div className="space-y-4">
       <div className="rounded-lg border-l-4 border-blue-500 bg-blue-50 p-4">
-        <h4 className="text-sm font-semibold text-blue-900">Widgets</h4>
+        <h4 className="text-sm font-semibold text-blue-900">{tp("widgetsTitle")}</h4>
         <p className="mt-1 text-sm text-blue-800">
-          캔버스의 위젯을 클릭하면 해당 위젯의 JSON 정의를 확인할 수 있습니다.
+          {tp("widgetsClickHint")}
         </p>
       </div>
 
       <h4 className="text-sm font-medium text-foreground">
-        위젯 목록 ({schema.widgets.length}개)
+        {tp("widgetsList", { count: schema.widgets.length })}
       </h4>
       <div className="space-y-2">
         {schema.widgets.map((widget) => (
@@ -160,7 +169,7 @@ function WidgetsContent({
             className="rounded-lg border p-3"
           >
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">{widget.title}</span>
+              <span className="text-sm font-medium">{resolveLabel(widget.title, locale)}</span>
               <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                 {widget.type}
               </span>
@@ -183,15 +192,18 @@ function DataBindingContent({
   schema: DashboardJson;
   selectedWidget: Widget | null;
 }) {
+  const locale = useLocale();
+  const tp = useTranslations("presentation");
+
   if (selectedWidget) {
     return (
       <div className="space-y-4">
         <div className="rounded-lg border-l-4 border-blue-500 bg-blue-50 p-4">
           <h4 className="text-sm font-semibold text-blue-900">
-            {selectedWidget.title}의 데이터 바인딩
+            {tp("dataBindingOfWidget", { title: resolveLabel(selectedWidget.title, locale) })}
           </h4>
           <p className="mt-1 text-sm text-blue-800">
-            위젯이 데이터를 가져오는 과정을 시각화합니다.
+            {tp("dataBindingVisualize")}
           </p>
         </div>
 
@@ -211,15 +223,14 @@ function DataBindingContent({
   return (
     <div className="space-y-4">
       <div className="rounded-lg border-l-4 border-blue-500 bg-blue-50 p-4">
-        <h4 className="text-sm font-semibold text-blue-900">Data Binding</h4>
+        <h4 className="text-sm font-semibold text-blue-900">{tp("dataBindingTitle")}</h4>
         <p className="mt-1 text-sm text-blue-800">
-          위젯은 <code className="rounded bg-blue-200 px-1">dataBinding</code>을 통해
-          데이터 소스와 연결됩니다. 캔버스에서 위젯을 클릭하면 바인딩 상세를 볼 수 있습니다.
+          {tp("dataBindingDesc")}
         </p>
       </div>
 
       <div className="rounded-lg border-l-4 border-blue-500 bg-blue-50 p-4">
-        <h4 className="text-sm font-semibold text-blue-900">바인딩 구조</h4>
+        <h4 className="text-sm font-semibold text-blue-900">{tp("dataBindingStructure")}</h4>
         <ul className="mt-2 space-y-1 text-sm text-blue-800">
           <li><strong>dataSourceId</strong> — 어떤 데이터 소스에서 가져올지</li>
           <li><strong>requestParams</strong> — API 요청 파라미터 (필터 변수 참조 가능)</li>
@@ -231,7 +242,7 @@ function DataBindingContent({
       {schema.dataSources && schema.dataSources.length > 0 && (
         <>
           <h4 className="text-sm font-medium text-foreground">
-            데이터 소스 ({schema.dataSources.length}개)
+            {tp("dataSources", { count: schema.dataSources.length })}
           </h4>
           <JsonBlock
             data={schema.dataSources}
@@ -248,6 +259,9 @@ function DataBindingContent({
 
 // Step 5: Rendered Result
 function RenderedContent({ schema }: { schema: DashboardJson }) {
+  const locale = useLocale();
+  const tp = useTranslations("presentation");
+
   const widgetTypes = schema.widgets.reduce<Record<string, number>>((acc, w) => {
     acc[w.type] = (acc[w.type] ?? 0) + 1;
     return acc;
@@ -256,26 +270,25 @@ function RenderedContent({ schema }: { schema: DashboardJson }) {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border-l-4 border-blue-500 bg-blue-50 p-4">
-        <h4 className="text-sm font-semibold text-blue-900">렌더링 결과</h4>
+        <h4 className="text-sm font-semibold text-blue-900">{tp("renderedResult")}</h4>
         <p className="mt-1 text-sm text-blue-800">
-          JSON 스키마가 프론트엔드 렌더러에 의해 실제 대시보드 화면으로 변환된 결과입니다.
-          좌측 캔버스에서 최종 결과를 확인하세요.
+          {tp("renderedResultDesc")}
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <SummaryCard label="위젯 수" value={String(schema.widgets.length)} />
-        <SummaryCard label="데이터 소스" value={String(schema.dataSources?.length ?? 0)} />
-        <SummaryCard label="필터" value={String(schema.filters?.length ?? 0)} />
-        <SummaryCard label="테마" value={schema.settings?.theme ?? "light"} />
-        <SummaryCard label="그리드 컬럼" value={String(schema.settings?.gridColumns ?? 24)} />
+        <SummaryCard label={tp("widgetCount")} value={String(schema.widgets.length)} />
+        <SummaryCard label={tp("dataSourceCount")} value={String(schema.dataSources?.length ?? 0)} />
+        <SummaryCard label={tp("filterCount")} value={String(schema.filters?.length ?? 0)} />
+        <SummaryCard label="Theme" value={schema.settings?.theme ?? "light"} />
+        <SummaryCard label={tp("gridColumns")} value={String(schema.settings?.gridColumns ?? 24)} />
         <SummaryCard
-          label="자동 갱신"
+          label={tp("autoRefresh")}
           value={schema.settings?.refreshInterval ? `${schema.settings.refreshInterval / 1000}s` : "Off"}
         />
       </div>
 
-      <h4 className="text-sm font-medium text-foreground">위젯 타입별 분포</h4>
+      <h4 className="text-sm font-medium text-foreground">{tp("widgetTypeDistribution")}</h4>
       <div className="space-y-2">
         {Object.entries(widgetTypes).map(([type, count]) => (
           <div key={type} className="flex items-center justify-between rounded-lg border p-3">
@@ -288,13 +301,13 @@ function RenderedContent({ schema }: { schema: DashboardJson }) {
       </div>
 
       <div className="rounded-lg border-l-4 border-blue-500 bg-blue-50 p-4">
-        <h4 className="text-sm font-semibold text-blue-900">렌더링 파이프라인</h4>
+        <h4 className="text-sm font-semibold text-blue-900">{tp("renderPipeline")}</h4>
         <ol className="mt-2 list-inside list-decimal space-y-1 text-sm text-blue-800">
-          <li>서버에서 JSON 스키마를 로드</li>
-          <li>settings로 그리드 레이아웃 구성</li>
-          <li>widgets 배열을 순회하며 WidgetRenderer 호출</li>
-          <li>각 위젯이 dataBinding으로 API 데이터 fetch</li>
-          <li>차트, 테이블, KPI 카드 등으로 렌더링</li>
+          <li>{tp("renderStep1")}</li>
+          <li>{tp("renderStep2")}</li>
+          <li>{tp("renderStep3")}</li>
+          <li>{tp("renderStep4")}</li>
+          <li>{tp("renderStep5")}</li>
         </ol>
       </div>
     </div>

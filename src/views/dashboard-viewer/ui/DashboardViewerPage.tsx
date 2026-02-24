@@ -1,19 +1,23 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { ArrowLeft, Pencil, RefreshCw, Monitor, Maximize2, Presentation, Search } from "lucide-react";
 import { ViewerCanvas, RESOLUTION_PRESETS, type ResolutionKey } from "@/src/widgets/viewer-canvas";
 import { useFilterValues } from "@/src/features/dashboard-filter";
 import { useFormManager } from "@/src/features/dashboard-form";
 import type { DashboardEntity } from "@/src/entities/dashboard";
 import { migrateFiltersToWidgets } from "@/src/entities/dashboard";
+import { LocaleToggle } from "@/src/shared/ui/LocaleToggle";
 
 interface DashboardViewerPageProps {
   dashboard: DashboardEntity;
 }
 
 export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
+  const t = useTranslations("common");
+  const td = useTranslations("dashboard");
   const schema = useMemo(() => migrateFiltersToWidgets(dashboard.schema), [dashboard.schema]);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(1200);
@@ -47,7 +51,7 @@ export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
               className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
-              뒤로가기
+              {t("back")}
             </Link>
             <div className="h-6 w-px bg-border" />
             <div>
@@ -102,29 +106,30 @@ export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
 
             <button className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent">
               <RefreshCw className="h-4 w-4" />
-              새로고침
+              {t("refresh")}
             </button>
             <Link
               href={`/view/${dashboard.id}`}
               className="flex items-center gap-2 rounded-md border border-primary bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
             >
               <Maximize2 className="h-4 w-4" />
-              전체 화면
+              {t("fullscreen")}
             </Link>
             <Link
               href={`/presentation/${dashboard.id}`}
               className="flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100"
             >
               <Presentation className="h-4 w-4" />
-              발표
+              {t("presentation")}
             </Link>
             <Link
               href={`/builder/${dashboard.id}`}
               className="flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               <Pencil className="h-4 w-4" />
-              수정
+              {t("edit")}
             </Link>
+            <LocaleToggle />
           </div>
         </div>
       </header>
@@ -145,24 +150,24 @@ export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
 
         {/* Dashboard 정보 */}
         <div className="mt-6 rounded-lg border bg-card p-6">
-          <h2 className="mb-4 text-lg font-semibold">Dashboard 정보</h2>
+          <h2 className="mb-4 text-lg font-semibold">{td("info")}</h2>
           <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <dt className="text-sm text-muted-foreground">버전</dt>
+              <dt className="text-sm text-muted-foreground">{td("version")}</dt>
               <dd className="text-sm font-medium">{schema.version}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Widgets</dt>
+              <dt className="text-sm text-muted-foreground">{td("widgets")}</dt>
               <dd className="text-sm font-medium">{schema.widgets?.length ?? 0}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Filters</dt>
+              <dt className="text-sm text-muted-foreground">{td("filters")}</dt>
               <dd className="text-sm font-medium">
                 {(schema.widgets ?? []).filter((w) => w.type.startsWith("filter-")).length}
               </dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">테마</dt>
+              <dt className="text-sm text-muted-foreground">{td("theme")}</dt>
               <dd className="text-sm font-medium">{schema.settings?.theme ?? "light"}</dd>
             </div>
           </dl>
@@ -176,7 +181,7 @@ export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
           className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
         >
           <Search className="h-4 w-4" />
-          조회
+          {t("search")}
         </button>
       )}
     </div>

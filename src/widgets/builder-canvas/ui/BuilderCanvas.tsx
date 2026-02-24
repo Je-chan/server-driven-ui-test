@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import ReactGridLayout from "react-grid-layout";
-import { Trash2, GripVertical, LayoutGrid } from "lucide-react";
+import { Trash2, GripVertical, LayoutGrid, Layers, Eye } from "lucide-react";
 import { useBuilderStore } from "@/src/features/dashboard-builder/model/builder.store";
 import { getWidgetType } from "@/src/entities/widget";
+import { resolveLabel } from "@/src/shared/lib";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
@@ -38,6 +40,8 @@ interface LayoutItem {
 const GridLayout = ReactGridLayout as any;
 
 export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: BuilderCanvasProps) {
+  const locale = useLocale();
+  const tb = useTranslations("builder");
   const {
     schema,
     selectedWidgetId,
@@ -53,7 +57,7 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
   const { widgets } = schema;
   const cols = schema.settings?.gridColumns ?? 24;
 
-  const rowHeight = schema.settings?.rowHeight ?? 10;
+  const rowHeight = schema.settings?.rowHeight ?? 30;
 
   // 해상도 기반 캔버스 너비 계산
   const { canvasWidth, scale } = useMemo(() => {
@@ -110,9 +114,9 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
   const handleWidgetClick = (widgetId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     selectWidget(widgetId);
-    // Card 위젯 클릭 시 자동으로 카드 편집 모드 진입
+    // 컨테이너 위젯(card, conditional-slot) 클릭 시 자동으로 편집 모드 진입
     const widget = widgets.find((w) => w.id === widgetId);
-    if (widget?.type === "card") {
+    if (widget?.type === "card" || widget?.type === "conditional-slot") {
       selectCard(widgetId);
     } else {
       selectCard(null);
@@ -160,8 +164,9 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
 
       // 자식 레이아웃 변경 후 Card 높이 자동 조정
       const maxChildBottom = newLayouts.reduce((max, l) => Math.max(max, l.y + l.h), 0);
-      const cardHeaderRows = 1; // 헤더가 차지하는 대략적인 행 수
-      const requiredCardH = maxChildBottom + cardHeaderRows;
+      const headerGridUnits = Math.ceil(36 / rowHeight); // 헤더 높이를 grid unit으로 변환
+      const paddingGridUnits = Math.ceil(8 / rowHeight); // containerPadding 보상
+      const requiredCardH = maxChildBottom + headerGridUnits + paddingGridUnits;
       const card = widgets.find((w) => w.id === cardId);
       if (card && card.layout.h < requiredCardH) {
         updateAllLayouts(
@@ -193,7 +198,7 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
     <div className="flex flex-col items-center">
       {/* 해상도 정보 */}
       <div className="mb-2 text-xs text-muted-foreground">
-        {RESOLUTION_PRESETS[resolution].label} • 배율: {Math.round(scale * 100)}%
+        {RESOLUTION_PRESETS[resolution].label} • {Math.round(scale * 100)}%
       </div>
 
       {/* 캔버스 컨테이너 - 16:9 비율 유지 */}
@@ -208,13 +213,13 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
         {widgets.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center">
             <p className="text-lg font-medium text-muted-foreground">
-              Widget을 여기에 배치하세요
+              {tb("emptyCanvas")}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              왼쪽 패널에서 Widget을 클릭하여 추가하세요
+              {tb("emptyCanvasHint")}
             </p>
             <p className="mt-4 text-xs text-muted-foreground">
-              캔버스: {Math.round(canvasWidth)}px • rowHeight: {rowHeight}
+              {Math.round(canvasWidth)}px • rowHeight: {rowHeight}
             </p>
           </div>
         ) : (
@@ -230,7 +235,7 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
             preventCollision={true}
             isResizable={true}
             isDraggable={true}
-            margin={[8, 8]}
+            margin={[8, 0]}
             containerPadding={[8, 8]}
           >
             {widgets.map((widget) => {
@@ -240,6 +245,8 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
               const isFilter = widget.type.startsWith("filter-");
               const isForm = widget.type === "form";
               const isCard = widget.type === "card";
+              const isConditionalSlot = widget.type === "conditional-slot";
+              const hasConditions = (widget.conditions?.rules?.length ?? 0) > 0;
               const filterKey = isFilter ? (widget.options as { filterKey?: string } | undefined)?.filterKey : undefined;
               const formId = isForm ? (widget.options as { formId?: string } | undefined)?.formId : undefined;
 
@@ -279,10 +286,16 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
                         <GripVertical className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
                         <LayoutGrid className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
                         <span className="truncate text-xs font-medium">
-                          {showHeader ? headerTitle : widget.title}
+                          {showHeader ? resolveLabel(headerTitle, locale) : resolveLabel(widget.title, locale)}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
+                        {hasConditions && (
+                          <span className="flex items-center gap-0.5 rounded bg-amber-100 px-1 py-0.5 text-[10px] text-amber-700">
+                            <Eye className="h-2.5 w-2.5" />
+                            {tb("conditional")}
+                          </span>
+                        )}
                         <span className="rounded bg-blue-100 px-1 py-0.5 text-[10px] text-blue-700">
                           card
                         </span>
@@ -298,7 +311,7 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
                       </div>
                     </div>
 
-                    {/* Card Inner Grid — 이벤트 전파 차단으로 외부 그리드 간섭 방지 */}
+                    {/* Card Inner Grid */}
                     <div
                       className="flex-1 overflow-auto"
                       onMouseDown={stopInnerGridPropagation}
@@ -306,7 +319,7 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
                     >
                       {children.length === 0 ? (
                         <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                          왼쪽 팔레트에서 위젯을 추가하세요
+                          {tb("emptyConditionalSlot")}
                         </div>
                       ) : (
                         <GridLayout
@@ -345,7 +358,7 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
                                 <div className="child-drag-handle flex cursor-grab items-center justify-between border-b bg-muted/20 px-1.5 py-0.5 active:cursor-grabbing">
                                   <div className="flex items-center gap-1 overflow-hidden">
                                     <GripVertical className="h-2.5 w-2.5 flex-shrink-0 text-muted-foreground" />
-                                    <span className="truncate text-[10px] font-medium">{child.title}</span>
+                                    <span className="truncate text-[10px] font-medium">{resolveLabel(child.title, locale)}</span>
                                   </div>
                                   <div className="flex items-center gap-0.5">
                                     <span className="rounded bg-muted px-1 py-0.5 text-[9px] text-muted-foreground">
@@ -375,6 +388,115 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
                 );
               }
 
+              if (isConditionalSlot) {
+                const children = widget.children ?? [];
+
+                return (
+                  <div
+                    key={widget.id}
+                    data-widget-id={widget.id}
+                    className={`group/slot relative flex flex-col overflow-hidden rounded-lg border-2 bg-card shadow-sm transition-all ${
+                      selectedCardId === widget.id
+                        ? "border-purple-400 ring-2 ring-purple-200"
+                        : isSelected
+                          ? "border-primary ring-2 ring-primary/20"
+                          : "border-transparent hover:border-muted-foreground/30"
+                    }`}
+                    onClick={(e) => handleWidgetClick(widget.id, e)}
+                  >
+                    {/* Conditional Slot Header (drag handle) */}
+                    <div className="drag-handle flex cursor-grab items-center justify-between border-b bg-muted/30 px-2 py-1 active:cursor-grabbing">
+                      <div className="flex items-center gap-1.5 overflow-hidden">
+                        <GripVertical className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
+                        <Layers className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
+                        <span className="truncate text-xs font-medium">
+                          {resolveLabel(widget.title, locale)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {hasConditions && (
+                          <span className="flex items-center gap-0.5 rounded bg-amber-100 px-1 py-0.5 text-[10px] text-amber-700">
+                            <Eye className="h-2.5 w-2.5" />
+                            {tb("conditional")}
+                          </span>
+                        )}
+                        <span className="rounded bg-purple-100 px-1 py-0.5 text-[10px] text-purple-700">
+                          conditional-slot
+                        </span>
+                        <span className="rounded bg-muted px-1 py-0.5 text-[10px] text-muted-foreground">
+                          {tb("slotCount", { count: children.length })}
+                        </span>
+                        <button
+                          className="rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover/slot:opacity-100"
+                          onClick={(e) => handleRemoveWidget(widget.id, e)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Slot List */}
+                    <div className="flex-1 overflow-auto p-2">
+                      {children.length === 0 ? (
+                        <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                          {tb("emptyConditionalSlot")}
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {children.map((child) => {
+                            const childDef = getWidgetType(child.type);
+                            const isChildSelected = selectedWidgetId === child.id;
+                            const ChildIcon = childDef?.icon;
+                            const childHasConditions = (child.conditions?.rules?.length ?? 0) > 0;
+
+                            return (
+                              <div
+                                key={child.id}
+                                data-widget-id={child.id}
+                                className={`flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5 transition-all ${
+                                  isChildSelected
+                                    ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                                    : "border-muted hover:border-muted-foreground/30 hover:bg-muted/30"
+                                }`}
+                                onClick={(e) => handleChildWidgetClick(widget.id, child.id, e)}
+                              >
+                                {ChildIcon && <ChildIcon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />}
+                                <span className="flex-1 truncate text-xs font-medium">
+                                  {resolveLabel(child.title, locale)}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  {childHasConditions ? (
+                                    <span className="rounded bg-amber-100 px-1 py-0.5 text-[9px] text-amber-700">
+                                      {tb("conditional")}
+                                    </span>
+                                  ) : (
+                                    <span className="rounded bg-gray-100 px-1 py-0.5 text-[9px] text-gray-500">
+                                      {tb("slotFallback")}
+                                    </span>
+                                  )}
+                                  <span className="rounded bg-muted px-1 py-0.5 text-[9px] text-muted-foreground">
+                                    {child.type}
+                                  </span>
+                                  <button
+                                    className="rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover/slot:opacity-100"
+                                    onClick={(e) => handleRemoveChildWidget(widget.id, child.id, e)}
+                                  >
+                                    <Trash2 className="h-2.5 w-2.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <div className="mt-2 text-center text-[10px] text-muted-foreground">
+                        {tb("addSlotHint")}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div
                   key={widget.id}
@@ -390,9 +512,15 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
                   <div className="drag-handle flex cursor-grab items-center justify-between border-b bg-muted/30 px-2 py-1 active:cursor-grabbing">
                     <div className="flex items-center gap-1.5 overflow-hidden">
                       <GripVertical className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
-                      <span className="truncate text-xs font-medium">{widget.title}</span>
+                      <span className="truncate text-xs font-medium">{resolveLabel(widget.title, locale)}</span>
                     </div>
                     <div className="flex items-center gap-1">
+                      {hasConditions && (
+                        <span className="flex items-center gap-0.5 rounded bg-amber-100 px-1 py-0.5 text-[10px] text-amber-700">
+                          <Eye className="h-2.5 w-2.5" />
+                          {tb("conditional")}
+                        </span>
+                      )}
                       <span className="rounded bg-muted px-1 py-0.5 text-[10px] text-muted-foreground">
                         {widget.type}
                       </span>
