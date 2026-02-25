@@ -494,11 +494,13 @@ function SwitchSlotContent({
                     {hasConditions ? `${child.conditions!.logic.toUpperCase()} (${child.conditions!.rules.length})` : "Fallback"}
                   </span>
                 </div>
-                {hasConditions && (
-                  <div className="mt-2">
-                    <JsonBlock data={child.conditions} title="conditions" maxHeight={150} />
-                  </div>
-                )}
+                <div className="mt-2">
+                  <JsonBlock
+                    data={hasConditions ? child.conditions : child}
+                    title={hasConditions ? "conditions" : "widget (fallback)"}
+                    maxHeight={150}
+                  />
+                </div>
               </div>
             );
           })}

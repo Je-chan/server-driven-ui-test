@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, ChevronRight, Maximize2, X } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, Maximize2, Search, X } from "lucide-react";
 
 interface JsonBlockProps {
   data: unknown;
@@ -32,6 +32,26 @@ function highlightJson(json: string): string {
   );
 }
 
+// 검색어 하이라이트를 JSON 구문 강조 위에 적용
+function highlightSearch(html: string, query: string): { html: string; count: number } {
+  if (!query) return { html, count: 0 };
+
+  // HTML 태그를 제외한 텍스트에서만 검색어 하이라이트
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(?<=>)([^<]*?)(?=<)|^([^<]+)`, "g");
+  let count = 0;
+
+  const result = html.replace(regex, (segment) => {
+    const searchRegex = new RegExp(`(${escaped})`, "gi");
+    return segment.replace(searchRegex, (match) => {
+      count++;
+      return `<mark class="bg-yellow-400/80 text-slate-900 rounded-sm px-0.5">${match}</mark>`;
+    });
+  });
+
+  return { html: result, count };
+}
+
 function JsonExpandModal({
   data,
   title,
@@ -41,16 +61,88 @@ function JsonExpandModal({
   title?: string;
   onClose: () => void;
 }) {
-  const jsonString = JSON.stringify(data, null, 2);
-  const highlighted = highlightJson(jsonString);
+  const [query, setQuery] = useState("");
+  const [activeIndex, setActiveIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const preRef = useRef<HTMLPreElement>(null);
 
+  const jsonString = JSON.stringify(data, null, 2);
+  const baseHighlighted = useMemo(() => highlightJson(jsonString), [jsonString]);
+
+  const { html: finalHtml, count: matchCount } = useMemo(
+    () => highlightSearch(baseHighlighted, query),
+    [baseHighlighted, query],
+  );
+
+  // 활성 매치 하이라이트 — activeIndex 번째 <mark>에 다른 스타일 적용
+  const displayHtml = useMemo(() => {
+    if (matchCount === 0 || !query) return finalHtml;
+    let idx = 0;
+    return finalHtml.replace(
+      /<mark class="bg-yellow-400\/80 text-slate-900 rounded-sm px-0.5">/g,
+      () => {
+        const cls = idx === activeIndex
+          ? "bg-orange-400 text-slate-900 rounded-sm px-0.5 ring-2 ring-orange-300"
+          : "bg-yellow-400/40 text-slate-100 rounded-sm px-0.5";
+        idx++;
+        return `<mark class="${cls}">`;
+      },
+    );
+  }, [finalHtml, activeIndex, matchCount, query]);
+
+  // 활성 매치로 스크롤
+  useEffect(() => {
+    if (!preRef.current || matchCount === 0) return;
+    const marks = preRef.current.querySelectorAll("mark");
+    marks[activeIndex]?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [activeIndex, matchCount, displayHtml]);
+
+  // query 변경 시 activeIndex 리셋
+  useEffect(() => setActiveIndex(0), [query]);
+
+  // 키보드 단축키
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        if (query) {
+          setQuery("");
+          inputRef.current?.focus();
+        } else {
+          onClose();
+        }
+        return;
+      }
+      // Ctrl/Cmd+F → 검색 인풋 포커스
+      if ((e.metaKey || e.ctrlKey) && e.key === "f") {
+        e.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }
+      // Enter / Shift+Enter → 다음/이전 매치
+      if (e.key === "Enter" && document.activeElement === inputRef.current && matchCount > 0) {
+        e.preventDefault();
+        if (e.shiftKey) {
+          setActiveIndex((prev) => (prev - 1 + matchCount) % matchCount);
+        } else {
+          setActiveIndex((prev) => (prev + 1) % matchCount);
+        }
+      }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, [onClose, query, matchCount]);
+
+  // 모달 열리면 검색 인풋 포커스
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const goNext = () => {
+    if (matchCount > 0) setActiveIndex((prev) => (prev + 1) % matchCount);
+  };
+  const goPrev = () => {
+    if (matchCount > 0) setActiveIndex((prev) => (prev - 1 + matchCount) % matchCount);
+  };
 
   return createPortal(
     <div
@@ -74,10 +166,40 @@ function JsonExpandModal({
           </button>
         </div>
 
+        {/* Search Bar */}
+        <div className="flex items-center gap-2 border-b border-slate-700 px-5 py-2">
+          <Search className="h-4 w-4 shrink-0 text-slate-500" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search... (Enter: next, Shift+Enter: prev)"
+            className="flex-1 bg-transparent text-sm text-slate-200 outline-none placeholder:text-slate-600"
+          />
+          {query && (
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-slate-500">
+                {matchCount > 0 ? `${activeIndex + 1}/${matchCount}` : "0"}
+              </span>
+              <button onClick={goPrev} className="rounded p-0.5 text-slate-500 hover:text-slate-300" disabled={matchCount === 0}>
+                <ChevronUp className="h-3.5 w-3.5" />
+              </button>
+              <button onClick={goNext} className="rounded p-0.5 text-slate-500 hover:text-slate-300" disabled={matchCount === 0}>
+                <ChevronDown className="h-3.5 w-3.5" />
+              </button>
+              <button onClick={() => setQuery("")} className="rounded p-0.5 text-slate-500 hover:text-slate-300">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Body */}
         <pre
+          ref={preRef}
           className="flex-1 overflow-auto p-5 text-sm leading-relaxed text-slate-100"
-          dangerouslySetInnerHTML={{ __html: highlighted }}
+          dangerouslySetInnerHTML={{ __html: displayHtml }}
         />
       </div>
     </div>,
