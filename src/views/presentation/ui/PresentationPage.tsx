@@ -7,7 +7,7 @@ import type { DashboardEntity } from "@/src/entities/dashboard";
 import { migrateFiltersToWidgets } from "@/src/entities/dashboard";
 import { PresentationCanvas } from "@/src/widgets/presentation-canvas";
 import { SchemaInspector } from "@/src/widgets/schema-inspector";
-import { PRESENTATION_STEPS } from "../model/types";
+import { buildPresentationSteps } from "../model/types";
 
 interface PresentationPageProps {
   dashboard: DashboardEntity;
@@ -15,12 +15,13 @@ interface PresentationPageProps {
 
 export function PresentationPage({ dashboard }: PresentationPageProps) {
   const schema = useMemo(() => migrateFiltersToWidgets(dashboard.schema), [dashboard.schema]);
+  const steps = useMemo(() => buildPresentationSteps(schema), [schema]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(1200);
 
-  const currentStep = PRESENTATION_STEPS[currentStepIndex];
+  const currentStep = steps[currentStepIndex];
   const selectedWidget = selectedWidgetId
     ? schema.widgets.find((w) => w.id === selectedWidgetId) ?? null
     : null;
@@ -59,7 +60,7 @@ export function PresentationPage({ dashboard }: PresentationPageProps) {
 
         {/* Step Indicators */}
         <div className="flex items-center gap-1">
-          {PRESENTATION_STEPS.map((step, index) => (
+          {steps.map((step, index) => (
             <button
               key={step.id}
               onClick={() => handleStepChange(index)}

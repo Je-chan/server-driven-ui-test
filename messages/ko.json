@@ -257,6 +257,27 @@
     "renderStep2": "settings로 그리드 레이아웃 구성",
     "renderStep3": "widgets 배열을 순회하며 WidgetRenderer 호출",
     "renderStep4": "각 위젯이 dataBinding으로 API 데이터 fetch",
-    "renderStep5": "차트, 테이블, KPI 카드 등으로 렌더링"
+    "renderStep5": "차트, 테이블, KPI 카드 등으로 렌더링",
+    "filtersTitle": "Filters",
+    "filtersDesc": "필터 위젯(filter-*)의 구조와 동작을 살펴봅니다",
+    "filtersExplanation": "필터 위젯은 widgets 배열 내에 filter-* 타입으로 정의됩니다. 각 위젯의 filterKey로 다른 위젯의 requestParams에서 '{{filter.xxx}}'로 참조됩니다.",
+    "filterModeExplanation": "filterMode가 'auto'이면 필터 값 변경 즉시 적용되고, 'manual'이면 조회 버튼(filter-submit)을 클릭해야 적용됩니다.",
+    "filterWidgetList": "필터 위젯 목록 ({count}개)",
+    "noFilterWidgets": "이 대시보드에는 필터 위젯이 없습니다",
+    "filterWidgetCount": "필터 위젯",
+    "formTitle": "Form",
+    "formDesc": "폼 위젯의 필드, 버튼, 제출 설정을 살펴봅니다",
+    "formExplanation": "Form 위젯은 사용자 입력을 받아 API에 제출합니다. formId로 상태를 추적하고, fields/buttons/submitConfig로 구성됩니다.",
+    "formStructureTitle": "Form 구성 요소",
+    "formWidgetList": "Form 위젯 목록 ({count}개)",
+    "selectedForm": "선택된 Form: {title}",
+    "switchSlotTitle": "Switch Slot",
+    "switchSlotDesc": "조건부 위젯 전환(conditional-slot)의 동작 원리를 살펴봅니다",
+    "switchSlotExplanation": "Conditional Slot은 동일한 그리드 위치에서 필터 값에 따라 다른 위젯을 전환하는 컨테이너입니다.",
+    "switchSlotMechanism": "동작 원리",
+    "switchSlotOperators": "조건 연산자",
+    "switchSlotChildren": "자식 슬롯 ({count}개)",
+    "switchSlotWidgetList": "Switch Slot 위젯 목록 ({count}개)",
+    "selectedSwitchSlot": "선택된 Switch Slot: {title}"
   }
 }

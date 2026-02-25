@@ -257,6 +257,27 @@
     "renderStep2": "Configure grid layout with settings",
     "renderStep3": "Iterate widgets array and call WidgetRenderer",
     "renderStep4": "Each widget fetches API data via dataBinding",
-    "renderStep5": "Render as charts, tables, KPI cards, etc."
+    "renderStep5": "Render as charts, tables, KPI cards, etc.",
+    "filtersTitle": "Filters",
+    "filtersDesc": "Explore the structure and behavior of filter widgets (filter-*)",
+    "filtersExplanation": "Filter widgets are defined as filter-* types within the widgets array. Each widget's filterKey is referenced in other widgets' requestParams as '{{filter.xxx}}'.",
+    "filterModeExplanation": "When filterMode is 'auto', filter changes apply immediately. When 'manual', the user must click the submit button (filter-submit) to apply.",
+    "filterWidgetList": "Filter Widgets ({count})",
+    "noFilterWidgets": "This dashboard has no filter widgets",
+    "filterWidgetCount": "Filter Widgets",
+    "formTitle": "Form",
+    "formDesc": "Explore form widget fields, buttons, and submit configuration",
+    "formExplanation": "Form widgets collect user input and submit it to an API. State is tracked via formId, and configured with fields/buttons/submitConfig.",
+    "formStructureTitle": "Form Components",
+    "formWidgetList": "Form Widgets ({count})",
+    "selectedForm": "Selected Form: {title}",
+    "switchSlotTitle": "Switch Slot",
+    "switchSlotDesc": "Explore the conditional widget switching mechanism (conditional-slot)",
+    "switchSlotExplanation": "Conditional Slot is a container that switches between different widgets at the same grid position based on filter values.",
+    "switchSlotMechanism": "How it works",
+    "switchSlotOperators": "Condition Operators",
+    "switchSlotChildren": "Child Slots ({count})",
+    "switchSlotWidgetList": "Switch Slot Widgets ({count})",
+    "selectedSwitchSlot": "Selected Switch Slot: {title}"
   }
 }

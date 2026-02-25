@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import ReactGridLayout from "react-grid-layout";
-import { Database } from "lucide-react";
+import { Database, ListFilter, FileText, GitBranch } from "lucide-react";
 import { WidgetRenderer } from "@/src/entities/widget";
 import { resolveLabel } from "@/src/shared/lib";
 import type { DashboardJson } from "@/src/entities/dashboard";
@@ -85,6 +85,9 @@ export function PresentationCanvas({
 
   const showLayoutBadge = currentStepId === "widgets";
   const showDataBindingIcon = currentStepId === "data-binding";
+  const showFilterBadge = currentStepId === "filters";
+  const showFormBadge = currentStepId === "form";
+  const showSlotBadge = currentStepId === "switch-slot";
 
   if (widgets.length === 0) {
     return (
@@ -125,6 +128,18 @@ export function PresentationCanvas({
             const style = widget.style ?? {};
             const isSelected = selectedWidgetId === widget.id;
             const hasDataBinding = !!widget.dataBinding;
+            const isFilter = widget.type.startsWith("filter-");
+            const isForm = widget.type === "form";
+            const isSlot = widget.type === "conditional-slot";
+
+            // 특정 스텝에서 해당 타입이 아닌 위젯은 opacity 감소
+            const isHighlighted = (() => {
+              if (showFilterBadge) return isFilter;
+              if (showFormBadge) return isForm;
+              if (showSlotBadge) return isSlot;
+              return true;
+            })();
+
             return (
               <div
                 key={widget.id}
@@ -133,7 +148,9 @@ export function PresentationCanvas({
                     ? "ring-2 ring-blue-500 ring-offset-2"
                     : selectedWidgetId
                       ? "opacity-40"
-                      : ""
+                      : !isHighlighted
+                        ? "opacity-30"
+                        : ""
                 }`}
                 style={{
                   backgroundColor: style.backgroundColor ?? "#ffffff",
@@ -150,6 +167,39 @@ export function PresentationCanvas({
                 <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-2">
                   <span className="text-sm font-medium">{resolveLabel(widget.title, locale)}</span>
                   <div className="flex items-center gap-1.5">
+                    {showFilterBadge && (
+                      <span
+                        className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-xs ${
+                          isFilter
+                            ? "bg-violet-100 text-violet-700"
+                            : "bg-slate-100 text-slate-400"
+                        }`}
+                      >
+                        <ListFilter className="h-3 w-3" />
+                      </span>
+                    )}
+                    {showFormBadge && (
+                      <span
+                        className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-xs ${
+                          isForm
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-slate-100 text-slate-400"
+                        }`}
+                      >
+                        <FileText className="h-3 w-3" />
+                      </span>
+                    )}
+                    {showSlotBadge && (
+                      <span
+                        className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-xs ${
+                          isSlot
+                            ? "bg-teal-100 text-teal-700"
+                            : "bg-slate-100 text-slate-400"
+                        }`}
+                      >
+                        <GitBranch className="h-3 w-3" />
+                      </span>
+                    )}
                     {showDataBindingIcon && (
                       <span
                         className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-xs ${
