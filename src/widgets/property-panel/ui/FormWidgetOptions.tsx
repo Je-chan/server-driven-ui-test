@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { Plus, Trash2, ChevronDown, ChevronRight, GripVertical } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useBuilderStore } from "@/src/features/dashboard-builder/model/builder.store";
+import { resolveLabel, type I18nLabel } from "@/src/shared/lib";
 import type { Widget } from "@/src/entities/dashboard";
 
 interface FormFieldDef {
@@ -37,8 +38,16 @@ interface FormWidgetOptionsProps {
 
 export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
   const { updateWidget } = useBuilderStore();
+  const locale = useLocale();
   const tc = useTranslations("common");
   const tf = useTranslations("form");
+
+  /** I18nLabel | string | unknown → 안전하게 string으로 변환 */
+  const toStr = (v: unknown): string => {
+    if (!v) return "";
+    if (typeof v === "string") return v;
+    return resolveLabel(v as I18nLabel, locale);
+  };
   const [expandedField, setExpandedField] = useState<number | null>(null);
   const [showSubmitConfig, setShowSubmitConfig] = useState(false);
 
@@ -196,14 +205,16 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
           {fields.map((field, idx) => (
             <div key={idx} className="rounded-md border bg-muted/30">
               {/* Field Header */}
-              <button
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => setExpandedField(expandedField === idx ? null : idx)}
-                className="flex w-full items-center justify-between p-2 text-left"
+                className="flex w-full cursor-pointer items-center justify-between p-2 text-left"
               >
                 <div className="flex items-center gap-1.5">
                   <GripVertical className="h-3 w-3 text-muted-foreground" />
                   <span className="text-xs font-medium">
-                    {field.label || field.fieldName || tf("fields") + " " + (idx + 1)}
+                    {toStr(field.label) || field.fieldName || tf("fields") + " " + (idx + 1)}
                   </span>
                   <span className="rounded bg-muted px-1 py-0.5 text-[10px] text-muted-foreground">
                     {field.type}
@@ -218,7 +229,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                   </button>
                   {expandedField === idx ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                 </div>
-              </button>
+              </div>
 
               {/* Field Detail */}
               {expandedField === idx && (
@@ -256,7 +267,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                     <label className="text-[10px] text-muted-foreground">{tf("fieldLabel")}</label>
                     <input
                       type="text"
-                      value={field.label ?? ""}
+                      value={toStr(field.label)}
                       onChange={(e) => handleFieldChange(idx, "label", e.target.value)}
                       className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
                     />
@@ -300,7 +311,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                         <label className="text-[10px] text-muted-foreground">Placeholder</label>
                         <input
                           type="text"
-                          value={field.placeholder ?? ""}
+                          value={toStr(field.placeholder)}
                           onChange={(e) => handleFieldChange(idx, "placeholder", e.target.value)}
                           className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
                         />
@@ -315,7 +326,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                         <label className="text-[10px] text-muted-foreground">Placeholder</label>
                         <input
                           type="text"
-                          value={field.placeholder ?? ""}
+                          value={toStr(field.placeholder)}
                           onChange={(e) => handleFieldChange(idx, "placeholder", e.target.value)}
                           className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
                         />
@@ -356,7 +367,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                             />
                             <input
                               type="text"
-                              value={opt.label}
+                              value={toStr(opt.label)}
                               onChange={(e) => handleFieldOptionChange(idx, optIdx, "label", e.target.value)}
                               placeholder="라벨"
                               className="flex-1 rounded border bg-background px-1.5 py-0.5 text-[10px]"
@@ -407,7 +418,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                           <label className="text-[10px] text-muted-foreground">{tf("checkboxLabel")}</label>
                           <input
                             type="text"
-                            value={field.checkboxLabel ?? ""}
+                            value={toStr(field.checkboxLabel)}
                             onChange={(e) => handleFieldChange(idx, "checkboxLabel", e.target.value)}
                             className="mt-0.5 w-full rounded border bg-background px-1.5 py-0.5 text-[10px]"
                           />
@@ -423,7 +434,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                         <label className="text-[10px] text-muted-foreground">Placeholder</label>
                         <input
                           type="text"
-                          value={field.placeholder ?? ""}
+                          value={toStr(field.placeholder)}
                           onChange={(e) => handleFieldChange(idx, "placeholder", e.target.value)}
                           className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
                         />
@@ -522,7 +533,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
                           )}
                           <input
                             type="text"
-                            value={rule.message}
+                            value={toStr(rule.message)}
                             onChange={(e) => handleValidationChange(idx, ruleIdx, "message", e.target.value)}
                             placeholder={tf("errorMessage")}
                             className="mt-1 w-full rounded border px-1.5 py-0.5 text-[10px]"
@@ -562,7 +573,7 @@ export function FormWidgetOptions({ widget }: FormWidgetOptionsProps) {
             <div key={idx} className="flex items-center gap-1.5 rounded-md border bg-muted/30 p-2">
               <input
                 type="text"
-                value={btn.label}
+                value={toStr(btn.label)}
                 onChange={(e) => handleButtonChange(idx, "label", e.target.value)}
                 placeholder="라벨"
                 className="flex-1 rounded border bg-background px-2 py-1 text-xs"
