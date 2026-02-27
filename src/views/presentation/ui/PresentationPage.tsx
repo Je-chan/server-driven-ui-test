@@ -1,3 +1,26 @@
+/**
+ * PresentationPage — 대시보드 발표(프레젠테이션) 모드 페이지.
+ *
+ * 각 대시보드의 /presentation 세그먼트에서 렌더링되며,
+ * JSON 스키마를 단계별로 시각적으로 설명하는 발표 화면을 제공한다.
+ *
+ * 레이아웃 구조:
+ * ┌──────────────────────────────────────────────────────┐
+ * │  Header: [← 뒤로] │ 대시보드 제목 │ [Step 버튼들]    │
+ * ├──────────────────────────────┬───────────────────────┤
+ * │  Canvas (60%)                │  Inspector (40%)      │
+ * │  - PresentationCanvas        │  - SchemaInspector     │
+ * │  - 읽기 전용 위젯 그리드      │  - 스텝별 설명        │
+ * │  - 스텝별 하이라이트          │  - JSON 블록          │
+ * │  - 위젯 클릭 → 상세 보기     │  - 데이터 흐름 다이어그램│
+ * └──────────────────────────────┴───────────────────────┘
+ *
+ * 동작 흐름:
+ * 1. dashboard.schema를 migrateFiltersToWidgets()로 변환 (레거시 필터 호환)
+ * 2. buildPresentationSteps()로 스키마 기반 동적 스텝 구성
+ * 3. 스텝 버튼 클릭 → currentStepIndex 변경 → Canvas/Inspector 연동 갱신
+ * 4. Canvas에서 위젯 클릭 → selectedWidgetId 변경 → Inspector에 상세 정보 표시
+ */
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";

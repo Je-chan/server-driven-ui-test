@@ -1,3 +1,21 @@
+/**
+ * StepContent — 발표 모드 Inspector 패널의 스텝별 콘텐츠 렌더러.
+ *
+ * PresentationPage의 우측 패널(SchemaInspector)에서 현재 스텝에 따라
+ * 적절한 설명/JSON/다이어그램을 렌더링한다.
+ *
+ * 스텝별 콘텐츠:
+ * - overview: 스키마 최상위 구조 요약 + Server-Driven UI 개념 설명
+ * - settings: gridColumns, rowHeight, theme, filterMode 등 설정 해설
+ * - filters: 필터 시스템 아키텍처 (타입, filterKey, 데이터 흐름, auto/manual)
+ * - widgets: 위젯 목록 + 선택 시 JSON 상세 보기
+ * - data-binding: 데이터 바인딩 구조 + DataFlowDiagram 시각화
+ * - form: 폼 위젯 구조 (fields, buttons, submitConfig)
+ * - switch-slot: 조건부 렌더링 메커니즘 (conditions, evaluateConditions)
+ * - rendered: 최종 렌더링 결과 요약 + 렌더링 파이프라인 설명
+ *
+ * 위젯 선택 시 해당 위젯의 상세 JSON과 관련 설명을 표시한다.
+ */
 "use client";
 
 import type { DashboardJson, Widget } from "@/src/entities/dashboard";
@@ -7,11 +25,12 @@ import { JsonBlock } from "./JsonBlock";
 import { DataFlowDiagram } from "./DataFlowDiagram";
 
 interface StepContentProps {
-  stepId: string;
-  schema: DashboardJson;
-  selectedWidget: Widget | null;
+  stepId: string;                    // 현재 활성 스텝 ID
+  schema: DashboardJson;            // 대시보드 JSON 스키마
+  selectedWidget: Widget | null;     // 캔버스에서 클릭된 위젯 (없으면 null)
 }
 
+/** 스텝 ID에 따라 적절한 콘텐츠 컴포넌트를 switch로 분기 */
 export function StepContent({ stepId, schema, selectedWidget }: StepContentProps) {
   switch (stepId) {
     case "overview":
@@ -35,7 +54,7 @@ export function StepContent({ stepId, schema, selectedWidget }: StepContentProps
   }
 }
 
-// Step 1: Schema Overview
+/** Step: Schema Overview — Server-Driven UI 개념 소개 + 스키마 최상위 구조 요약 */
 function OverviewContent({ schema }: { schema: DashboardJson }) {
   const locale = useLocale();
   const tp = useTranslations("presentation");
@@ -87,7 +106,7 @@ function OverviewContent({ schema }: { schema: DashboardJson }) {
   );
 }
 
-// Step 2: Settings
+/** Step: Settings — gridColumns, rowHeight, theme, filterMode 등 대시보드 설정 해설 */
 function SettingsContent({ schema }: { schema: DashboardJson }) {
   const locale = useLocale();
   const tp = useTranslations("presentation");
@@ -134,7 +153,11 @@ function SettingsContent({ schema }: { schema: DashboardJson }) {
   );
 }
 
-// Filters
+/**
+ * FiltersContent — 필터 시스템 설명 스텝.
+ * 필터 아키텍처, 데이터 흐름, 필터 위젯 목록을 보여준다.
+ * 위젯 선택 시 해당 필터의 상세 JSON과 역할을 설명한다.
+ */
 function FiltersContent({
   schema,
   selectedWidget,
@@ -146,9 +169,15 @@ function FiltersContent({
   const tp = useTranslations("presentation");
 
   const filterWidgets = schema.widgets.filter((w) => w.type.startsWith("filter-"));
+  const hasSubmit = schema.widgets.some((w) => w.type === "filter-submit");
 
+  // ── 특정 필터 위젯이 선택된 경우: 상세 설명 ──
   if (selectedWidget && selectedWidget.type.startsWith("filter-")) {
     const filterKey = (selectedWidget.options as Record<string, unknown>)?.filterKey as string | undefined;
+    const opts = (selectedWidget.options ?? {}) as Record<string, unknown>;
+    const hasDependsOn = !!opts.dependsOn;
+    const hasFixedValue = opts.fixedValue !== undefined && opts.fixedValue !== null;
+
     return (
       <div className="space-y-4">
         <div className="rounded-lg border-l-4 border-violet-500 bg-violet-50 p-4">
@@ -166,11 +195,41 @@ function FiltersContent({
           </p>
         </div>
 
+        {/* 필터 위젯의 데이터 흐름 설명 */}
+        <div className="rounded-lg border-l-4 border-violet-500 bg-violet-50 p-4">
+          <h4 className="text-sm font-semibold text-violet-900">데이터 흐름</h4>
+          <div className="mt-2 space-y-1 font-mono text-xs text-violet-800">
+            <p>사용자 조작 → onFilterChange(&quot;{filterKey}&quot;, value)</p>
+            <p>→ useFilterValues.setFilterValue()</p>
+            <p>→ pendingValues[&quot;{filterKey}&quot;] = value</p>
+            <p>→ {hasSubmit ? "조회 버튼 클릭 → applyFilters()" : "즉시"} URL SearchParams 기록</p>
+            <p>→ appliedValues 갱신</p>
+            <p>→ resolveTemplateParams() 에서 {`{{filter.${filterKey}}}`} 치환</p>
+            <p>→ 데이터 위젯 리페치</p>
+          </div>
+        </div>
+
+        {/* 특수 기능 배지 */}
+        {(hasDependsOn || hasFixedValue) && (
+          <div className="rounded-lg border-l-4 border-amber-500 bg-amber-50 p-4">
+            <h4 className="text-sm font-semibold text-amber-900">특수 기능</h4>
+            <ul className="mt-2 space-y-1 text-sm text-amber-800">
+              {hasDependsOn && (
+                <li><strong>dependsOn</strong> — 부모 필터 값에 따라 이 필터의 선택지가 동적 변경됨</li>
+              )}
+              {hasFixedValue && (
+                <li><strong>fixedValue</strong> — 관리자가 값을 고정하여 사용자 변경 불가</li>
+              )}
+            </ul>
+          </div>
+        )}
+
         <JsonBlock data={selectedWidget} title="Filter Widget JSON" maxHeight={500} />
       </div>
     );
   }
 
+  // ── 필터 위젯 미선택 시: 전체 필터 시스템 설명 ──
   return (
     <div className="space-y-4">
       <div className="rounded-lg border-l-4 border-violet-500 bg-violet-50 p-4">
@@ -180,15 +239,48 @@ function FiltersContent({
         </p>
       </div>
 
+      {/* 필터 아키텍처 상세 설명 */}
+      <div className="rounded-lg border-l-4 border-violet-500 bg-violet-50 p-4">
+        <h4 className="text-sm font-semibold text-violet-900">필터 아키텍처</h4>
+        <ul className="mt-2 space-y-1 text-sm text-violet-800">
+          <li><strong>useFilterValues</strong> — 이중 상태(pending/applied) 관리 훅</li>
+          <li><strong>pendingValues</strong> — 필터 UI에 즉시 반영되는 임시 값</li>
+          <li><strong>appliedValues</strong> — URL에서 역직렬화한 확정 값 (데이터 위젯이 참조)</li>
+          <li><strong>URL 동기화</strong> — 필터 상태를 SearchParams에 저장 (북마크/공유 가능)</li>
+          <li><strong>queueMicrotask</strong> — DatepickerFilterWidget의 연속 호출을 하나의 URL 업데이트로 배치</li>
+        </ul>
+      </div>
+
+      {/* filterMode 설명 */}
       <div className="rounded-lg border-l-4 border-violet-500 bg-violet-50 p-4">
         <h4 className="text-sm font-semibold text-violet-900">filterMode</h4>
         <p className="mt-1 text-sm text-violet-800">
           {tp("filterModeExplanation")}
         </p>
-        <div className="mt-2">
+        <div className="mt-2 flex items-center gap-2">
           <span className="rounded bg-violet-200 px-2 py-0.5 text-xs font-mono text-violet-800">
             filterMode: &quot;{schema.settings?.filterMode ?? "auto"}&quot;
           </span>
+          {hasSubmit && (
+            <span className="rounded bg-amber-200 px-2 py-0.5 text-xs font-mono text-amber-800">
+              filter-submit 위젯 존재 → manual 모드
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* 필터 타입 요약 */}
+      <div className="rounded-lg border-l-4 border-violet-500 bg-violet-50 p-4">
+        <h4 className="text-sm font-semibold text-violet-900">필터 위젯 타입</h4>
+        <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-violet-800">
+          <div><code className="rounded bg-violet-200 px-1">filter-select</code> — 단일 선택</div>
+          <div><code className="rounded bg-violet-200 px-1">filter-multiselect</code> — 다중 선택</div>
+          <div><code className="rounded bg-violet-200 px-1">filter-datepicker</code> — 날짜 범위</div>
+          <div><code className="rounded bg-violet-200 px-1">filter-input</code> — 텍스트 입력</div>
+          <div><code className="rounded bg-violet-200 px-1">filter-tab</code> — 탭/버튼 그룹</div>
+          <div><code className="rounded bg-violet-200 px-1">filter-toggle</code> — ON/OFF 토글</div>
+          <div><code className="rounded bg-violet-200 px-1">filter-treeselect</code> — 트리 선택</div>
+          <div><code className="rounded bg-violet-200 px-1">filter-submit</code> — 조회 버튼</div>
         </div>
       </div>
 
@@ -200,6 +292,7 @@ function FiltersContent({
           <div className="space-y-2">
             {filterWidgets.map((widget) => {
               const filterKey = (widget.options as Record<string, unknown>)?.filterKey as string | undefined;
+              const opts = (widget.options ?? {}) as Record<string, unknown>;
               return (
                 <div key={widget.id} className="rounded-lg border p-3">
                   <div className="flex items-center justify-between">
@@ -208,15 +301,25 @@ function FiltersContent({
                       {widget.type}
                     </span>
                   </div>
-                  <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     {filterKey && (
                       <span>
                         filterKey: <code className="rounded bg-muted px-1">{filterKey}</code>
                       </span>
                     )}
-                    {(widget.options as Record<string, unknown>)?.defaultValue !== undefined && (
+                    {opts.defaultValue !== undefined && (
                       <span>
-                        default: <code className="rounded bg-muted px-1">{String((widget.options as Record<string, unknown>).defaultValue)}</code>
+                        default: <code className="rounded bg-muted px-1">{String(opts.defaultValue)}</code>
+                      </span>
+                    )}
+                    {opts.fixedValue !== undefined && opts.fixedValue !== null && (
+                      <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-700">
+                        fixed
+                      </span>
+                    )}
+                    {!!opts.dependsOn && (
+                      <span className="rounded bg-blue-100 px-1.5 py-0.5 text-blue-700">
+                        dependsOn
                       </span>
                     )}
                   </div>
@@ -234,7 +337,7 @@ function FiltersContent({
   );
 }
 
-// Widgets
+/** Step: Widgets — 위젯 목록 표시, 클릭 시 상세 JSON 보기 */
 function WidgetsContent({
   schema,
   selectedWidget,
@@ -298,7 +401,7 @@ function WidgetsContent({
   );
 }
 
-// Step 4: Data Binding
+/** Step: Data Binding — 위젯↔데이터 소스 연결 구조 + DataFlowDiagram 시각화 */
 function DataBindingContent({
   schema,
   selectedWidget,
@@ -371,7 +474,7 @@ function DataBindingContent({
   );
 }
 
-// Form
+/** Step: Form — 폼 위젯의 fields, buttons, submitConfig 구조 설명 */
 function FormContent({
   schema,
   selectedWidget,
@@ -451,7 +554,11 @@ function FormContent({
   );
 }
 
-// Switch Slot
+/**
+ * SwitchSlotContent — 조건부 렌더링(conditional-slot) 설명 스텝.
+ * ConditionalSlotWidget의 동작 원리, evaluateConditions 엔진,
+ * 각 자식 위젯의 조건 규칙을 시각적으로 설명한다.
+ */
 function SwitchSlotContent({
   schema,
   selectedWidget,
@@ -464,8 +571,12 @@ function SwitchSlotContent({
 
   const slotWidgets = schema.widgets.filter((w) => w.type === "conditional-slot");
 
+  // ── conditional-slot 위젯이 선택된 경우: 자식별 조건 상세 보기 ──
   if (selectedWidget && selectedWidget.type === "conditional-slot") {
     const children = selectedWidget.children ?? [];
+    const conditionedChildren = children.filter((c) => c.conditions?.rules?.length);
+    const fallbackChildren = children.filter((c) => !c.conditions?.rules?.length);
+
     return (
       <div className="space-y-4">
         <div className="rounded-lg border-l-4 border-teal-500 bg-teal-50 p-4">
@@ -474,9 +585,23 @@ function SwitchSlotContent({
           </h4>
           <p className="mt-1 text-sm text-teal-800">
             {tp("switchSlotChildren", { count: children.length })}
+            {" ("}조건부: {conditionedChildren.length}, 폴백: {fallbackChildren.length}{")"}
           </p>
         </div>
 
+        {/* 활성 자식 결정 알고리즘 설명 */}
+        <div className="rounded-lg border-l-4 border-teal-500 bg-teal-50 p-4">
+          <h4 className="text-sm font-semibold text-teal-900">활성 자식 결정 알고리즘</h4>
+          <ol className="mt-2 list-inside list-decimal space-y-1 text-sm text-teal-800">
+            <li>children 배열이 비어있으면 → 빈 슬롯 플레이스홀더 표시</li>
+            <li>filterValues가 없으면 → 첫 번째 자식 렌더링 (빌더 미리보기)</li>
+            <li>conditions가 있는 자식들을 순회하며 evaluateConditions()로 매칭 검사</li>
+            <li>첫 번째 매칭 자식을 activeChild로 선택</li>
+            <li>매칭 없으면 → 조건이 없는 첫 자식(폴백)을 선택</li>
+          </ol>
+        </div>
+
+        {/* 자식 위젯별 조건 카드 */}
         <div className="space-y-2">
           {children.map((child, i) => {
             const hasConditions = child.conditions && child.conditions.rules.length > 0;
@@ -486,14 +611,38 @@ function SwitchSlotContent({
                   <span className="text-sm font-medium">
                     Slot {i + 1}: {resolveLabel(child.title, locale)}
                   </span>
-                  <span className={`rounded px-2 py-0.5 text-xs ${
-                    hasConditions
-                      ? "bg-teal-100 text-teal-700"
-                      : "bg-slate-100 text-slate-500"
-                  }`}>
-                    {hasConditions ? `${child.conditions!.logic.toUpperCase()} (${child.conditions!.rules.length})` : "Fallback"}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                      {child.type}
+                    </span>
+                    <span className={`rounded px-2 py-0.5 text-xs ${
+                      hasConditions
+                        ? "bg-teal-100 text-teal-700"
+                        : "bg-slate-100 text-slate-500"
+                    }`}>
+                      {hasConditions ? `${child.conditions!.logic.toUpperCase()} (${child.conditions!.rules.length} rules)` : "Fallback"}
+                    </span>
+                  </div>
                 </div>
+                {/* 조건이 있는 경우: 각 규칙을 사람이 읽기 좋은 형태로 표시 */}
+                {hasConditions && (
+                  <div className="mt-2 space-y-1">
+                    {child.conditions!.rules.map((rule, rIdx) => (
+                      <div key={rIdx} className="flex items-center gap-1 text-xs">
+                        {rIdx > 0 && (
+                          <span className="rounded bg-teal-200 px-1 py-0.5 text-[10px] font-bold text-teal-700">
+                            {child.conditions!.logic.toUpperCase()}
+                          </span>
+                        )}
+                        <code className="rounded bg-muted px-1">{rule.variable}</code>
+                        <span className="font-medium text-teal-700">{rule.operator}</span>
+                        {rule.value !== undefined && (
+                          <code className="rounded bg-muted px-1">{JSON.stringify(rule.value)}</code>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="mt-2">
                   <JsonBlock
                     data={hasConditions ? child.conditions : child}
@@ -511,6 +660,7 @@ function SwitchSlotContent({
     );
   }
 
+  // ── 미선택 시: 조건부 렌더링 시스템 전체 설명 ──
   return (
     <div className="space-y-4">
       <div className="rounded-lg border-l-4 border-teal-500 bg-teal-50 p-4">
@@ -520,26 +670,52 @@ function SwitchSlotContent({
         </p>
       </div>
 
+      {/* 렌더링 흐름 다이어그램 */}
+      <div className="rounded-lg border-l-4 border-teal-500 bg-teal-50 p-4">
+        <h4 className="text-sm font-semibold text-teal-900">렌더링 흐름</h4>
+        <div className="mt-2 space-y-1 font-mono text-xs text-teal-800">
+          <p>filterValues (useFilterValues)</p>
+          <p>{"  ↓"}</p>
+          <p>ConditionalSlotWidget.activeChild (useMemo)</p>
+          <p>{"  ↓"} evaluateConditions(child.conditions, filterValues)</p>
+          <p>{"  ↓"} 첫 번째 매칭 자식 선택</p>
+          <p>{"  ↓"} 없으면 → 폴백 자식</p>
+          <p>{"  ↓"}</p>
+          <p>WidgetRenderer(activeChild)</p>
+        </div>
+      </div>
+
       <div className="rounded-lg border-l-4 border-teal-500 bg-teal-50 p-4">
         <h4 className="text-sm font-semibold text-teal-900">{tp("switchSlotMechanism")}</h4>
         <ul className="mt-2 space-y-1 text-sm text-teal-800">
           <li><strong>children[]</strong> — 여러 후보 위젯을 자식으로 보유</li>
-          <li><strong>conditions</strong> — 각 자식에 rules + logic 설정</li>
-          <li><strong>evaluateConditions()</strong> — 필터 값과 대조하여 첫 번째 매칭 자식 렌더링</li>
-          <li>조건 없는 자식 = <strong>폴백</strong> (기본 표시)</li>
+          <li><strong>conditions</strong> — 각 자식에 {`{ logic: "and"|"or", rules: [...] }`} 설정</li>
+          <li><strong>evaluateConditions()</strong> — filterValues와 대조하여 true/false 판정</li>
+          <li>조건 없는 자식 = <strong>폴백</strong> (모든 조건 미매칭 시 기본 표시)</li>
         </ul>
       </div>
 
       <div className="rounded-lg border-l-4 border-teal-500 bg-teal-50 p-4">
         <h4 className="text-sm font-semibold text-teal-900">{tp("switchSlotOperators")}</h4>
         <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-teal-800">
-          <div><code className="rounded bg-teal-200 px-1">eq</code> — 같음</div>
+          <div><code className="rounded bg-teal-200 px-1">eq</code> — 같음 (String 비교)</div>
           <div><code className="rounded bg-teal-200 px-1">neq</code> — 같지 않음</div>
-          <div><code className="rounded bg-teal-200 px-1">in</code> — 포함</div>
-          <div><code className="rounded bg-teal-200 px-1">notIn</code> — 미포함</div>
-          <div><code className="rounded bg-teal-200 px-1">exists</code> — 값 존재</div>
-          <div><code className="rounded bg-teal-200 px-1">notExists</code> — 값 없음</div>
+          <div><code className="rounded bg-teal-200 px-1">in</code> — 배열에 포함</div>
+          <div><code className="rounded bg-teal-200 px-1">notIn</code> — 배열에 미포함</div>
+          <div><code className="rounded bg-teal-200 px-1">exists</code> — 값이 존재하고 비어있지 않음</div>
+          <div><code className="rounded bg-teal-200 px-1">notExists</code> — 값 없음 또는 빈 문자열</div>
         </div>
+      </div>
+
+      {/* 관련 소스 파일 안내 */}
+      <div className="rounded-lg border-l-4 border-teal-500 bg-teal-50 p-4">
+        <h4 className="text-sm font-semibold text-teal-900">관련 소스 파일</h4>
+        <ul className="mt-2 space-y-1 text-xs font-mono text-teal-800">
+          <li>entities/widget/ui/ConditionalSlotWidget.tsx — 조건부 렌더링 컨테이너</li>
+          <li>shared/lib/evaluate-conditions.ts — 조건 평가 엔진</li>
+          <li>widgets/property-panel/ui/ConditionsEditor.tsx — 빌더 조건 편집 UI</li>
+          <li>entities/dashboard/model/types.ts — conditionRuleSchema, widgetConditionsSchema</li>
+        </ul>
       </div>
 
       <h4 className="text-sm font-medium text-foreground">
@@ -548,6 +724,7 @@ function SwitchSlotContent({
       <div className="space-y-2">
         {slotWidgets.map((widget) => {
           const childCount = widget.children?.length ?? 0;
+          const conditionedCount = widget.children?.filter((c) => c.conditions?.rules?.length).length ?? 0;
           return (
             <div key={widget.id} className="rounded-lg border p-3">
               <div className="flex items-center justify-between">
@@ -558,6 +735,7 @@ function SwitchSlotContent({
               </div>
               <div className="mt-1 text-xs text-muted-foreground">
                 {tp("switchSlotChildren", { count: childCount })}
+                {" ("}조건부: {conditionedCount}, 폴백: {childCount - conditionedCount}{")"}
               </div>
             </div>
           );
@@ -567,7 +745,7 @@ function SwitchSlotContent({
   );
 }
 
-// Rendered Result
+/** Step: Rendered Result — 최종 렌더링 결과 요약 + 렌더링 파이프라인 설명 */
 function RenderedContent({ schema }: { schema: DashboardJson }) {
   const tp = useTranslations("presentation");
 

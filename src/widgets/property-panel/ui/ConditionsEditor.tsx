@@ -1,3 +1,26 @@
+/**
+ * ConditionsEditor — 빌더 속성 패널의 조건부 렌더링 규칙 편집기.
+ *
+ * conditional-slot 위젯의 자식 위젯에 conditions를 설정할 때 사용한다.
+ * 관리자가 로우코드 빌더에서 드래그 앤 드롭이 아닌 폼 UI로 조건 규칙을 편집할 수 있게 해준다.
+ *
+ * 기능:
+ * - 규칙 추가/삭제: + 버튼으로 새 규칙 추가, 휴지통 아이콘으로 삭제
+ * - variable 선택: 대시보드 내 모든 filter-* 위젯의 filterKey를 드롭다운으로 표시
+ *                  (filterKey가 없으면 직접 텍스트 입력 가능)
+ * - operator 선택: eq, neq, in, notIn, exists, notExists 중 선택
+ * - value 입력: in/notIn은 쉼표 구분 배열 입력, exists/notExists는 value 불필요
+ * - logic 토글: 2개 이상 규칙 시 AND/OR 토글 표시
+ *
+ * 데이터 흐름:
+ * 1. 관리자가 규칙 수정
+ * 2. handleUpdate() → builderStore.updateWidget() 또는 updateChildWidget() 호출
+ * 3. Zustand 스토어에 스키마 반영
+ * 4. 저장 시 API로 DB에 persist
+ * 5. 뷰어에서 evaluateConditions()가 이 규칙을 평가
+ *
+ * 사용처: PropertyPanel → ConditionsEditor (빌더 우측 패널)
+ */
 "use client";
 
 import { useState } from "react";
@@ -7,8 +30,8 @@ import { useBuilderStore } from "@/src/features/dashboard-builder/model/builder.
 import type { Widget, WidgetConditions } from "@/src/entities/dashboard";
 
 interface ConditionsEditorProps {
-  widget: Widget;
-  parentCardId: string | null;
+  widget: Widget;                    // 조건을 편집할 대상 위젯
+  parentCardId: string | null;       // conditional-slot 부모 ID (자식 편집 시 필요)
 }
 
 export function ConditionsEditor({ widget, parentCardId }: ConditionsEditorProps) {

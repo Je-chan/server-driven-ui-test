@@ -1,3 +1,22 @@
+/**
+ * FilterSubmitWidget — 필터 적용(조회) 버튼.
+ *
+ * manual 필터 모드에서 사용되는 "조회" 버튼 위젯.
+ * 이 위젯이 대시보드에 존재하면 useFilterValues가 자동으로 manual 모드로 전환된다.
+ *
+ * 동작 원리:
+ * - 사용자가 필터를 변경하면 pendingValues만 갱신 (UI 반영)
+ * - 이 버튼을 클릭하면 applyFilters() 호출 → pendingValues를 URL에 기록
+ * - URL 변경 → appliedValues 갱신 → 데이터 위젯 리페치
+ * - hasPendingChanges가 false이면 버튼 비활성화 (변경사항 없음)
+ *
+ * 스타일 변형:
+ * - "primary": 배경색이 채워진 기본 버튼
+ * - "outline": 테두리만 있는 아웃라인 버튼
+ *
+ * 스키마 예시:
+ * { type: "filter-submit", options: { label: "조회", variant: "primary" } }
+ */
 "use client";
 
 import { Search } from "lucide-react";

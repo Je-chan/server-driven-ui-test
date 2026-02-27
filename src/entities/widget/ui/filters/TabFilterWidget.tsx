@@ -1,3 +1,20 @@
+/**
+ * TabFilterWidget — 탭/버튼 그룹 필터.
+ *
+ * 여러 선택지를 시각적인 탭 또는 버튼 그룹으로 표시하고,
+ * 하나를 선택하면 즉시 onFilterChange를 호출한다.
+ *
+ * 3가지 비주얼 변형(variant):
+ * - "pill": 둥근 알약 형태 (기본값) — 세그먼트 컨트롤 스타일
+ * - "tab": 하단 보더 강조 — 탭 바 스타일
+ * - "button": 테두리 버튼 — 독립 버튼 스타일
+ *
+ * SelectFilterWidget과 기능은 같지만 UI가 다르다.
+ * 선택지가 적고(2~5개) 한눈에 보여야 할 때 적합.
+ *
+ * 스키마 예시:
+ * { type: "filter-tab", options: { filterKey: "viewMode", variant: "pill", options: [...] } }
+ */
 "use client";
 
 import { ToggleLeft } from "lucide-react";

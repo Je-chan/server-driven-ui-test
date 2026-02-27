@@ -1,3 +1,16 @@
+/**
+ * ToggleFilterWidget — ON/OFF 토글 스위치 필터.
+ *
+ * 이진(Boolean) 값을 토글하는 스위치 형태의 필터.
+ * ON/OFF 각각에 대응하는 값과 라벨을 커스터마이즈할 수 있다.
+ *
+ * 설정 옵션:
+ * - onValue/offValue: ON/OFF 시 저장될 실제 값 (기본: "on"/"off")
+ * - onLabel/offLabel: 화면에 표시될 라벨 (기본: "ON"/"OFF", 다국어 지원)
+ *
+ * 스키마 예시:
+ * { type: "filter-toggle", options: { filterKey: "showInactive", onValue: "true", offValue: "false" } }
+ */
 "use client";
 
 import { ToggleLeft, ToggleRight } from "lucide-react";

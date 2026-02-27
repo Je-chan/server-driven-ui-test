@@ -1,3 +1,43 @@
+/**
+ * WidgetRenderer — Server-Driven UI의 핵심 렌더링 엔진.
+ *
+ * JSON 스키마의 위젯 정의(Widget)를 받아 적절한 React 컴포넌트로 렌더링한다.
+ * 위젯 타입에 따라 3가지 렌더링 경로로 분기한다:
+ *
+ * ┌────────────────────────────────────────────────────┐
+ * │                  WidgetRenderer                     │
+ * │                                                    │
+ * │  widget.type 에 따른 분기:                          │
+ * │                                                    │
+ * │  1. "filter-submit" → FilterSubmitWidget            │
+ * │     (조회 버튼, applyFilters 호출)                   │
+ * │                                                    │
+ * │  2. "filter-*" → renderFilterWidget()               │
+ * │     (필터 위젯 — 데이터 페칭 없이 즉시 렌더링)        │
+ * │     ├ filter-select    → SelectFilterWidget         │
+ * │     ├ filter-multiselect → MultiSelectFilterWidget  │
+ * │     ├ filter-treeselect → TreeSelectFilterWidget     │
+ * │     ├ filter-input     → InputFilterWidget          │
+ * │     ├ filter-tab       → TabFilterWidget            │
+ * │     ├ filter-toggle    → ToggleFilterWidget         │
+ * │     └ filter-datepicker → DatepickerFilterWidget    │
+ * │                                                    │
+ * │  3. "form" → FormWidget                             │
+ * │     (폼 위젯 — formManager를 통한 폼 상태 관리)      │
+ * │                                                    │
+ * │  4. 나머지 → DataWidgetRenderer                     │
+ * │     (데이터 위젯 — API 호출 + 시각화)                │
+ * │     ├ kpi-card   → KpiCardContent                   │
+ * │     ├ table      → TableContent                     │
+ * │     ├ line-chart → LineChartContent                  │
+ * │     └ bar-chart  → BarChartContent                  │
+ * └────────────────────────────────────────────────────┘
+ *
+ * 데이터 위젯의 렌더링 흐름:
+ * 1. resolveTemplateParams()로 {{filter.xxx}} 템플릿 치환
+ * 2. useWidgetData() 훅으로 API 호출 (TanStack Query)
+ * 3. 위젯 타입별 Content 컴포넌트로 시각화
+ */
 "use client";
 
 import { useMemo } from "react";
@@ -53,10 +93,22 @@ interface DataResponse {
   error?: string;
 }
 
+/**
+ * 메인 위젯 렌더러 — 위젯 타입에 따라 적절한 컴포넌트로 분기.
+ *
+ * 분기 우선순위:
+ * 1. filter-submit → FilterSubmitWidget (조회 버튼)
+ * 2. filter-* + onFilterChange → renderFilterWidget (필터 위젯)
+ * 3. form + formManager → FormWidget (폼 위젯)
+ * 4. 나머지 → DataWidgetRenderer (데이터 위젯 — API 호출 후 시각화)
+ *
+ * 필터 위젯은 filterValues(pending)를 받고, 데이터 위젯은 appliedFilterValues를 받는다.
+ * 이 구분이 auto/manual 모드의 UX 차이를 만든다.
+ */
 export function WidgetRenderer({ widget, filterValues, appliedFilterValues, onFilterChange, formManager, dataSources, filterSubmitProps }: WidgetRendererProps) {
   const tw = useTranslations("widget");
 
-  // filter-submit 위젯은 별도 처리
+  // 1단계: filter-submit 위젯은 조회 버튼으로 렌더링
   if (widget.type === "filter-submit") {
     if (filterSubmitProps) {
       return <FilterSubmitWidget widget={widget} {...filterSubmitProps} />;
@@ -70,19 +122,27 @@ export function WidgetRenderer({ widget, filterValues, appliedFilterValues, onFi
     );
   }
 
-  // 필터 위젯은 데이터 페칭 없이 즉시 렌더링
+  // 2단계: 필터 위젯은 데이터 페칭 없이 즉시 렌더링
+  // filterValues(pending)를 사용하여 UI에 현재 선택 상태를 즉시 반영
   if (widget.type.startsWith("filter-") && onFilterChange && filterValues) {
     return renderFilterWidget(widget, filterValues, onFilterChange);
   }
 
-  // 폼 위젯은 formManager를 통해 렌더링
+  // 3단계: 폼 위젯은 formManager를 통해 렌더링
   if (widget.type === "form" && formManager) {
     return <FormWidget widget={widget} formManager={formManager} />;
   }
 
+  // 4단계: 데이터 위젯 — appliedFilterValues로 API 호출 후 시각화
+  // appliedFilterValues를 우선 사용하여 "확정된" 필터 값으로 데이터를 가져온다
   return <DataWidgetRenderer widget={widget} filterValues={appliedFilterValues ?? filterValues} dataSources={dataSources} />;
 }
 
+/**
+ * 필터 위젯 타입별 분기 — switch 문으로 적절한 필터 컴포넌트 렌더링.
+ * 각 필터 위젯은 filterValues에서 자신의 filterKey에 해당하는 값을 읽고,
+ * 사용자 조작 시 onFilterChange(filterKey, newValue)를 호출한다.
+ */
 function renderFilterWidget(
   widget: Widget,
   filterValues: Record<string, unknown>,
@@ -112,6 +172,18 @@ function renderFilterWidget(
   }
 }
 
+/**
+ * 데이터 위젯 렌더러 — 필터 값으로 API를 호출하고 결과를 시각화.
+ *
+ * 렌더링 파이프라인:
+ * 1. resolveTemplateParams(): dataBinding.requestParams의 {{filter.xxx}}를 실제 값으로 치환
+ * 2. 시간 필터(startTime/endTime) 자동 주입
+ * 3. useWidgetData(): TanStack Query로 /api/data 엔드포인트 호출
+ * 4. 위젯 타입별 Content 컴포넌트로 시각화 (KpiCard, Table, LineChart, BarChart)
+ *
+ * 데이터 소스의 cache 설정(staleTime/gcTime)을 useWidgetData에 전달하여
+ * 데이터 소스 타입별 차등 캐싱을 구현한다.
+ */
 function DataWidgetRenderer({
   widget,
   filterValues,
@@ -134,7 +206,9 @@ function DataWidgetRenderer({
     };
   } | undefined;
 
-  // 필터 파라미터 치환 + 시간 필터 포함
+  // ── 1. 필터 파라미터 치환 ({{filter.xxx}} → 실제 값) ──
+  // resolveTemplateParams()로 템플릿 변수를 치환하고,
+  // startTime/endTime이 명시적으로 없으면 filterValues에서 자동 주입
   const resolvedParams = useMemo(() => {
     const params = dataBinding?.requestParams && filterValues
       ? resolveTemplateParams(dataBinding.requestParams, filterValues)
@@ -153,7 +227,9 @@ function DataWidgetRenderer({
     return paramsWithTime;
   }, [dataBinding?.requestParams, filterValues]);
 
-  // dataSources에서 해당 dataSourceId의 cache 설정 조회
+  // ── 2. 데이터 소스의 캐시 설정 조회 ──
+  // schema.dataSources에서 해당 dataSourceId의 cache 객체를 찾아
+  // useWidgetData에 staleTime/gcTime으로 전달
   const cache = useMemo(() => {
     if (!dataSources || !dataBinding?.dataSourceId) return undefined;
     const ds = dataSources.find(
@@ -195,7 +271,7 @@ function DataWidgetRenderer({
     );
   }
 
-  // 위젯 타입에 따른 렌더링
+  // ── 3. 위젯 타입별 시각화 컴포넌트 분기 ──
   switch (widget.type) {
     case "kpi-card":
       return <KpiCardContent data={data ?? null} mapping={dataBinding.mapping} />;

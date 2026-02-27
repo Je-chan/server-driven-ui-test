@@ -1,3 +1,19 @@
+/**
+ * SelectFilterWidget — 단일 선택 드롭다운 필터.
+ *
+ * 가장 기본적인 필터 위젯. <select> 요소로 선택지 중 하나를 고를 수 있다.
+ * 선택 시 onFilterChange(filterKey, selectedValue)를 호출하여
+ * useFilterValues 훅의 setFilterValue를 트리거한다.
+ *
+ * 추가 기능:
+ * - dependsOn: 부모 필터 값에 따라 선택지(options)가 동적으로 변경
+ *   예: 발전소 필터(부모) → 인버터 필터(자식)의 선택지가 바뀜
+ * - fixedValue: 관리자가 잠근 값 — 사용자 변경 불가 (disabled)
+ * - resolveLabel: 다국어 라벨 지원 (I18nLabel)
+ *
+ * 스키마 예시:
+ * { type: "filter-select", options: { filterKey: "selectedSite", options: [...], dependsOn: { ... } } }
+ */
 "use client";
 
 import { ListFilter } from "lucide-react";

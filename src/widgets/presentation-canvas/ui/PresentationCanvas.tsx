@@ -1,3 +1,20 @@
+/**
+ * PresentationCanvas — 발표 모드의 읽기 전용 대시보드 캔버스.
+ *
+ * 실제 대시보드와 동일한 그리드 레이아웃으로 위젯을 배치하되,
+ * 드래그/리사이즈를 비활성화하고 프레젠테이션에 특화된 시각 효과를 제공한다.
+ *
+ * 스텝별 시각 효과:
+ * - "filters" 스텝: filter-* 위젯만 하이라이트, 나머지 opacity 감소
+ * - "widgets" 스텝: 각 위젯에 레이아웃 좌표 배지 표시 (x,y) WxH
+ * - "data-binding" 스텝: dataBinding이 있는 위젯에 DB 아이콘 표시
+ * - "form" 스텝: form 위젯만 하이라이트
+ * - "switch-slot" 스텝: conditional-slot 위젯만 하이라이트
+ *
+ * Full HD(1920x1080) 기준으로 캔버스를 렌더링하고,
+ * 컨테이너 너비에 맞게 축소(scale) 적용.
+ * 위젯 클릭 시 onWidgetClick → PresentationPage에서 selectedWidgetId 변경 → Inspector 연동.
+ */
 "use client";
 
 import { useMemo } from "react";

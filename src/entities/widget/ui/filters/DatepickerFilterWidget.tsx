@@ -1,3 +1,25 @@
+/**
+ * DatepickerFilterWidget — 날짜 범위 필터.
+ *
+ * 시간축 데이터를 다루는 에너지 대시보드에서 가장 중요한 필터.
+ * 프리셋 버튼(오늘/어제/최근 7일 등)과 커스텀 날짜 입력을 지원한다.
+ *
+ * outputKeys 메커니즘:
+ * - 하나의 필터 위젯이 여러 filterValues 키를 동시에 업데이트
+ * - outputKeys: { start: "startTime", end: "endTime" }
+ * - 프리셋 클릭 시 3번의 onFilterChange를 연속 호출:
+ *   1. onFilterChange("startTime", "2026-02-27...")
+ *   2. onFilterChange("endTime", "2026-02-27...")
+ *   3. onFilterChange("__preset_timeRange", "today")
+ * - useFilterValues의 queueMicrotask 배치가 이를 단일 URL 업데이트로 병합
+ *
+ * 커스텀 모드:
+ * - 프리셋 대신 직접 시작/종료일을 입력
+ * - "적용" 버튼 클릭 시 onFilterChange 호출
+ *
+ * 스키마 예시:
+ * { type: "filter-datepicker", options: { filterKey: "timeRange", presets: [...], outputKeys: { start: "startTime", end: "endTime" } } }
+ */
 "use client";
 
 import { useState, useEffect } from "react";

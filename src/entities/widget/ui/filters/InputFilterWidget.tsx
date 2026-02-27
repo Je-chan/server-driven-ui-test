@@ -1,3 +1,18 @@
+/**
+ * InputFilterWidget — 텍스트 입력 필터.
+ *
+ * 자유 텍스트 입력으로 필터링하는 위젯.
+ * 디바운스(debounce) 패턴을 적용하여 타이핑 중에는
+ * onFilterChange를 호출하지 않고, 입력이 멈춘 후 300ms 뒤에 호출한다.
+ *
+ * 상태 관리:
+ * - localValue: 입력창에 즉시 반영되는 로컬 상태
+ * - externalValue: filterValues에서 가져온 외부 값 (동기화용)
+ * - timerRef: 디바운스 타이머 참조
+ *
+ * 스키마 예시:
+ * { type: "filter-input", options: { filterKey: "searchQuery", placeholder: "검색...", debounceMs: 300 } }
+ */
 "use client";
 
 import { useState, useEffect, useRef } from "react";

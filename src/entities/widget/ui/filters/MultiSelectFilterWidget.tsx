@@ -1,3 +1,18 @@
+/**
+ * MultiSelectFilterWidget — 다중 선택 토글 버튼 필터.
+ *
+ * 여러 값을 동시에 선택/해제할 수 있는 토글 버튼 그룹.
+ * 선택된 값은 string[] 배열로 관리되며, URL 직렬화 시 쉼표로 결합된다.
+ * 예: ["solar", "ess"] → URL에서 "tags=solar,ess"
+ *
+ * 동작:
+ * - 버튼 클릭 시 toggleOption()으로 선택/해제 토글
+ * - onFilterChange(filterKey, newArray)로 배열 전체를 전달
+ * - fixedValue 설정 시 모든 버튼 disabled
+ *
+ * 스키마 예시:
+ * { type: "filter-multiselect", options: { filterKey: "tags", options: [...] } }
+ */
 "use client";
 
 import { ListChecks } from "lucide-react";
