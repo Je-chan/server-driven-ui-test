@@ -1,5 +1,6 @@
 import { prisma } from "@/src/shared/lib";
 import { dashboardJsonSchema, type DashboardEntity, type DashboardJson } from "../model/types";
+import { normalizeSchema } from "../lib/normalize-schema";
 
 export async function getDashboards(): Promise<DashboardEntity[]> {
   const dashboards = await prisma.dashboard.findMany({
@@ -75,9 +76,11 @@ export async function deleteDashboard(id: string): Promise<void> {
 
 function parseDashboardSchema(schemaString: string): DashboardJson {
   try {
-    const parsed = JSON.parse(schemaString);
-    return dashboardJsonSchema.parse(parsed);
-  } catch {
+    const raw = JSON.parse(schemaString);
+    const normalized = normalizeSchema(raw as DashboardJson);
+    return dashboardJsonSchema.parse(normalized);
+  } catch (e) {
+    console.error("[parseDashboardSchema] 스키마 파싱 실패:", e);
     return dashboardJsonSchema.parse({});
   }
 }

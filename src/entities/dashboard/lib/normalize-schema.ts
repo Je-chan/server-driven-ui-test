@@ -105,18 +105,24 @@ function normalizeWidgetTypes(widgets: DashboardJson["widgets"]): DashboardJson[
 export function normalizeSchema(schema: DashboardJson): DashboardJson {
   let normalized = { ...schema };
 
-  // Step 1: 레퍼런스 형식 필터를 레거시 형식으로 변환
-  if (
-    normalized.filters &&
-    normalized.filters.length > 0 &&
-    isReferenceFilter(normalized.filters[0] as unknown as Record<string, unknown>)
-  ) {
-    normalized = {
-      ...normalized,
-      filters: (normalized.filters as unknown as Record<string, unknown>[]).map(
-        normalizeReferenceFilter,
-      ) as DashboardJson["filters"],
-    };
+  // Step 1: 레퍼런스 형식 필터를 레거시 형식으로 변환 (항목별 판별)
+  if (normalized.filters && normalized.filters.length > 0) {
+    const raw = normalized.filters as unknown as Record<string, unknown>[];
+    const hasAnyReference = raw.some(isReferenceFilter);
+    if (hasAnyReference) {
+      if (process.env.NODE_ENV === "development") {
+        const hasMixed = raw.some(isReferenceFilter) && raw.some((f) => !isReferenceFilter(f));
+        if (hasMixed) {
+          console.warn("[normalizeSchema] 혼합 필터 입력 감지: 레퍼런스/레거시 형식이 섞여 있음");
+        }
+      }
+      normalized = {
+        ...normalized,
+        filters: raw.map((f) =>
+          isReferenceFilter(f) ? normalizeReferenceFilter(f) : f,
+        ) as DashboardJson["filters"],
+      };
+    }
   }
 
   // Step 2: 위젯 타입 alias 변환
