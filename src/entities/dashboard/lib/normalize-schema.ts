@@ -130,5 +130,34 @@ export function normalizeSchema(schema: DashboardJson): DashboardJson {
   // Step 3: 레거시 filters[] → filter-* 위젯 변환 (기존 마이그레이션 로직 재사용)
   normalized = migrateFiltersToWidgets(normalized);
 
+  // Step 4: 개발 모드에서 스키마 계약 검증 경고
+  if (process.env.NODE_ENV === "development") {
+    validateSchemaContract(normalized);
+  }
+
   return normalized;
+}
+
+/**
+ * 스키마 계약 검증 — 누락 필드 경고 (개발 모드 전용).
+ * 운영 환경에서는 호출되지 않는다.
+ */
+function validateSchemaContract(schema: DashboardJson) {
+  for (const widget of schema.widgets) {
+    if (!widget.type) {
+      console.warn(`[schema-validate] Widget "${widget.id}" is missing "type" field`);
+    }
+    if (!widget.layout) {
+      console.warn(`[schema-validate] Widget "${widget.id}" is missing "layout" field`);
+    }
+    if (
+      widget.type.startsWith("filter-") &&
+      widget.type !== "filter-submit"
+    ) {
+      const opts = widget.options as Record<string, unknown> | undefined;
+      if (!opts?.filterKey) {
+        console.warn(`[schema-validate] Filter widget "${widget.id}" is missing "filterKey" in options`);
+      }
+    }
+  }
 }
