@@ -142,7 +142,7 @@ export function useWidgetData({
   const endpoint = buildEndpoint(dataSourceId, widgetType, resolvedParams, dataSourceEndpoint);
 
   return useQuery<DataResponse>({
-    queryKey: ["widget-data", dataSourceId, widgetType, resolvedParams],
+    queryKey: ["widget-data", dataSourceId, widgetType, resolvedParams, dataSourceEndpoint],
     queryFn: async () => {
       const res = await fetch(endpoint);
       const json = await res.json();

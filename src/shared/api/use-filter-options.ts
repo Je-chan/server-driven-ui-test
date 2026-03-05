@@ -52,7 +52,7 @@ export function useFilterOptions({
   })();
 
   return useQuery<FilterOption[]>({
-    queryKey: ["filter-options", dataSourceId, dependsOnParam?.value],
+    queryKey: ["filter-options", dataSourceId, valueField, labelField, dependsOnParam?.key, dependsOnParam?.value],
     queryFn: async () => {
       const res = await fetch(queryUrl);
       const json = await res.json();
