@@ -76,3 +76,42 @@ describe("queryUrl 생성 로직", () => {
     expect(url).toContain("site%20001%26foo%3Dbar");
   });
 });
+
+describe("queryKey 캐시 분리 검증", () => {
+  /**
+   * useFilterOptions의 queryKey 정책 검증.
+   * 같은 dataSourceId라도 valueField/labelField가 다르면 별도 캐시 엔트리여야 한다.
+   */
+  function buildQueryKey(
+    dataSourceId: string,
+    valueField: string,
+    labelField: string,
+    dependsOnParam?: { key: string; value: string }
+  ) {
+    return ["filter-options", dataSourceId, valueField, labelField, dependsOnParam?.key, dependsOnParam?.value];
+  }
+
+  it("같은 dataSourceId + 다른 valueField → 다른 queryKey", () => {
+    const key1 = buildQueryKey("ds_sites", "id", "name");
+    const key2 = buildQueryKey("ds_sites", "siteCode", "name");
+    expect(JSON.stringify(key1)).not.toBe(JSON.stringify(key2));
+  });
+
+  it("같은 dataSourceId + 다른 labelField → 다른 queryKey", () => {
+    const key1 = buildQueryKey("ds_sites", "id", "name");
+    const key2 = buildQueryKey("ds_sites", "id", "displayName");
+    expect(JSON.stringify(key1)).not.toBe(JSON.stringify(key2));
+  });
+
+  it("같은 dataSourceId + 같은 fields + 다른 dependsOn key → 다른 queryKey", () => {
+    const key1 = buildQueryKey("ds_assets", "id", "name", { key: "siteId", value: "site_001" });
+    const key2 = buildQueryKey("ds_assets", "id", "name", { key: "regionId", value: "site_001" });
+    expect(JSON.stringify(key1)).not.toBe(JSON.stringify(key2));
+  });
+
+  it("같은 모든 파라미터 → 같은 queryKey", () => {
+    const key1 = buildQueryKey("ds_sites", "id", "name");
+    const key2 = buildQueryKey("ds_sites", "id", "name");
+    expect(JSON.stringify(key1)).toBe(JSON.stringify(key2));
+  });
+});

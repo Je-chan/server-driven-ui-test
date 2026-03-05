@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { normalizeSchema } from "../normalize-schema";
-import type { DashboardJson } from "../../model/types";
+import { dashboardJsonSchema, type DashboardJson } from "../../model/types";
 
 /**
  * 레퍼런스 형식 스키마 → 정규화 → 마이그레이션 전체 파이프라인 통합 테스트.
@@ -292,5 +292,166 @@ describe("기존 내부 형식 스키마 하위 호환", () => {
       { value: "1h", label: "1시간" },
     ]);
     expect(opts.defaultValue).toBe("5m");
+  });
+});
+
+describe("서버 파싱 → 정규화 → Zod 검증 파이프라인 (parseDashboardSchema 시뮬레이션)", () => {
+  it("레퍼런스 형식 스키마를 JSON.parse → normalizeSchema → Zod 통과 시 정상 결과", () => {
+    const referenceJson = JSON.stringify({
+      version: "1.0.0",
+      settings: {
+        refreshInterval: 30000,
+        theme: "light",
+        gridColumns: 24,
+        rowHeight: 40,
+        filterMode: "auto",
+      },
+      dataSources: [],
+      filters: [
+        {
+          id: "filter_site",
+          type: "select",
+          field: "selectedSite",
+          label: "발전소",
+          dataSourceId: "ds_sites",
+          valueField: "id",
+          labelField: "name",
+        },
+        {
+          id: "filter_time",
+          type: "date-range",
+          field: "timeRange",
+          label: "기간",
+          presets: ["today", "last7days"],
+          defaultValue: "today",
+          outputFields: { start: "startTime", end: "endTime" },
+        },
+      ],
+      widgets: [
+        {
+          id: "w1",
+          type: "number-card",
+          title: "발전량",
+          layout: { x: 0, y: 0, w: 4, h: 4 },
+        },
+      ],
+      linkages: [],
+    });
+
+    // parseDashboardSchema와 동일한 흐름
+    const raw = JSON.parse(referenceJson);
+    const normalized = normalizeSchema(raw as DashboardJson);
+    const result = dashboardJsonSchema.parse(normalized);
+
+    // 빈 스키마 fallback이 아닌 정상 결과
+    expect(result.widgets.length).toBeGreaterThan(0);
+    expect(result.filters).toEqual([]);
+
+    // number-card → kpi-card 변환 확인
+    const kpi = result.widgets.find((w) => w.id === "w1");
+    expect(kpi!.type).toBe("kpi-card");
+
+    // 필터 위젯이 생성됨
+    const filterWidgets = result.widgets.filter((w) => w.type.startsWith("filter-"));
+    expect(filterWidgets.length).toBe(2);
+  });
+
+  it("정규화 없이 Zod 직접 파싱하면 레퍼런스 형식 필터가 실패함 (P0 회귀 방지)", () => {
+    const referenceJson = {
+      version: "1.0.0",
+      settings: {
+        refreshInterval: 30000,
+        theme: "light",
+        gridColumns: 24,
+        rowHeight: 40,
+        filterMode: "auto",
+      },
+      dataSources: [],
+      filters: [
+        {
+          id: "filter_site",
+          type: "select",
+          field: "selectedSite", // Zod는 key를 요구, field는 알 수 없는 필드
+          label: "발전소",
+        },
+      ],
+      widgets: [],
+      linkages: [],
+    };
+
+    // Zod가 레퍼런스 형식을 직접 파싱하면 실패해야 함
+    const zodResult = dashboardJsonSchema.safeParse(referenceJson);
+    expect(zodResult.success).toBe(false);
+  });
+});
+
+describe("혼합 필터 배열 정규화", () => {
+  it("레퍼런스+레거시 혼합 필터를 항목별로 정규화", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.stubEnv("NODE_ENV", "development");
+
+    const schema = makeSchema({
+      filters: [
+        // 레거시 형식 (key + config)
+        {
+          id: "filter_interval",
+          type: "select",
+          key: "interval",
+          label: "집계 단위",
+          config: {
+            options: [
+              { value: "5m", label: "5분" },
+              { value: "1h", label: "1시간" },
+            ],
+            defaultValue: "5m",
+          },
+        },
+        // 레퍼런스 형식 (field 기반)
+        {
+          id: "filter_site",
+          type: "select",
+          field: "selectedSite",
+          label: "발전소",
+          dataSourceId: "ds_sites",
+          valueField: "id",
+          labelField: "name",
+        },
+      ] as unknown as DashboardJson["filters"],
+      widgets: [
+        {
+          id: "w1",
+          type: "line-chart",
+          title: "차트",
+          layout: { x: 0, y: 0, w: 12, h: 8 },
+        },
+      ] as DashboardJson["widgets"],
+    });
+
+    const result = normalizeSchema(schema);
+
+    expect(result.filters).toEqual([]);
+    // 필터 2개 + 데이터 위젯 1개 = 3개
+    expect(result.widgets.length).toBe(3);
+
+    // 레거시 필터가 그대로 변환됨
+    const intervalFilter = result.widgets.find(
+      (w) => (w.options as Record<string, unknown>)?.filterKey === "interval"
+    );
+    expect(intervalFilter).toBeDefined();
+
+    // 레퍼런스 필터도 정상 변환됨
+    const siteFilter = result.widgets.find(
+      (w) => (w.options as Record<string, unknown>)?.filterKey === "selectedSite"
+    );
+    expect(siteFilter).toBeDefined();
+    expect((siteFilter!.options as Record<string, unknown>).dataSourceId).toBe("ds_sites");
+
+    // 혼합 경고 발생
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("혼합 필터 입력 감지")
+    );
+
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
   });
 });
