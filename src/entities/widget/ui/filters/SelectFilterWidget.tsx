@@ -18,6 +18,7 @@
  */
 "use client";
 
+import { useEffect } from "react";
 import { ListFilter, Loader2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { resolveLabel } from "@/src/shared/lib";
@@ -81,6 +82,17 @@ export function SelectFilterWidget({ widget, filterValues, onFilterChange }: Sel
       options = opts.dependsOn.optionsMap[parentValue];
     }
   }
+
+  // API 옵션 변경 시 현재 값이 유효하지 않으면 첫 항목 자동 선택
+  useEffect(() => {
+    if (!opts?.dataSourceId || !apiOptions || apiOptions.length === 0) return;
+    if (isFixed) return;
+    const currentVal = String(filterValues[filterKey] ?? "");
+    const isCurrentValid = apiOptions.some((opt) => opt.value === currentVal);
+    if (!isCurrentValid) {
+      onFilterChange(filterKey, apiOptions[0].value);
+    }
+  }, [apiOptions, filterKey, filterValues, onFilterChange, opts?.dataSourceId, isFixed]);
 
   if (!filterKey) {
     return (
