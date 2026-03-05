@@ -9,7 +9,7 @@ import { BuilderCanvas, RESOLUTION_PRESETS, type ResolutionKey } from "@/src/wid
 import { WidgetPalette } from "@/src/widgets/widget-palette";
 import { PropertyPanel } from "@/src/widgets/property-panel";
 import type { DashboardEntity } from "@/src/entities/dashboard";
-import { migrateFiltersToWidgets } from "@/src/entities/dashboard";
+import { normalizeSchema } from "@/src/entities/dashboard";
 import { LocaleToggle } from "@/src/shared/ui/LocaleToggle";
 
 interface DashboardBuilderPageProps {
@@ -43,7 +43,7 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
 
   // 초기 스키마 로드 (기존 filters[] 자동 마이그레이션)
   useEffect(() => {
-    initSchema(migrateFiltersToWidgets(dashboard.schema));
+    initSchema(normalizeSchema(dashboard.schema));
   }, [dashboard.schema, initSchema]);
 
   // 캔버스 컨테이너 너비 계산

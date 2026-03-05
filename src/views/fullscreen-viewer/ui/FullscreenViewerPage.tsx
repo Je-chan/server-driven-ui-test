@@ -10,7 +10,7 @@ import { resolveLabel, evaluateConditions } from "@/src/shared/lib";
 import { useFilterValues } from "@/src/features/dashboard-filter";
 import { useFormManager } from "@/src/features/dashboard-form";
 import type { DashboardEntity } from "@/src/entities/dashboard";
-import { migrateFiltersToWidgets } from "@/src/entities/dashboard";
+import { normalizeSchema } from "@/src/entities/dashboard";
 import { LocaleToggle } from "@/src/shared/ui/LocaleToggle";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -36,7 +36,7 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
   const t = useTranslations("common");
   const td = useTranslations("dashboard");
   const router = useRouter();
-  const schema = useMemo(() => migrateFiltersToWidgets(dashboard.schema), [dashboard.schema]);
+  const schema = useMemo(() => normalizeSchema(dashboard.schema), [dashboard.schema]);
   const [showControls, setShowControls] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const filterMode = schema.settings.filterMode ?? "auto";

@@ -8,7 +8,7 @@ import { ViewerCanvas, RESOLUTION_PRESETS, type ResolutionKey } from "@/src/widg
 import { useFilterValues } from "@/src/features/dashboard-filter";
 import { useFormManager } from "@/src/features/dashboard-form";
 import type { DashboardEntity } from "@/src/entities/dashboard";
-import { migrateFiltersToWidgets } from "@/src/entities/dashboard";
+import { normalizeSchema } from "@/src/entities/dashboard";
 import { LocaleToggle } from "@/src/shared/ui/LocaleToggle";
 
 interface DashboardViewerPageProps {
@@ -18,7 +18,7 @@ interface DashboardViewerPageProps {
 export function DashboardViewerPage({ dashboard }: DashboardViewerPageProps) {
   const t = useTranslations("common");
   const td = useTranslations("dashboard");
-  const schema = useMemo(() => migrateFiltersToWidgets(dashboard.schema), [dashboard.schema]);
+  const schema = useMemo(() => normalizeSchema(dashboard.schema), [dashboard.schema]);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(1200);
   const [resolution, setResolution] = useState<ResolutionKey>("1920x1080");

@@ -16,7 +16,7 @@
  * └──────────────────────────────┴───────────────────────┘
  *
  * 동작 흐름:
- * 1. dashboard.schema를 migrateFiltersToWidgets()로 변환 (레거시 필터 호환)
+ * 1. dashboard.schema를 normalizeSchema()로 변환 (레퍼런스/레거시 필터 호환)
  * 2. buildPresentationSteps()로 스키마 기반 동적 스텝 구성
  * 3. 스텝 버튼 클릭 → currentStepIndex 변경 → Canvas/Inspector 연동 갱신
  * 4. Canvas에서 위젯 클릭 → selectedWidgetId 변경 → Inspector에 상세 정보 표시
@@ -27,7 +27,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { DashboardEntity } from "@/src/entities/dashboard";
-import { migrateFiltersToWidgets } from "@/src/entities/dashboard";
+import { normalizeSchema } from "@/src/entities/dashboard";
 import { PresentationCanvas } from "@/src/widgets/presentation-canvas";
 import { SchemaInspector } from "@/src/widgets/schema-inspector";
 import { buildPresentationSteps } from "../model/types";
@@ -37,7 +37,7 @@ interface PresentationPageProps {
 }
 
 export function PresentationPage({ dashboard }: PresentationPageProps) {
-  const schema = useMemo(() => migrateFiltersToWidgets(dashboard.schema), [dashboard.schema]);
+  const schema = useMemo(() => normalizeSchema(dashboard.schema), [dashboard.schema]);
   const steps = useMemo(() => buildPresentationSteps(schema), [schema]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);

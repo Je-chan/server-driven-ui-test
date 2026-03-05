@@ -39,6 +39,7 @@ export {
 
 // Lib
 export { migrateFiltersToWidgets } from "./lib/migrate-filters";
+export { normalizeSchema } from "./lib/normalize-schema";
 
 // UI
 export { DashboardCard } from "./ui/DashboardCard";
