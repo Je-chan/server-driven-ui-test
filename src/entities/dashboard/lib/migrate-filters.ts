@@ -80,6 +80,12 @@ export function migrateFiltersToWidgets(schema: DashboardJson): DashboardJson {
     if (filter.visible !== undefined) options.visible = filter.visible;
     if (filter.dependsOn) options.dependsOn = filter.dependsOn;
 
+    // 동적 필터 옵션 조회 필드 (normalize-schema에서 config에 넣은 값)
+    if (config.dataSourceId) options.dataSourceId = config.dataSourceId;
+    if (config.valueField) options.valueField = config.valueField;
+    if (config.labelField) options.labelField = config.labelField;
+    if (config.dependsOnParamKey) options.dependsOnParamKey = config.dependsOnParamKey;
+
     return {
       id: filter.id.startsWith("filter_") ? `widget_migrated_${filter.id}` : `widget_${filter.id}`,
       type: widgetType,
