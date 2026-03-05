@@ -275,15 +275,14 @@ describe("normalizeSchema", () => {
   // === 스키마 계약 검증 경고 (Step 5) ===
   describe("스키마 계약 검증 경고 (dev mode)", () => {
     let warnSpy: ReturnType<typeof vi.spyOn>;
-    const originalNodeEnv = process.env.NODE_ENV;
 
     beforeEach(() => {
-      process.env.NODE_ENV = "development";
+      vi.stubEnv("NODE_ENV", "development");
       warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     });
 
     afterEach(() => {
-      process.env.NODE_ENV = originalNodeEnv;
+      vi.unstubAllEnvs();
       vi.restoreAllMocks();
     });
 

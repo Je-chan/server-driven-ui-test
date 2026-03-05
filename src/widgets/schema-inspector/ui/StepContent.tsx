@@ -177,6 +177,8 @@ function FiltersContent({
     const opts = (selectedWidget.options ?? {}) as Record<string, unknown>;
     const hasDependsOn = !!opts.dependsOn;
     const hasFixedValue = opts.fixedValue !== undefined && opts.fixedValue !== null;
+    const hasDataSourceId = !!opts.dataSourceId;
+    const dependsOnParamKey = opts.dependsOnParamKey as string | undefined;
 
     return (
       <div className="space-y-4">
@@ -199,6 +201,16 @@ function FiltersContent({
         <div className="rounded-lg border-l-4 border-violet-500 bg-violet-50 p-4">
           <h4 className="text-sm font-semibold text-violet-900">데이터 흐름</h4>
           <div className="mt-2 space-y-1 font-mono text-xs text-violet-800">
+            {hasDataSourceId && (
+              <>
+                <p>useFilterOptions({`{ dataSourceId: "${opts.dataSourceId}" }`})</p>
+                <p>→ API에서 옵션 목록 로드</p>
+                {hasDependsOn && dependsOnParamKey && (
+                  <p>→ 부모 필터 변경 시 ?{dependsOnParamKey}=값 으로 재조회</p>
+                )}
+                <p>→ 현재 값이 유효하지 않으면 첫 항목 자동 선택</p>
+              </>
+            )}
             <p>사용자 조작 → onFilterChange(&quot;{filterKey}&quot;, value)</p>
             <p>→ useFilterValues.setFilterValue()</p>
             <p>→ pendingValues[&quot;{filterKey}&quot;] = value</p>
@@ -210,12 +222,23 @@ function FiltersContent({
         </div>
 
         {/* 특수 기능 배지 */}
-        {(hasDependsOn || hasFixedValue) && (
+        {(hasDependsOn || hasFixedValue || hasDataSourceId) && (
           <div className="rounded-lg border-l-4 border-amber-500 bg-amber-50 p-4">
-            <h4 className="text-sm font-semibold text-amber-900">특수 기능</h4>
+            <h4 className="text-sm font-semibold text-amber-900">{tp("filterSpecialFeatures")}</h4>
             <ul className="mt-2 space-y-1 text-sm text-amber-800">
+              {hasDataSourceId && (
+                <li>
+                  <strong>dataSourceId</strong> — <code className="rounded bg-amber-200 px-1">{String(opts.dataSourceId)}</code>
+                  {" "}에서 API로 옵션 동적 로드
+                  {opts.valueField ? <> (value: <code className="rounded bg-amber-200 px-1">{String(opts.valueField)}</code>)</> : null}
+                  {opts.labelField ? <> (label: <code className="rounded bg-amber-200 px-1">{String(opts.labelField)}</code>)</> : null}
+                </li>
+              )}
               {hasDependsOn && (
-                <li><strong>dependsOn</strong> — 부모 필터 값에 따라 이 필터의 선택지가 동적 변경됨</li>
+                <li>
+                  <strong>dependsOn</strong> — 부모 필터 값에 따라 이 필터의 선택지가 동적 변경됨
+                  {dependsOnParamKey && <> (paramKey: <code className="rounded bg-amber-200 px-1">{dependsOnParamKey}</code>)</>}
+                </li>
               )}
               {hasFixedValue && (
                 <li><strong>fixedValue</strong> — 관리자가 값을 고정하여 사용자 변경 불가</li>
@@ -241,13 +264,24 @@ function FiltersContent({
 
       {/* 필터 아키텍처 상세 설명 */}
       <div className="rounded-lg border-l-4 border-violet-500 bg-violet-50 p-4">
-        <h4 className="text-sm font-semibold text-violet-900">필터 아키텍처</h4>
+        <h4 className="text-sm font-semibold text-violet-900">{tp("filterArchitecture")}</h4>
         <ul className="mt-2 space-y-1 text-sm text-violet-800">
           <li><strong>useFilterValues</strong> — 이중 상태(pending/applied) 관리 훅</li>
           <li><strong>pendingValues</strong> — 필터 UI에 즉시 반영되는 임시 값</li>
           <li><strong>appliedValues</strong> — URL에서 역직렬화한 확정 값 (데이터 위젯이 참조)</li>
           <li><strong>URL 동기화</strong> — 필터 상태를 SearchParams에 저장 (북마크/공유 가능)</li>
           <li><strong>queueMicrotask</strong> — DatepickerFilterWidget의 연속 호출을 하나의 URL 업데이트로 배치</li>
+        </ul>
+      </div>
+
+      {/* 동적 필터 옵션 로딩 */}
+      <div className="rounded-lg border-l-4 border-violet-500 bg-violet-50 p-4">
+        <h4 className="text-sm font-semibold text-violet-900">{tp("dynamicFilterOptions")}</h4>
+        <ul className="mt-2 space-y-1 text-sm text-violet-800">
+          <li><strong>useFilterOptions</strong> — dataSourceId 기반 API 호출로 옵션 동적 로드</li>
+          <li><strong>종속 필터</strong> — 부모 필터 변경 시 자식 필터가 API를 재호출하고 첫 항목 자동 선택</li>
+          <li><strong>스키마 정규화</strong> — normalizeSchema()가 레퍼런스/레거시 형식을 내부 형식으로 통일</li>
+          <li><strong>필드 전달 경로</strong> — config.dataSourceId → migrate-filters → widget.options.dataSourceId → useFilterOptions</li>
         </ul>
       </div>
 
@@ -320,6 +354,11 @@ function FiltersContent({
                     {!!opts.dependsOn && (
                       <span className="rounded bg-blue-100 px-1.5 py-0.5 text-blue-700">
                         dependsOn
+                      </span>
+                    )}
+                    {!!opts.dataSourceId && (
+                      <span className="rounded bg-green-100 px-1.5 py-0.5 text-green-700">
+                        API: {String(opts.dataSourceId)}
                       </span>
                     )}
                   </div>
@@ -792,9 +831,11 @@ function RenderedContent({ schema }: { schema: DashboardJson }) {
         <h4 className="text-sm font-semibold text-blue-900">{tp("renderPipeline")}</h4>
         <ol className="mt-2 list-inside list-decimal space-y-1 text-sm text-blue-800">
           <li>{tp("renderStep1")}</li>
+          <li>{tp("renderStep1_5")}</li>
           <li>{tp("renderStep2")}</li>
           <li>{tp("renderStep3")}</li>
           <li>{tp("renderStep4")}</li>
+          <li>{tp("renderStep4_5")}</li>
           <li>{tp("renderStep5")}</li>
         </ol>
       </div>
