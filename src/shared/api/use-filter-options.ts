@@ -24,6 +24,7 @@ interface UseFilterOptionsParams {
 const FILTER_ENDPOINT_MAP: Record<string, string> = {
   ds_sites: "/api/data/sites",
   ds_asset_tree: "/api/data/sites",
+  ds_assets: "/api/options/assets",
 };
 
 /**
