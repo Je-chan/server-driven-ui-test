@@ -279,6 +279,7 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
                     formManager={formManager}
                     dataSources={schema.dataSources}
                     filterSubmitProps={{ applyFilters, hasPendingChanges }}
+                    refreshInterval={schema.settings?.refreshInterval}
                   />
                 </div>
               </div>

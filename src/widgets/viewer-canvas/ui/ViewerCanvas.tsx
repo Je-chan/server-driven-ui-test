@@ -210,6 +210,7 @@ export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080",
                     formManager={formManager}
                     dataSources={schema.dataSources}
                     filterSubmitProps={applyFilters ? { applyFilters, hasPendingChanges: hasPendingChanges ?? false } : undefined}
+                    refreshInterval={schema.settings?.refreshInterval}
                   />
                 </div>
               </div>

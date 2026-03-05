@@ -93,6 +93,8 @@ interface WidgetRendererProps {
   formManager?: FormManagerReturn;
   dataSources?: Record<string, unknown>[];
   filterSubmitProps?: FilterSubmitProps;
+  /** schema.settings.refreshInterval (ms) — 데이터 위젯 자동 갱신 주기 */
+  refreshInterval?: number;
 }
 
 interface DataResponse {
@@ -114,7 +116,7 @@ interface DataResponse {
  * 필터 위젯은 filterValues(pending)를 받고, 데이터 위젯은 appliedFilterValues를 받는다.
  * 이 구분이 auto/manual 모드의 UX 차이를 만든다.
  */
-export function WidgetRenderer({ widget, filterValues, appliedFilterValues, onFilterChange, formManager, dataSources, filterSubmitProps }: WidgetRendererProps) {
+export function WidgetRenderer({ widget, filterValues, appliedFilterValues, onFilterChange, formManager, dataSources, filterSubmitProps, refreshInterval }: WidgetRendererProps) {
   const tw = useTranslations("widget");
 
   // 1단계: filter-submit 위젯은 조회 버튼으로 렌더링
@@ -152,7 +154,7 @@ export function WidgetRenderer({ widget, filterValues, appliedFilterValues, onFi
 
   // 5단계: 데이터 위젯 — appliedFilterValues로 API 호출 후 시각화
   // appliedFilterValues를 우선 사용하여 "확정된" 필터 값으로 데이터를 가져온다
-  return <DataWidgetRenderer widget={widget} filterValues={appliedFilterValues ?? filterValues} dataSources={dataSources} />;
+  return <DataWidgetRenderer widget={widget} filterValues={appliedFilterValues ?? filterValues} dataSources={dataSources} refreshInterval={refreshInterval} />;
 }
 
 /**
@@ -205,10 +207,12 @@ function DataWidgetRenderer({
   widget,
   filterValues,
   dataSources,
+  refreshInterval,
 }: {
   widget: Widget;
   filterValues?: Record<string, unknown>;
   dataSources?: Record<string, unknown>[];
+  refreshInterval?: number;
 }) {
   const tw = useTranslations("widget");
   const tc = useTranslations("common");
@@ -244,15 +248,17 @@ function DataWidgetRenderer({
     return paramsWithTime;
   }, [dataBinding?.requestParams, filterValues]);
 
-  // ── 2. 데이터 소스의 캐시 설정 조회 ──
-  // schema.dataSources에서 해당 dataSourceId의 cache 객체를 찾아
-  // useWidgetData에 staleTime/gcTime으로 전달
-  const cache = useMemo(() => {
-    if (!dataSources || !dataBinding?.dataSourceId) return undefined;
+  // ── 2. 데이터 소스의 캐시 설정 + endpoint 조회 ──
+  // schema.dataSources에서 해당 dataSourceId의 cache/config.endpoint를 찾아 전달
+  const { cache, dataSourceEndpoint } = useMemo(() => {
+    if (!dataSources || !dataBinding?.dataSourceId) return { cache: undefined, dataSourceEndpoint: undefined };
     const ds = dataSources.find(
       (s) => (s as { id?: string }).id === dataBinding.dataSourceId,
-    ) as { cache?: Record<string, unknown> } | undefined;
-    return ds?.cache;
+    ) as { cache?: Record<string, unknown>; config?: { endpoint?: string } } | undefined;
+    return {
+      cache: ds?.cache,
+      dataSourceEndpoint: ds?.config?.endpoint,
+    };
   }, [dataSources, dataBinding?.dataSourceId]);
 
   const { data, isLoading, error } = useWidgetData({
@@ -261,6 +267,8 @@ function DataWidgetRenderer({
     resolvedParams,
     cache,
     enabled: !!dataBinding?.dataSourceId,
+    dataSourceEndpoint,
+    refreshInterval,
   });
 
   if (isLoading) {
