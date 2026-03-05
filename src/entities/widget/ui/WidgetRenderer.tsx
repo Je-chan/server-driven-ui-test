@@ -25,12 +25,19 @@
  * │  3. "form" → FormWidget                             │
  * │     (폼 위젯 — formManager를 통한 폼 상태 관리)      │
  * │                                                    │
- * │  4. 나머지 → DataWidgetRenderer                     │
+ * │  4. "text" → TextWidget                              │
+ * │     (정적 텍스트 — 데이터 페칭 없이 즉시 렌더링)      │
+ * │                                                    │
+ * │  5. "image" → ImageWidget                           │
+ * │     (정적 이미지 — 데이터 페칭 없이 즉시 렌더링)      │
+ * │                                                    │
+ * │  6. 나머지 → DataWidgetRenderer                     │
  * │     (데이터 위젯 — API 호출 + 시각화)                │
- * │     ├ kpi-card   → KpiCardContent                   │
- * │     ├ table      → TableContent                     │
- * │     ├ line-chart → LineChartContent                  │
- * │     └ bar-chart  → BarChartContent                  │
+ * │     ├ kpi-card      → KpiCardContent                │
+ * │     ├ number-card   → KpiCardContent (alias)        │
+ * │     ├ table         → TableContent                  │
+ * │     ├ line-chart    → LineChartContent               │
+ * │     └ bar-chart     → BarChartContent               │
  * └────────────────────────────────────────────────────┘
  *
  * 데이터 위젯의 렌더링 흐름:
@@ -69,6 +76,8 @@ import {
   FilterSubmitWidget,
 } from "./filters";
 import { FormWidget } from "./forms";
+import { TextWidget } from "./TextWidget";
+import { ImageWidget } from "./ImageWidget";
 import type { FormManagerReturn } from "@/src/features/dashboard-form";
 
 interface FilterSubmitProps {
@@ -133,7 +142,15 @@ export function WidgetRenderer({ widget, filterValues, appliedFilterValues, onFi
     return <FormWidget widget={widget} formManager={formManager} />;
   }
 
-  // 4단계: 데이터 위젯 — appliedFilterValues로 API 호출 후 시각화
+  // 4단계: 정적 위젯 — 데이터 페칭 없이 즉시 렌더링
+  if (widget.type === "text") {
+    return <TextWidget widget={widget} />;
+  }
+  if (widget.type === "image") {
+    return <ImageWidget widget={widget} />;
+  }
+
+  // 5단계: 데이터 위젯 — appliedFilterValues로 API 호출 후 시각화
   // appliedFilterValues를 우선 사용하여 "확정된" 필터 값으로 데이터를 가져온다
   return <DataWidgetRenderer widget={widget} filterValues={appliedFilterValues ?? filterValues} dataSources={dataSources} />;
 }
@@ -274,6 +291,7 @@ function DataWidgetRenderer({
   // ── 3. 위젯 타입별 시각화 컴포넌트 분기 ──
   switch (widget.type) {
     case "kpi-card":
+    case "number-card":
       return <KpiCardContent data={data ?? null} mapping={dataBinding.mapping} />;
     case "table":
       return <TableContent data={data ?? null} mapping={dataBinding.mapping} />;

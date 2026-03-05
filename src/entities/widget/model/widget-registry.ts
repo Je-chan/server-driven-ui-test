@@ -16,6 +16,8 @@ import {
   ClipboardList,
   LayoutGrid,
   Layers,
+  Type,
+  ImageIcon,
   type LucideIcon,
 } from "lucide-react";
 
@@ -123,6 +125,35 @@ export const WIDGET_TYPES: WidgetTypeDefinition[] = [
     defaultOptions: {
       center: [36.5, 127.5],
       zoom: 7,
+    },
+  },
+  // ── 정적 위젯 ──
+  {
+    type: "text",
+    label: "Text",
+    icon: Type,
+    category: "card",
+    description: "정적 텍스트 블록",
+    defaultSize: { w: 6, h: 80 },
+    minSize: { w: 3, h: 40 },
+    defaultOptions: {
+      content: "",
+      align: "left",
+      fontSize: 14,
+    },
+  },
+  {
+    type: "image",
+    label: "Image",
+    icon: ImageIcon,
+    category: "card",
+    description: "이미지 표시",
+    defaultSize: { w: 6, h: 200 },
+    minSize: { w: 3, h: 80 },
+    defaultOptions: {
+      src: "",
+      alt: "",
+      fit: "contain",
     },
   },
   // ── 필터 위젯 ──
