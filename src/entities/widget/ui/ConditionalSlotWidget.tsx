@@ -46,6 +46,7 @@ interface ConditionalSlotWidgetProps {
   formManager?: FormManagerReturn;
   dataSources?: Record<string, unknown>[];
   filterSubmitProps?: FilterSubmitProps;
+  refreshInterval?: number;
 }
 
 /** 위젯 스타일의 shadow 값을 CSS box-shadow 문자열로 변환 */
@@ -67,6 +68,7 @@ export function ConditionalSlotWidget({
   formManager,
   dataSources,
   filterSubmitProps,
+  refreshInterval,
 }: ConditionalSlotWidgetProps) {
   const locale = useLocale();
   const tb = useTranslations("builder");
@@ -154,6 +156,7 @@ export function ConditionalSlotWidget({
           formManager={formManager}
           dataSources={dataSources}
           filterSubmitProps={filterSubmitProps}
+          refreshInterval={refreshInterval}
         />
       </div>
     </div>

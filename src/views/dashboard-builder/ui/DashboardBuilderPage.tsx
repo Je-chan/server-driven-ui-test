@@ -217,20 +217,21 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
                     </div>
                     <div className="border-t pt-3">
                       <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                        {tb("refreshInterval")}
+                        {tb("autoRefresh")}
                       </label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={((schema.settings?.refreshInterval as number) ?? 0) / 1000}
-                        onChange={(e) => {
-                          const sec = Math.max(0, Number(e.target.value) || 0);
-                          updateSettings({ refreshInterval: sec * 1000 });
-                        }}
+                      <select
+                        value={(schema.settings?.refreshInterval as number) ?? 0}
+                        onChange={(e) => updateSettings({ refreshInterval: Number(e.target.value) })}
                         className="w-full rounded-md border px-2 py-1.5 text-sm"
-                      />
+                      >
+                        <option value={0}>{tb("refreshDisabled")}</option>
+                        <option value={10000}>10{tb("refreshSeconds")}</option>
+                        <option value={30000}>30{tb("refreshSeconds")}</option>
+                        <option value={60000}>1{tb("refreshMinute")}</option>
+                        <option value={300000}>5{tb("refreshMinutes")}</option>
+                      </select>
                       <p className="mt-0.5 text-[10px] text-muted-foreground">
-                        {tb("refreshIntervalHint")}
+                        {tb("autoRefreshHint")}
                       </p>
                     </div>
                     <div>

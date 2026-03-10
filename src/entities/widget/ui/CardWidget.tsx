@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useLocale } from "next-intl";
-import ReactGridLayout from "react-grid-layout";
+import ReactGridLayout from "react-grid-layout/legacy";
 import type { Widget } from "@/src/entities/dashboard";
 import { resolveLabel } from "@/src/shared/lib";
 import { WidgetRenderer } from "./WidgetRenderer";
@@ -26,6 +26,7 @@ interface CardWidgetProps {
   formManager?: FormManagerReturn;
   dataSources?: Record<string, unknown>[];
   filterSubmitProps?: FilterSubmitProps;
+  refreshInterval?: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,6 +46,7 @@ export function CardWidget({
   formManager,
   dataSources,
   filterSubmitProps,
+  refreshInterval,
 }: CardWidgetProps) {
   const locale = useLocale();
   const children = widget.children ?? [];
@@ -144,6 +146,7 @@ export function CardWidget({
                       formManager={formManager}
                       dataSources={dataSources}
                       filterSubmitProps={filterSubmitProps}
+                      refreshInterval={refreshInterval}
                     />
                   </div>
                 </div>

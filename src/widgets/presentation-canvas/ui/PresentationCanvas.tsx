@@ -19,7 +19,7 @@
 
 import { useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import ReactGridLayout from "react-grid-layout";
+import ReactGridLayout from "react-grid-layout/legacy";
 import { Database, ListFilter, FileText, GitBranch } from "lucide-react";
 import { WidgetRenderer } from "@/src/entities/widget";
 import { resolveLabel } from "@/src/shared/lib";

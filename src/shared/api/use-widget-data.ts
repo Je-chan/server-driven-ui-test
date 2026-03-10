@@ -16,7 +16,7 @@ interface UseWidgetDataParams {
   enabled?: boolean;
   /** dataSources[].config.endpoint — 스키마에 정의된 커스텀 엔드포인트 */
   dataSourceEndpoint?: string;
-  /** schema.settings.refreshInterval (ms). 0이면 비활성 */
+  /** schema.settings.refreshInterval (ms). 0이면 비활성. cache.refetchInterval이 없을 때 폴백으로 사용 */
   refreshInterval?: number;
 }
 
@@ -77,6 +77,11 @@ export function useWidgetData({
 }: UseWidgetDataParams) {
   const endpoint = buildEndpoint(dataSourceId, widgetType, resolvedParams, dataSourceEndpoint);
 
+  // cache에서 undefined 값 제거 후 spread (undefined가 명시적 refetchInterval을 덮어쓰는 문제 방지)
+  const cleanCache = cache
+    ? Object.fromEntries(Object.entries(cache).filter(([, v]) => v !== undefined))
+    : undefined;
+
   return useQuery<DataResponse>({
     queryKey: ["widget-data", dataSourceId, widgetType, resolvedParams, dataSourceEndpoint],
     queryFn: async () => {
@@ -87,6 +92,6 @@ export function useWidgetData({
     },
     enabled: enabled !== false && !!endpoint,
     refetchInterval: refreshInterval && refreshInterval > 0 ? refreshInterval : false,
-    ...cache,
+    ...cleanCache, // cache.refetchInterval이 있으면 위 라인의 폴백을 오버라이드
   });
 }

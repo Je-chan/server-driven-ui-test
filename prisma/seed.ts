@@ -589,7 +589,7 @@ const allDataSources = [
     type: "timeseries",
     name: L("인버터 데이터", "Inverter Data"),
     config: { endpoint: "/api/data/inverter" },
-    cache: { staleTime: 30000, gcTime: 300000 },
+    cache: { staleTime: 30000, gcTime: 300000, refetchInterval: 30000 },
     returnStructure: {
       dimensions: ["assetId", "assetName", "siteName", "timestamp"],
       measurements: ["activePower", "reactivePower", "dailyEnergy", "totalEnergy", "efficiency"],
@@ -600,7 +600,7 @@ const allDataSources = [
     type: "rest-api",
     name: L("기상 데이터", "Weather Data"),
     config: { endpoint: "/api/data/weather" },
-    cache: { staleTime: 600000, gcTime: 1800000 },
+    cache: { staleTime: 600000, gcTime: 1800000, refetchInterval: 600000 },
     returnStructure: {
       dimensions: ["siteId", "siteName", "timestamp"],
       measurements: ["irradiance", "temperature", "humidity", "windSpeed"],
@@ -611,7 +611,7 @@ const allDataSources = [
     type: "metric",
     name: L("KPI 지표", "KPI Metrics"),
     config: { endpoint: "/api/data/kpi" },
-    cache: { staleTime: 300000, gcTime: 1800000 },
+    cache: { staleTime: 300000, gcTime: 1800000, refetchInterval: 300000 },
     returnStructure: {
       dimensions: ["siteId", "date"],
       measurements: ["dailyGeneration", "pr", "availability", "capacityFactor"],
@@ -622,7 +622,7 @@ const allDataSources = [
     type: "rest-api",
     name: L("알람 데이터", "Alarm Data"),
     config: { endpoint: "/api/data/alarm" },
-    cache: { staleTime: 60000, gcTime: 300000 },
+    cache: { staleTime: 60000, gcTime: 300000, refetchInterval: 60000 },
     returnStructure: {
       dimensions: ["siteId", "severity", "category", "timestamp"],
       measurements: ["count"],
@@ -633,7 +633,7 @@ const allDataSources = [
     type: "metric",
     name: L("수익 데이터", "Revenue Data"),
     config: { endpoint: "/api/data/revenue" },
-    cache: { staleTime: 300000, gcTime: 1800000 },
+    cache: { staleTime: 300000, gcTime: 1800000, refetchInterval: 300000 },
     returnStructure: {
       dimensions: ["siteId", "date"],
       measurements: ["energySales", "recSales", "totalRevenue", "generationKwh"],
@@ -644,7 +644,7 @@ const allDataSources = [
     type: "timeseries",
     name: L("ESS 데이터", "ESS Data"),
     config: { endpoint: "/api/data/battery" },
-    cache: { staleTime: 30000, gcTime: 300000 },
+    cache: { staleTime: 30000, gcTime: 300000, refetchInterval: 30000 },
     returnStructure: {
       dimensions: ["siteId", "batteryId", "timestamp"],
       measurements: ["soc", "power", "temperature", "voltage", "current"],
@@ -655,7 +655,7 @@ const allDataSources = [
     type: "timeseries",
     name: L("계통 데이터", "Grid Data"),
     config: { endpoint: "/api/data/grid" },
-    cache: { staleTime: 30000, gcTime: 300000 },
+    cache: { staleTime: 30000, gcTime: 300000, refetchInterval: 30000 },
     returnStructure: {
       dimensions: ["siteId", "timestamp"],
       measurements: ["gridVoltage", "gridFrequency", "exportPower", "importPower"],
@@ -666,7 +666,7 @@ const allDataSources = [
     type: "rest-api",
     name: L("전력 가격", "Energy Price"),
     config: { endpoint: "/api/data/price" },
-    cache: { staleTime: 600000, gcTime: 1800000 },
+    cache: { staleTime: 600000, gcTime: 1800000, refetchInterval: 600000 },
     returnStructure: {
       dimensions: ["region", "timestamp"],
       measurements: ["smp", "rec"],
@@ -677,7 +677,7 @@ const allDataSources = [
     type: "timeseries",
     name: L("계량기 데이터", "Meter Data"),
     config: { endpoint: "/api/data/meter" },
-    cache: { staleTime: 30000, gcTime: 300000 },
+    cache: { staleTime: 30000, gcTime: 300000, refetchInterval: 30000 },
     returnStructure: {
       dimensions: ["siteId", "meterId", "timestamp"],
       measurements: ["activeExport", "activeImport", "powerFactor"],
@@ -688,7 +688,7 @@ const allDataSources = [
     type: "rest-api",
     name: L("유지보수 데이터", "Maintenance Data"),
     config: { endpoint: "/api/data/maintenance" },
-    cache: { staleTime: 60000, gcTime: 300000 },
+    cache: { staleTime: 60000, gcTime: 300000, refetchInterval: 60000 },
     returnStructure: {
       dimensions: ["siteId", "type", "status"],
       measurements: ["cost"],
@@ -699,7 +699,7 @@ const allDataSources = [
     type: "timeseries",
     name: L("모듈/스트링 데이터", "Module/String Data"),
     config: { endpoint: "/api/data/module" },
-    cache: { staleTime: 30000, gcTime: 300000 },
+    cache: { staleTime: 30000, gcTime: 300000, refetchInterval: 30000 },
     returnStructure: {
       dimensions: ["siteId", "stringId", "timestamp"],
       measurements: ["voltage", "current", "power", "temperature"],
@@ -733,7 +733,7 @@ const FILTER_STYLE = { backgroundColor: "#ffffff", borderRadius: 4, padding: 8, 
 function makeSiteFilterWidget(id: string, x: number, y: number, w: number, siteOptions: { value: string; label: string }[]): WidgetDef {
   return {
     id, type: "filter-select", title: L("발전소 선택", "Select Site"),
-    layout: { x, y, w, h: 2, minW: 3, minH: 2 },
+    layout: { x, y, w, h: 50, minW: 3, minH: 50 },
     style: FILTER_STYLE,
     options: { filterKey: "selectedSite", options: [{ value: "", label: L("전체", "All") }, ...siteOptions], defaultValue: "" },
   };
@@ -742,7 +742,7 @@ function makeSiteFilterWidget(id: string, x: number, y: number, w: number, siteO
 function makeDatepickerWidget(id: string, x: number, y: number, w: number): WidgetDef {
   return {
     id, type: "filter-datepicker", title: L("조회 기간", "Date Range"),
-    layout: { x, y, w, h: 2, minW: 3, minH: 2 },
+    layout: { x, y, w, h: 50, minW: 3, minH: 50 },
     style: FILTER_STYLE,
     options: {
       filterKey: "timeRange",
@@ -756,7 +756,7 @@ function makeDatepickerWidget(id: string, x: number, y: number, w: number): Widg
 function makeIntervalWidget(id: string, x: number, y: number, w: number): WidgetDef {
   return {
     id, type: "filter-select", title: L("집계 단위", "Interval"),
-    layout: { x, y, w, h: 2, minW: 3, minH: 2 },
+    layout: { x, y, w, h: 50, minW: 3, minH: 50 },
     style: FILTER_STYLE,
     options: {
       filterKey: "interval",
@@ -779,16 +779,16 @@ function makeIntervalWidget(id: string, x: number, y: number, w: number): Widget
 function createMainDashboardSchema(siteOptions: { value: string; label: string }[]) {
   const widgets: (WidgetDef | Record<string, unknown>)[] = [
     // ── 필터 위젯 ──
-    makeSiteFilterWidget("widget_migrated_filter_site", 0, 0, 3, siteOptions),
-    makeDatepickerWidget("widget_migrated_filter_time", 3, 0, 5),
-    makeIntervalWidget("widget_migrated_filter_interval", 8, 0, 3),
+    makeSiteFilterWidget("widget_migrated_filter_site", 0, 0, 6, siteOptions),
+    makeDatepickerWidget("widget_migrated_filter_time", 6, 0, 8),
+    makeIntervalWidget("widget_migrated_filter_interval", 14, 0, 5),
 
     // ── KPI 카드 ──
     {
       id: "w_main_kpi1",
       type: "kpi-card",
       title: L("현재 총 출력", "Current Total Output"),
-      layout: { x: 0, y: 2, w: 3, h: 2 },
+      layout: { x: 0, y: 60, w: 6, h: 120 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}" },
@@ -800,7 +800,7 @@ function createMainDashboardSchema(siteOptions: { value: string; label: string }
       id: "w_main_kpi2",
       type: "kpi-card",
       title: L("금일 발전량", "Today's Generation"),
-      layout: { x: 3, y: 2, w: 3, h: 2 },
+      layout: { x: 6, y: 60, w: 6, h: 120 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}" },
@@ -812,7 +812,7 @@ function createMainDashboardSchema(siteOptions: { value: string; label: string }
       id: "w_main_kpi3",
       type: "kpi-card",
       title: L("평균 효율", "Avg. Efficiency"),
-      layout: { x: 6, y: 2, w: 3, h: 2 },
+      layout: { x: 12, y: 60, w: 6, h: 120 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}" },
@@ -824,7 +824,7 @@ function createMainDashboardSchema(siteOptions: { value: string; label: string }
       id: "w_main_kpi4",
       type: "kpi-card",
       title: L("현재 일사량", "Current Irradiance"),
-      layout: { x: 9, y: 2, w: 3, h: 2 },
+      layout: { x: 18, y: 60, w: 6, h: 120 },
       dataBinding: {
         dataSourceId: "ds_weather",
         requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
@@ -838,7 +838,7 @@ function createMainDashboardSchema(siteOptions: { value: string; label: string }
       id: "w_main_chart1",
       type: "line-chart",
       title: L("실시간 발전 출력", "Real-time Power Output"),
-      layout: { x: 0, y: 4, w: 4, h: 4 },
+      layout: { x: 0, y: 190, w: 8, h: 320 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
@@ -856,7 +856,7 @@ function createMainDashboardSchema(siteOptions: { value: string; label: string }
       id: "w_main_chart2",
       type: "line-chart",
       title: L("일사량 & 온도 추이", "Irradiance & Temperature Trend"),
-      layout: { x: 4, y: 4, w: 4, h: 4 },
+      layout: { x: 8, y: 190, w: 8, h: 320 },
       dataBinding: {
         dataSourceId: "ds_weather",
         requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
@@ -877,7 +877,7 @@ function createMainDashboardSchema(siteOptions: { value: string; label: string }
       id: "w_main_bar1",
       type: "bar-chart",
       title: L("사이트별 수익 비교", "Revenue by Site"),
-      layout: { x: 8, y: 4, w: 4, h: 4 },
+      layout: { x: 16, y: 190, w: 8, h: 320 },
       dataBinding: {
         dataSourceId: "ds_revenue",
         requestParams: { siteId: "{{filter.selectedSite}}" },
@@ -898,7 +898,7 @@ function createMainDashboardSchema(siteOptions: { value: string; label: string }
       id: "w_main_table1",
       type: "table",
       title: L("인버터별 현황", "Inverter Status"),
-      layout: { x: 0, y: 8, w: 12, h: 6 },
+      layout: { x: 0, y: 520, w: 24, h: 350 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}" },
@@ -917,7 +917,7 @@ function createMainDashboardSchema(siteOptions: { value: string; label: string }
 
   return {
     version: "1.0.0",
-    settings: { refreshInterval: 30000, theme: "light", gridColumns: 24, rowHeight: 30, filterMode: "auto" as const },
+    settings: { refreshInterval: 30000, theme: "light", gridColumns: 24, rowHeight: 1, filterMode: "auto" as const },
     dataSources: allDataSources,
     filters: [],
     widgets,
@@ -929,13 +929,13 @@ function createMainDashboardSchema(siteOptions: { value: string; label: string }
 function createComparisonDashboardSchema(siteOptions: { value: string; label: string }[]) {
   const widgets: (WidgetDef | Record<string, unknown>)[] = [
     // ── 필터 위젯 ──
-    makeDatepickerWidget("widget_migrated_filter_time", 0, 0, 8),
+    makeDatepickerWidget("widget_migrated_filter_time", 0, 0, 10),
 
     {
       id: "w_cmp_submit",
       type: "filter-submit",
       title: L("조회", "Search"),
-      layout: { x: 8, y: 0, w: 3, h: 2 },
+      layout: { x: 10, y: 0, w: 4, h: 50 },
       style: { backgroundColor: "#ffffff", borderRadius: 4, shadow: "none" },
       options: { label: L("조회", "Search"), variant: "primary" },
     },
@@ -945,7 +945,7 @@ function createComparisonDashboardSchema(siteOptions: { value: string; label: st
       id: "w_cmp_bar1",
       type: "bar-chart",
       title: L("사이트별 발전량", "Generation by Site"),
-      layout: { x: 0, y: 2, w: 6, h: 3 },
+      layout: { x: 0, y: 60, w: 12, h: 320 },
       dataBinding: {
         dataSourceId: "ds_kpi",
         requestParams: {},
@@ -964,7 +964,7 @@ function createComparisonDashboardSchema(siteOptions: { value: string; label: st
       id: "w_cmp_bar2",
       type: "bar-chart",
       title: L("사이트별 수익", "Revenue by Site"),
-      layout: { x: 6, y: 2, w: 6, h: 3 },
+      layout: { x: 12, y: 60, w: 12, h: 320 },
       dataBinding: {
         dataSourceId: "ds_revenue",
         requestParams: {},
@@ -986,7 +986,7 @@ function createComparisonDashboardSchema(siteOptions: { value: string; label: st
       id: "w_cmp_table1",
       type: "table",
       title: L("사이트별 KPI 비교", "KPI Comparison by Site"),
-      layout: { x: 0, y: 5, w: 6, h: 4 },
+      layout: { x: 0, y: 390, w: 12, h: 350 },
       dataBinding: {
         dataSourceId: "ds_kpi",
         requestParams: {},
@@ -1006,7 +1006,7 @@ function createComparisonDashboardSchema(siteOptions: { value: string; label: st
       id: "w_cmp_table2",
       type: "table",
       title: L("인버터 현황 종합", "Inverter Overview"),
-      layout: { x: 6, y: 5, w: 6, h: 4 },
+      layout: { x: 12, y: 390, w: 12, h: 350 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: {},
@@ -1024,7 +1024,7 @@ function createComparisonDashboardSchema(siteOptions: { value: string; label: st
 
   return {
     version: "1.0.0",
-    settings: { refreshInterval: 60000, theme: "light", gridColumns: 24, rowHeight: 30, filterMode: "manual" as const },
+    settings: { refreshInterval: 60000, theme: "light", gridColumns: 24, rowHeight: 1, filterMode: "manual" as const },
     dataSources: allDataSources,
     filters: [],
     widgets,
@@ -1036,16 +1036,16 @@ function createComparisonDashboardSchema(siteOptions: { value: string; label: st
 function createInverterDetailDashboardSchema(siteOptions: { value: string; label: string }[]) {
   const widgets: (WidgetDef | Record<string, unknown>)[] = [
     // ── 필터 위젯 ──
-    makeSiteFilterWidget("widget_migrated_filter_site", 0, 0, 3, siteOptions),
-    makeIntervalWidget("widget_migrated_filter_interval", 3, 0, 3),
-    makeDatepickerWidget("widget_migrated_filter_time", 6, 0, 4),
+    makeSiteFilterWidget("widget_migrated_filter_site", 0, 0, 6, siteOptions),
+    makeIntervalWidget("widget_migrated_filter_interval", 6, 0, 5),
+    makeDatepickerWidget("widget_migrated_filter_time", 11, 0, 8),
 
     // ── KPI 카드 ──
     {
       id: "w_inv_kpi1",
       type: "kpi-card",
       title: L("총 출력", "Total Output"),
-      layout: { x: 0, y: 2, w: 3, h: 2 },
+      layout: { x: 0, y: 60, w: 6, h: 120 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}" },
@@ -1057,7 +1057,7 @@ function createInverterDetailDashboardSchema(siteOptions: { value: string; label
       id: "w_inv_kpi2",
       type: "kpi-card",
       title: L("평균 효율", "Avg. Efficiency"),
-      layout: { x: 3, y: 2, w: 3, h: 2 },
+      layout: { x: 6, y: 60, w: 6, h: 120 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}" },
@@ -1069,7 +1069,7 @@ function createInverterDetailDashboardSchema(siteOptions: { value: string; label
       id: "w_inv_kpi3",
       type: "kpi-card",
       title: L("가동 인버터", "Active Inverters"),
-      layout: { x: 6, y: 2, w: 3, h: 2 },
+      layout: { x: 12, y: 60, w: 6, h: 120 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}" },
@@ -1081,7 +1081,7 @@ function createInverterDetailDashboardSchema(siteOptions: { value: string; label
       id: "w_inv_kpi4",
       type: "kpi-card",
       title: L("전체 인버터", "Total Inverters"),
-      layout: { x: 9, y: 2, w: 3, h: 2 },
+      layout: { x: 18, y: 60, w: 6, h: 120 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}" },
@@ -1095,7 +1095,7 @@ function createInverterDetailDashboardSchema(siteOptions: { value: string; label
       id: "w_inv_chart1",
       type: "line-chart",
       title: L("유효/무효 전력 추이", "Active/Reactive Power Trend"),
-      layout: { x: 0, y: 4, w: 4, h: 3 },
+      layout: { x: 0, y: 190, w: 8, h: 320 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
@@ -1114,7 +1114,7 @@ function createInverterDetailDashboardSchema(siteOptions: { value: string; label
       id: "w_inv_chart2",
       type: "line-chart",
       title: L("인버터 온도 추이", "Inverter Temperature Trend"),
-      layout: { x: 4, y: 4, w: 4, h: 3 },
+      layout: { x: 8, y: 190, w: 8, h: 320 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
@@ -1132,7 +1132,7 @@ function createInverterDetailDashboardSchema(siteOptions: { value: string; label
       id: "w_inv_chart3",
       type: "line-chart",
       title: L("스트링 출력 추이", "String Output Trend"),
-      layout: { x: 8, y: 4, w: 4, h: 3 },
+      layout: { x: 16, y: 190, w: 8, h: 320 },
       dataBinding: {
         dataSourceId: "ds_module",
         requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
@@ -1153,7 +1153,7 @@ function createInverterDetailDashboardSchema(siteOptions: { value: string; label
       id: "w_inv_table1",
       type: "table",
       title: L("인버터 상세 데이터", "Inverter Detail Data"),
-      layout: { x: 0, y: 7, w: 12, h: 4 },
+      layout: { x: 0, y: 520, w: 24, h: 350 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}" },
@@ -1174,7 +1174,7 @@ function createInverterDetailDashboardSchema(siteOptions: { value: string; label
 
   return {
     version: "1.0.0",
-    settings: { refreshInterval: 15000, theme: "light", gridColumns: 24, rowHeight: 30, filterMode: "auto" as const },
+    settings: { refreshInterval: 15000, theme: "light", gridColumns: 24, rowHeight: 1, filterMode: "auto" as const },
     dataSources: allDataSources,
     filters: [],
     widgets,
@@ -1186,7 +1186,7 @@ function createInverterDetailDashboardSchema(siteOptions: { value: string; label
 function createInspectionFormDashboardSchema(siteOptions: { value: string; label: string }[]) {
   return {
     version: "1.0.0",
-    settings: { refreshInterval: 0, theme: "light", gridColumns: 24, rowHeight: 30, filterMode: "auto" as const },
+    settings: { refreshInterval: 0, theme: "light", gridColumns: 24, rowHeight: 1, filterMode: "auto" as const },
     dataSources: allDataSources,
     filters: [],
     widgets: [
@@ -1195,7 +1195,7 @@ function createInspectionFormDashboardSchema(siteOptions: { value: string; label
         id: "w_form_header",
         type: "kpi-card",
         title: L("설비 점검 보고서", "Equipment Inspection Report"),
-        layout: { x: 0, y: 0, w: 2, h: 2 },
+        layout: { x: 0, y: 0, w: 6, h: 200 },
         dataBinding: {
           dataSourceId: "ds_maintenance",
           requestParams: {},
@@ -1209,7 +1209,7 @@ function createInspectionFormDashboardSchema(siteOptions: { value: string; label
         id: "w_form_inspection",
         type: "form",
         title: L("설비 점검 보고서", "Equipment Inspection Report"),
-        layout: { x: 0, y: 2, w: 12, h: 4 },
+        layout: { x: 0, y: 210, w: 24, h: 650 },
         style: { backgroundColor: "#ffffff", borderRadius: 8, padding: 16, shadow: "sm" },
         options: {
           formId: "inspection",
@@ -1359,7 +1359,7 @@ function createInspectionFormDashboardSchema(siteOptions: { value: string; label
         id: "w_form_ref_alarms",
         type: "table",
         title: L("최근 알람 내역 (참고)", "Recent Alarms (Reference)"),
-        layout: { x: 2, y: 0, w: 5, h: 2 },
+        layout: { x: 6, y: 0, w: 9, h: 200 },
         dataBinding: {
           dataSourceId: "ds_alarm",
           requestParams: {},
@@ -1377,7 +1377,7 @@ function createInspectionFormDashboardSchema(siteOptions: { value: string; label
         id: "w_form_ref_maint",
         type: "table",
         title: L("최근 정비 기록 (참고)", "Recent Maintenance (Reference)"),
-        layout: { x: 7, y: 0, w: 5, h: 2 },
+        layout: { x: 15, y: 0, w: 9, h: 200 },
         dataBinding: {
           dataSourceId: "ds_maintenance",
           requestParams: {},
@@ -1405,7 +1405,7 @@ function createConditionalDashboardSchema(siteOptions: { value: string; label: s
       id: "w_cond_toggle",
       type: "filter-toggle",
       title: L("보기 모드", "View Mode"),
-      layout: { x: 0, y: 0, w: 3, h: 2 },
+      layout: { x: 0, y: 0, w: 4, h: 50 },
       options: {
         filterKey: "viewMode",
         onValue: "detail",
@@ -1419,7 +1419,7 @@ function createConditionalDashboardSchema(siteOptions: { value: string; label: s
       id: "w_cond_tab",
       type: "filter-tab",
       title: L("카테고리", "Category"),
-      layout: { x: 3, y: 0, w: 2, h: 2 },
+      layout: { x: 4, y: 0, w: 6, h: 50 },
       options: {
         filterKey: "dataCategory",
         defaultValue: "power",
@@ -1435,11 +1435,11 @@ function createConditionalDashboardSchema(siteOptions: { value: string; label: s
       id: "w_cond_site",
       type: "filter-select",
       title: L("발전소", "Site"),
-      layout: { x: 5, y: 0, w: 3, h: 2 },
+      layout: { x: 10, y: 0, w: 5, h: 50 },
       options: { filterKey: "selectedSite", options: siteOptions },
     },
-    makeDatepickerWidget("w_cond_filter_time", 8, 0, 4),
-    makeIntervalWidget("w_cond_filter_interval", 12, 0, 3),
+    makeDatepickerWidget("w_cond_filter_time", 15, 0, 6),
+    makeIntervalWidget("w_cond_filter_interval", 21, 0, 3),
   ];
 
   // ── KPI 카드 (항상 표시, 조건 없음) ──
@@ -1448,7 +1448,7 @@ function createConditionalDashboardSchema(siteOptions: { value: string; label: s
       id: "w_cond_kpi1",
       type: "kpi-card",
       title: L("현재 총 출력", "Current Total Output"),
-      layout: { x: 0, y: 2, w: 3, h: 2 },
+      layout: { x: 0, y: 60, w: 8, h: 120 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}" },
@@ -1460,7 +1460,7 @@ function createConditionalDashboardSchema(siteOptions: { value: string; label: s
       id: "w_cond_kpi2",
       type: "kpi-card",
       title: L("금일 발전량", "Today's Generation"),
-      layout: { x: 3, y: 2, w: 3, h: 2 },
+      layout: { x: 8, y: 60, w: 8, h: 120 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}" },
@@ -1472,7 +1472,7 @@ function createConditionalDashboardSchema(siteOptions: { value: string; label: s
       id: "w_cond_kpi3",
       type: "kpi-card",
       title: L("평균 효율", "Avg. Efficiency"),
-      layout: { x: 6, y: 2, w: 5, h: 2 },
+      layout: { x: 16, y: 60, w: 8, h: 120 },
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}" },
@@ -1487,7 +1487,7 @@ function createConditionalDashboardSchema(siteOptions: { value: string; label: s
     id: "w_cond_slot_chart",
     type: "conditional-slot",
     title: L("데이터 차트", "Data Chart"),
-    layout: { x: 0, y: 4, w: 6, h: 2 },
+    layout: { x: 0, y: 190, w: 12, h: 350 },
     style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
     ...({
       children: [
@@ -1557,7 +1557,7 @@ function createConditionalDashboardSchema(siteOptions: { value: string; label: s
     id: "w_cond_slot_view",
     type: "conditional-slot",
     title: L("상세/요약 보기", "Detail/Summary View"),
-    layout: { x: 6, y: 4, w: 6, h: 2 },
+    layout: { x: 12, y: 190, w: 12, h: 350 },
     style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
     ...({
       children: [
@@ -1601,7 +1601,7 @@ function createConditionalDashboardSchema(siteOptions: { value: string; label: s
 
   return {
     version: "1.0.0",
-    settings: { refreshInterval: 30000, theme: "light", gridColumns: 24, rowHeight: 30, filterMode: "auto" as const },
+    settings: { refreshInterval: 30000, theme: "light", gridColumns: 24, rowHeight: 1, filterMode: "auto" as const },
     dataSources: allDataSources,
     filters: [],
     widgets: [...filterWidgets, ...kpiWidgets, slotA, slotB],

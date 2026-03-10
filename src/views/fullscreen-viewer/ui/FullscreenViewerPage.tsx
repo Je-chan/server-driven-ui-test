@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import ReactGridLayout from "react-grid-layout";
+import ReactGridLayout from "react-grid-layout/legacy";
 import { X, ArrowLeft, Settings, RefreshCw, Search } from "lucide-react";
 import { WidgetRenderer, CardWidget, ConditionalSlotWidget } from "@/src/entities/widget";
 import { resolveLabel, evaluateConditions } from "@/src/shared/lib";
@@ -225,6 +225,7 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
                     formManager={formManager}
                     dataSources={schema.dataSources}
                     filterSubmitProps={{ applyFilters, hasPendingChanges }}
+                    refreshInterval={schema.settings?.refreshInterval}
                   />
                 </div>
               );
@@ -244,6 +245,7 @@ export function FullscreenViewerPage({ dashboard }: FullscreenViewerPageProps) {
                     formManager={formManager}
                     dataSources={schema.dataSources}
                     filterSubmitProps={{ applyFilters, hasPendingChanges }}
+                    refreshInterval={schema.settings?.refreshInterval}
                   />
                 </div>
               );

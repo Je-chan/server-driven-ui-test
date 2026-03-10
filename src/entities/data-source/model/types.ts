@@ -16,6 +16,7 @@ export type DataSourceType = z.infer<typeof dataSourceTypeSchema>;
 export const dataSourceCacheSchema = z.object({
   staleTime: z.number().default(30000),
   gcTime: z.number().default(300000),
+  refetchInterval: z.number().optional(), // ms, undefined → settings.refreshInterval 폴백
 });
 
 // 데이터 소스 반환 구조 (어떤 필드들이 있는지)
@@ -96,7 +97,7 @@ export const DEFAULT_DATA_SOURCES: DashboardDataSource[] = [
       endpoint: "/api/data/inverter",
       model: "pv_inverter",
     },
-    cache: { staleTime: 30000, gcTime: 300000 },
+    cache: { staleTime: 30000, gcTime: 300000, refetchInterval: 30000 },
     returnStructure: {
       dimensions: ["assetId", "assetName", "siteName", "timestamp"],
       measurements: ["activePower", "reactivePower", "dailyEnergy", "totalEnergy", "efficiency"],
@@ -111,7 +112,7 @@ export const DEFAULT_DATA_SOURCES: DashboardDataSource[] = [
       endpoint: "/api/data/weather",
       method: "GET",
     },
-    cache: { staleTime: 600000, gcTime: 1800000 },
+    cache: { staleTime: 600000, gcTime: 1800000, refetchInterval: 600000 },
     returnStructure: {
       dimensions: ["regionCode", "timestamp"],
       measurements: ["irradiance", "temperature", "humidity", "windSpeed"],
@@ -124,7 +125,7 @@ export const DEFAULT_DATA_SOURCES: DashboardDataSource[] = [
     config: {
       endpoint: "/api/data/kpi",
     },
-    cache: { staleTime: 60000, gcTime: 300000 },
+    cache: { staleTime: 60000, gcTime: 300000, refetchInterval: 300000 },
     returnStructure: {
       dimensions: ["assetId", "date"],
       measurements: ["dailyGeneration", "monthlyGeneration", "pr", "availability"],

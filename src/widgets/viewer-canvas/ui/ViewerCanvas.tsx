@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import ReactGridLayout from "react-grid-layout";
+import ReactGridLayout from "react-grid-layout/legacy";
 import { WidgetRenderer, CardWidget, ConditionalSlotWidget } from "@/src/entities/widget";
 import { resolveLabel, evaluateConditions } from "@/src/shared/lib";
 import type { DashboardJson } from "@/src/entities/dashboard";
@@ -49,7 +49,7 @@ export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080",
   const locale = useLocale();
   const td = useTranslations("dashboard");
   const cols = schema.settings?.gridColumns ?? 24;
-  const rowHeight = schema.settings?.rowHeight ?? 30;
+  const rowHeight = schema.settings?.rowHeight ?? 1;
 
   // 조건부 렌더링: filterValues 기반으로 표시할 위젯 필터링
   const visibleWidgets = useMemo(() => {
@@ -71,13 +71,14 @@ export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080",
     };
   }, [containerWidth, resolution]);
 
-  // 레이아웃 생성 (static으로 설정하여 드래그/리사이즈 불가)
+  // 레이아웃 생성 (static, px → grid unit 변환)
+  const toGrid = (px: number) => Math.max(1, Math.ceil(px / rowHeight));
   const layouts: LayoutItem[] = visibleWidgets.map((widget) => ({
     i: widget.id,
     x: widget.layout.x,
-    y: widget.layout.y,
+    y: Math.round(widget.layout.y / rowHeight),
     w: widget.layout.w,
-    h: widget.layout.h,
+    h: toGrid(widget.layout.h),
     static: true, // 뷰어에서는 편집 불가
   }));
 
@@ -156,6 +157,7 @@ export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080",
                     formManager={formManager}
                     dataSources={schema.dataSources}
                     filterSubmitProps={applyFilters ? { applyFilters, hasPendingChanges: hasPendingChanges ?? false } : undefined}
+                    refreshInterval={schema.settings?.refreshInterval}
                   />
                 </div>
               );
@@ -175,6 +177,7 @@ export function ViewerCanvas({ schema, containerWidth, resolution = "1920x1080",
                     formManager={formManager}
                     dataSources={schema.dataSources}
                     filterSubmitProps={applyFilters ? { applyFilters, hasPendingChanges: hasPendingChanges ?? false } : undefined}
+                    refreshInterval={schema.settings?.refreshInterval}
                   />
                 </div>
               );

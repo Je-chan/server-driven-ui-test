@@ -2,7 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import ReactGridLayout from "react-grid-layout";
+// v2 API: outer grid에 커스텀 compactor 적용 (충돌 시 밀어내기 O, 자동 올라가기 X)
+import {
+  GridLayout as RGLGridLayout,
+  sortLayoutItemsByRowCol,
+  getFirstCollision,
+  cloneLayoutItem,
+} from "react-grid-layout";
+// Legacy API: inner card grid (flat props 사용)
+import LegacyReactGridLayout from "react-grid-layout/legacy";
 import { Trash2, GripVertical, LayoutGrid, Layers, Eye } from "lucide-react";
 import { useBuilderStore } from "@/src/features/dashboard-builder/model/builder.store";
 import { getWidgetType } from "@/src/entities/widget";
@@ -37,7 +45,48 @@ interface LayoutItem {
 
 // react-grid-layout 타입 정의가 불완전하여 any 사용
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const GridLayout = ReactGridLayout as any;
+const OuterGrid = RGLGridLayout as any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const InnerGrid = LegacyReactGridLayout as any;
+
+/**
+ * 커스텀 compactor: 충돌 시 밀어내기(push) O, 빈 공간 자동 올라가기 X.
+ * - type: "vertical" → moveElement에서 vertical 방향 충돌 해결 (아래로 밀어냄)
+ * - compact(): 겹침만 해소 (아래로 밀기), 위로 끌어올리기는 하지 않음
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const pushOnlyCompactor: any = {
+  type: "vertical",
+  allowOverlap: false,
+  preventCollision: false,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  compact(layout: any[]) {
+    // 위→아래, 좌→우 순서로 처리
+    const sorted = sortLayoutItemsByRowCol(layout);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const resolved: any[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const out = new Array<any>(layout.length);
+
+    for (let i = 0; i < sorted.length; i++) {
+      const l = cloneLayoutItem(sorted[i]);
+      if (!l.static) {
+        // 겹침만 해소: 충돌하는 아이템 아래로 밀기
+        // verticalCompactor와 달리 위로 끌어올리는 while(y > 0) 루프 없음
+        let collision;
+        while ((collision = getFirstCollision(resolved, l))) {
+          l.y = collision.y + collision.h;
+        }
+      }
+      resolved.push(l);
+      const originalIndex = layout.indexOf(sorted[i]);
+      out[originalIndex] = l;
+      l.moved = false;
+    }
+
+    return out;
+  },
+};
 
 export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: BuilderCanvasProps) {
   const locale = useLocale();
@@ -57,7 +106,7 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
   const { widgets } = schema;
   const cols = schema.settings?.gridColumns ?? 24;
 
-  const rowHeight = schema.settings?.rowHeight ?? 30;
+  const rowHeight = schema.settings?.rowHeight ?? 1;
 
   // 해상도 기반 캔버스 너비 계산
   const { canvasWidth, scale } = useMemo(() => {
@@ -73,29 +122,71 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
     };
   }, [containerWidth, resolution]);
 
+  // v2 API config objects
+  const gridConfig = useMemo(
+    () => ({ cols, rowHeight, margin: [8, 0] as [number, number], containerPadding: [8, 8] as [number, number] }),
+    [cols, rowHeight]
+  );
+  const dragConfig = useMemo(() => ({ enabled: true, handle: ".drag-handle" }), []);
+  const resizeConfig = useMemo(() => ({ enabled: true }), []);
+
+  // 스토어: h, y, minH = px 단위. RGL: grid unit 단위 (h_grid = h_px / rowHeight)
+  const toGrid = useCallback(
+    (px: number) => Math.max(1, Math.ceil(px / rowHeight)),
+    [rowHeight]
+  );
+  const toPx = useCallback(
+    (grid: number) => grid * rowHeight,
+    [rowHeight]
+  );
+
   const layouts: LayoutItem[] = widgets.map((widget) => ({
     i: widget.id,
     x: widget.layout.x,
-    y: widget.layout.y,
+    y: Math.round(widget.layout.y / rowHeight),
     w: widget.layout.w,
-    h: widget.layout.h,
+    h: toGrid(widget.layout.h),
     minW: widget.layout.minW ?? 2,
-    minH: widget.layout.minH ?? 2,
+    minH: toGrid(widget.layout.minH ?? 2),
   }));
 
-  const handleLayoutChange = useCallback(
-    (newLayouts: LayoutItem[]) => {
+  // 드래그/리사이즈 완료 시 전체 레이아웃 저장 (밀려난 위젯 포함), grid unit → px 변환
+  const handleDragStop = useCallback(
+    (rglLayout: LayoutItem[]) => {
+      const layoutMap = new Map(rglLayout.map((l) => [l.i, l]));
       updateAllLayouts(
-        newLayouts.map((l) => ({
-          i: l.i,
-          x: l.x,
-          y: l.y,
-          w: l.w,
-          h: l.h,
-        }))
+        widgets.map((w) => {
+          const rglItem = layoutMap.get(w.id);
+          return {
+            i: w.id,
+            x: rglItem ? rglItem.x : w.layout.x,
+            y: rglItem ? toPx(rglItem.y) : w.layout.y,
+            w: rglItem ? rglItem.w : w.layout.w,
+            h: rglItem ? toPx(rglItem.h) : w.layout.h,
+          };
+        })
       );
     },
-    [updateAllLayouts]
+    [updateAllLayouts, widgets, toPx]
+  );
+
+  const handleResizeStop = useCallback(
+    (rglLayout: LayoutItem[]) => {
+      const layoutMap = new Map(rglLayout.map((l) => [l.i, l]));
+      updateAllLayouts(
+        widgets.map((w) => {
+          const rglItem = layoutMap.get(w.id);
+          return {
+            i: w.id,
+            x: rglItem ? rglItem.x : w.layout.x,
+            y: rglItem ? toPx(rglItem.y) : w.layout.y,
+            w: rglItem ? rglItem.w : w.layout.w,
+            h: rglItem ? toPx(rglItem.h) : w.layout.h,
+          };
+        })
+      );
+    },
+    [updateAllLayouts, widgets, toPx]
   );
 
   // 위젯 추가 시 해당 위젯으로 스크롤
@@ -151,6 +242,7 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
 
   const handleChildLayoutChange = useCallback(
     (cardId: string, newLayouts: LayoutItem[]) => {
+      // Card 내부 그리드는 rowHeight=1 (px 단위) — 변환 불필요
       updateChildLayouts(
         cardId,
         newLayouts.map((l) => ({
@@ -162,20 +254,20 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
         }))
       );
 
-      // 자식 레이아웃 변경 후 Card 높이 자동 조정
-      const maxChildBottom = newLayouts.reduce((max, l) => Math.max(max, l.y + l.h), 0);
-      const headerGridUnits = Math.ceil(36 / rowHeight); // 헤더 높이를 grid unit으로 변환
-      const paddingGridUnits = Math.ceil(8 / rowHeight); // containerPadding 보상
-      const requiredCardH = maxChildBottom + headerGridUnits + paddingGridUnits;
+      // 자식 레이아웃 변경 후 Card 높이 자동 조정 (px 단위)
+      const maxChildBottomPx = newLayouts.reduce((max, l) => Math.max(max, l.y + l.h), 0);
+      const headerPx = 36;
+      const paddingPx = 8;
+      const requiredCardHPx = maxChildBottomPx + headerPx + paddingPx;
       const card = widgets.find((w) => w.id === cardId);
-      if (card && card.layout.h < requiredCardH) {
+      if (card && card.layout.h < requiredCardHPx) {
         updateAllLayouts(
           widgets.map((w) => ({
             i: w.id,
             x: w.layout.x,
             y: w.layout.y,
             w: w.layout.w,
-            h: w.id === cardId ? requiredCardH : w.layout.h,
+            h: w.id === cardId ? requiredCardHPx : w.layout.h,
           }))
         );
       }
@@ -223,20 +315,16 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
             </p>
           </div>
         ) : (
-          <GridLayout
+          <OuterGrid
             className="layout"
             layout={layouts}
-            cols={cols}
-            rowHeight={rowHeight}
             width={canvasWidth}
-            onLayoutChange={handleLayoutChange}
-            draggableHandle=".drag-handle"
-            compactType={null}
-            preventCollision={true}
-            isResizable={true}
-            isDraggable={true}
-            margin={[8, 0]}
-            containerPadding={[8, 8]}
+            gridConfig={gridConfig}
+            compactor={pushOnlyCompactor}
+            dragConfig={dragConfig}
+            resizeConfig={resizeConfig}
+            onDragStop={handleDragStop}
+            onResizeStop={handleResizeStop}
           >
             {widgets.map((widget) => {
               const widgetDef = getWidgetType(widget.type);
@@ -322,11 +410,11 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
                           {tb("emptyConditionalSlot")}
                         </div>
                       ) : (
-                        <GridLayout
+                        <InnerGrid
                           className="layout"
                           layout={childLayouts}
                           cols={innerCols}
-                          rowHeight={rowHeight}
+                          rowHeight={1}
                           width={cardInnerWidth}
                           onLayoutChange={(newLayouts: LayoutItem[]) =>
                             handleChildLayoutChange(widget.id, newLayouts)
@@ -381,7 +469,7 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
                               </div>
                             );
                           })}
-                        </GridLayout>
+                        </InnerGrid>
                       )}
                     </div>
                   </div>
@@ -549,7 +637,7 @@ export function BuilderCanvas({ containerWidth, resolution = "1920x1080" }: Buil
                 </div>
               );
             })}
-          </GridLayout>
+          </OuterGrid>
         )}
       </div>
     </div>
