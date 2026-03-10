@@ -48,18 +48,23 @@ export async function GET(request: NextRequest) {
       _count: { id: true },
     });
 
-    const summary = {
-      critical: stats.find((s) => s.severity === "critical")?._count.id ?? 0,
-      warning: stats.find((s) => s.severity === "warning")?._count.id ?? 0,
-      info: stats.find((s) => s.severity === "info")?._count.id ?? 0,
-      totalActive: stats.reduce((sum, s) => sum + s._count.id, 0),
-    };
+    // 집계 값을 각 data row에 포함
+    const critical = stats.find((s) => s.severity === "critical")?._count.id ?? 0;
+    const warning = stats.find((s) => s.severity === "warning")?._count.id ?? 0;
+    const info = stats.find((s) => s.severity === "info")?._count.id ?? 0;
+    const totalActive = stats.reduce((sum, s) => sum + s._count.id, 0);
+
+    const enrichedData = alarms.map((a) => ({
+      ...a,
+      critical,
+      warning,
+      info,
+      totalActive,
+    }));
 
     return NextResponse.json({
       success: true,
-      data: alarms,
-      summary,
-      meta: { startTime: start, endTime: end, count: alarms.length },
+      data: enrichedData,
     });
   } catch (error) {
     console.error("Alarm API Error:", error);

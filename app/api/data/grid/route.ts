@@ -10,7 +10,6 @@ export async function GET(request: NextRequest) {
     const startTime = searchParams.get("startTime");
     const endTime = searchParams.get("endTime");
     const interval = searchParams.get("interval");
-    const aggregation = searchParams.get("aggregation") ?? "latest";
 
     // 시간 범위 설정
     const now = new Date();
@@ -20,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     const baseWhere = siteId ? { siteId } : {};
 
-    if (aggregation === "latest") {
+    if (!interval) {
       // 각 사이트의 최신 계통 데이터 (시간 범위 내)
       const latestData = await prisma.gridData.findMany({
         where: {
@@ -32,18 +31,9 @@ export async function GET(request: NextRequest) {
         take: 10,
       });
 
-      const summary = {
-        avgVoltage: latestData.length > 0 ? latestData.reduce((sum, d) => sum + d.gridVoltage, 0) / latestData.length : 0,
-        avgFrequency: latestData.length > 0 ? latestData.reduce((sum, d) => sum + d.gridFrequency, 0) / latestData.length : 0,
-        totalExport: latestData.reduce((sum, d) => sum + d.exportPower, 0),
-        totalImport: latestData.reduce((sum, d) => sum + d.importPower, 0),
-      };
-
       return NextResponse.json({
         success: true,
         data: latestData,
-        summary,
-        meta: { startTime: start, endTime: end, count: latestData.length },
       });
     }
 
@@ -66,7 +56,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data,
-      meta: { startTime: start, endTime: end, count: data.length, interval: bucketInterval },
     });
   } catch (error) {
     console.error("Grid API Error:", error);

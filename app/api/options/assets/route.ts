@@ -21,7 +21,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: assets,
-      meta: { count: assets.length },
     });
   } catch (error) {
     console.error("Assets Options API Error:", error);

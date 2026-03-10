@@ -57,30 +57,9 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // 요약 통계 (전체 기간)
-    const summary = {
-      totalGeneration: data.reduce((sum, d) => sum + d.dailyGeneration, 0),
-      avgDailyGeneration: data.length > 0
-        ? data.reduce((sum, d) => sum + d.dailyGeneration, 0) / data.length
-        : 0,
-      avgPr: data.length > 0
-        ? data.reduce((sum, d) => sum + (d.pr ?? 0), 0) / data.length
-        : 0,
-      avgAvailability: data.length > 0
-        ? data.reduce((sum, d) => sum + (d.availability ?? 0), 0) / data.length
-        : 0,
-      maxPeakPower: Math.max(...data.map((d) => d.peakPower ?? 0)),
-    };
-
     return NextResponse.json({
       success: true,
       data,
-      summary,
-      meta: {
-        startDate: start,
-        endDate: end,
-        count: data.length,
-      },
     });
   } catch (error) {
     console.error("KPI API Error:", error);

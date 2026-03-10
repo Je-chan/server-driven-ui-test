@@ -58,11 +58,10 @@ describe("GET /api/options/assets", () => {
     mockFindMany.mockResolvedValue(mockAssets);
 
     const response = await GET(makeRequest());
-    const json = await response.json() as { success: boolean; data: typeof mockAssets; meta: { count: number } };
+    const json = await response.json() as { success: boolean; data: typeof mockAssets };
 
     expect(json.success).toBe(true);
     expect(json.data).toHaveLength(2);
-    expect(json.meta.count).toBe(2);
 
     // where 조건이 undefined (전체 조회)
     expect(mockFindMany).toHaveBeenCalledWith(
@@ -92,11 +91,10 @@ describe("GET /api/options/assets", () => {
     mockFindMany.mockResolvedValue([]);
 
     const response = await GET(makeRequest("siteId=nonexistent"));
-    const json = await response.json() as { success: boolean; data: unknown[]; meta: { count: number } };
+    const json = await response.json() as { success: boolean; data: unknown[] };
 
     expect(json.success).toBe(true);
     expect(json.data).toEqual([]);
-    expect(json.meta.count).toBe(0);
   });
 
   it("DB 에러 시 500 반환", async () => {

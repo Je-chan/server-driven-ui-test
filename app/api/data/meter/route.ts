@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
     const startTime = searchParams.get("startTime");
     const endTime = searchParams.get("endTime");
     const interval = searchParams.get("interval");
-    const aggregation = searchParams.get("aggregation") ?? "latest";
 
     // 시간 범위 설정
     const now = new Date();
@@ -24,7 +23,7 @@ export async function GET(request: NextRequest) {
       ...(meterId ? { meterId } : {}),
     };
 
-    if (aggregation === "latest") {
+    if (!interval) {
       // 각 계량기의 최신 데이터 (시간 범위 내)
       const latestData = await prisma.meterData.findMany({
         where: {
@@ -36,17 +35,9 @@ export async function GET(request: NextRequest) {
         take: 10,
       });
 
-      const summary = {
-        totalExport: latestData.reduce((sum, d) => sum + d.activeExport, 0),
-        totalImport: latestData.reduce((sum, d) => sum + d.activeImport, 0),
-        avgPowerFactor: latestData.length > 0 ? latestData.reduce((sum, d) => sum + (d.powerFactor ?? 0), 0) / latestData.length : 0,
-      };
-
       return NextResponse.json({
         success: true,
         data: latestData,
-        summary,
-        meta: { startTime: start, endTime: end, count: latestData.length },
       });
     }
 
@@ -69,7 +60,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data,
-      meta: { startTime: start, endTime: end, count: data.length, interval: bucketInterval },
     });
   } catch (error) {
     console.error("Meter API Error:", error);

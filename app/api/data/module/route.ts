@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
     const startTime = searchParams.get("startTime");
     const endTime = searchParams.get("endTime");
     const interval = searchParams.get("interval");
-    const aggregation = searchParams.get("aggregation") ?? "latest";
 
     // 시간 범위 설정
     const now = new Date();
@@ -24,7 +23,7 @@ export async function GET(request: NextRequest) {
       ...(stringId ? { stringId } : {}),
     };
 
-    if (aggregation === "latest") {
+    if (!interval) {
       // 각 스트링의 최신 데이터 (시간 범위 내)
       const latestData = await prisma.moduleData.findMany({
         where: {
@@ -36,19 +35,9 @@ export async function GET(request: NextRequest) {
         take: 20,
       });
 
-      const summary = {
-        totalPower: latestData.reduce((sum, d) => sum + d.power, 0),
-        avgVoltage: latestData.length > 0 ? latestData.reduce((sum, d) => sum + d.voltage, 0) / latestData.length : 0,
-        avgCurrent: latestData.length > 0 ? latestData.reduce((sum, d) => sum + d.current, 0) / latestData.length : 0,
-        avgTemperature: latestData.length > 0 ? latestData.reduce((sum, d) => sum + (d.temperature ?? 0), 0) / latestData.length : 0,
-        stringCount: latestData.length,
-      };
-
       return NextResponse.json({
         success: true,
         data: latestData,
-        summary,
-        meta: { startTime: start, endTime: end, count: latestData.length },
       });
     }
 
@@ -71,7 +60,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data,
-      meta: { startTime: start, endTime: end, count: data.length, interval: bucketInterval },
     });
   } catch (error) {
     console.error("Module API Error:", error);

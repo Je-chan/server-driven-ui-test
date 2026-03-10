@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
     const startTime = searchParams.get("startTime");
     const endTime = searchParams.get("endTime");
     const interval = searchParams.get("interval");
-    const aggregation = searchParams.get("aggregation") ?? "latest";
 
     // 시간 범위 설정
     const now = new Date();
@@ -24,7 +23,7 @@ export async function GET(request: NextRequest) {
       ...(batteryId ? { batteryId } : {}),
     };
 
-    if (aggregation === "latest") {
+    if (!interval) {
       // 각 배터리의 최신 데이터 (시간 범위 내)
       const latestData = await prisma.batteryData.findMany({
         where: {
@@ -36,18 +35,9 @@ export async function GET(request: NextRequest) {
         take: 10,
       });
 
-      const summary = {
-        avgSoc: latestData.length > 0 ? latestData.reduce((sum, d) => sum + d.soc, 0) / latestData.length : 0,
-        totalPower: latestData.reduce((sum, d) => sum + d.power, 0),
-        chargingCount: latestData.filter((d) => d.status === "charging").length,
-        dischargingCount: latestData.filter((d) => d.status === "discharging").length,
-      };
-
       return NextResponse.json({
         success: true,
         data: latestData,
-        summary,
-        meta: { startTime: start, endTime: end, count: latestData.length },
       });
     }
 
@@ -70,7 +60,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data,
-      meta: { startTime: start, endTime: end, count: data.length, interval: bucketInterval },
     });
   } catch (error) {
     console.error("Battery API Error:", error);

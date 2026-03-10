@@ -10,7 +10,6 @@ export async function GET(request: NextRequest) {
     const startTime = searchParams.get("startTime");
     const endTime = searchParams.get("endTime");
     const interval = searchParams.get("interval");
-    const aggregation = searchParams.get("aggregation") ?? "latest";
 
     // 시간 범위 설정
     const now = new Date();
@@ -18,7 +17,7 @@ export async function GET(request: NextRequest) {
     const start = startTime ? parseDateStart(startTime) : defaultStartTime;
     const end = endTime ? parseDateEnd(endTime) : now;
 
-    if (aggregation === "latest") {
+    if (!interval) {
       // 각 사이트의 최신 기상 데이터 (선택된 시간 범위 내)
       const sites = await prisma.site.findMany({
         where: siteId ? { id: siteId } : undefined,
@@ -50,28 +49,9 @@ export async function GET(request: NextRequest) {
           };
         });
 
-      // 평균 데이터
-      const summary = {
-        avgIrradiance: data.length > 0
-          ? data.reduce((sum, d) => sum + d.irradiance, 0) / data.length
-          : 0,
-        avgTemperature: data.length > 0
-          ? data.reduce((sum, d) => sum + d.temperature, 0) / data.length
-          : 0,
-        avgHumidity: data.length > 0
-          ? data.reduce((sum, d) => sum + (d.humidity ?? 0), 0) / data.length
-          : 0,
-      };
-
       return NextResponse.json({
         success: true,
         data,
-        summary,
-        meta: {
-          startTime: start,
-          endTime: end,
-          count: data.length,
-        },
       });
     }
 
@@ -118,12 +98,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data,
-      meta: {
-        startTime: start,
-        endTime: end,
-        count: data.length,
-        interval: bucketInterval,
-      },
     });
   } catch (error) {
     console.error("Weather API Error:", error);

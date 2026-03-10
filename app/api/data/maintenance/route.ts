@@ -70,18 +70,23 @@ export async function GET(request: NextRequest) {
       _count: { id: true },
     });
 
-    const summary = {
-      scheduled: statusStats.find((s) => s.status === "scheduled")?._count.id ?? 0,
-      inProgress: statusStats.find((s) => s.status === "in_progress")?._count.id ?? 0,
-      completed: statusStats.find((s) => s.status === "completed")?._count.id ?? 0,
-      totalCost: maintenanceData.reduce((sum, d) => sum + (d.cost ?? 0), 0),
-    };
+    // 집계 값을 각 data row에 포함
+    const scheduled = statusStats.find((s) => s.status === "scheduled")?._count.id ?? 0;
+    const inProgress = statusStats.find((s) => s.status === "in_progress")?._count.id ?? 0;
+    const completed = statusStats.find((s) => s.status === "completed")?._count.id ?? 0;
+    const totalCost = maintenanceData.reduce((sum, d) => sum + (d.cost ?? 0), 0);
+
+    const enrichedData = maintenanceData.map((d) => ({
+      ...d,
+      scheduled,
+      inProgress,
+      completed,
+      totalCost,
+    }));
 
     return NextResponse.json({
       success: true,
-      data: maintenanceData,
-      summary,
-      meta: { startTime: start, endTime: end, count: maintenanceData.length },
+      data: enrichedData,
     });
   } catch (error) {
     console.error("Maintenance API Error:", error);

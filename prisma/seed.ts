@@ -816,7 +816,7 @@ function createMainDashboardSchema(siteOptions: { value: string; label: string }
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}" },
-        mapping: { measurements: [{ field: "efficiency", label: L("효율", "Efficiency"), unit: "%", color: "#3b82f6" }] },
+        mapping: { measurements: [{ field: "efficiency", label: L("효율", "Efficiency"), unit: "%", color: "#3b82f6", aggregation: "avg" }] },
       },
       style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
     },
@@ -828,7 +828,7 @@ function createMainDashboardSchema(siteOptions: { value: string; label: string }
       dataBinding: {
         dataSourceId: "ds_weather",
         requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
-        mapping: { measurements: [{ field: "irradiance", label: L("일사량", "Irradiance"), unit: "W/m²", color: "#ef4444" }] },
+        mapping: { measurements: [{ field: "irradiance", label: L("일사량", "Irradiance"), unit: "W/m²", color: "#ef4444", aggregation: "avg" }] },
       },
       style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
     },
@@ -1061,7 +1061,7 @@ function createInverterDetailDashboardSchema(siteOptions: { value: string; label
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}" },
-        mapping: { measurements: [{ field: "efficiency", label: L("효율", "Efficiency"), unit: "%", color: "#3b82f6" }] },
+        mapping: { measurements: [{ field: "efficiency", label: L("효율", "Efficiency"), unit: "%", color: "#3b82f6", aggregation: "avg" }] },
       },
       style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
     },
@@ -1073,7 +1073,7 @@ function createInverterDetailDashboardSchema(siteOptions: { value: string; label
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}" },
-        mapping: { measurements: [{ field: "activeCount", label: L("가동", "Active"), unit: L("대", "units"), color: "#f59e0b" }] },
+        mapping: { measurements: [{ field: "activeCount", label: L("가동", "Active"), unit: L("대", "units"), color: "#f59e0b", aggregation: "latest" }] },
       },
       style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
     },
@@ -1085,7 +1085,7 @@ function createInverterDetailDashboardSchema(siteOptions: { value: string; label
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}" },
-        mapping: { measurements: [{ field: "totalCount", label: L("전체", "Total"), unit: L("대", "units"), color: "#8b5cf6" }] },
+        mapping: { measurements: [{ field: "totalCount", label: L("전체", "Total"), unit: L("대", "units"), color: "#8b5cf6", aggregation: "latest" }] },
       },
       style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
     },
@@ -1199,7 +1199,7 @@ function createInspectionFormDashboardSchema(siteOptions: { value: string; label
         dataBinding: {
           dataSourceId: "ds_maintenance",
           requestParams: {},
-          mapping: { measurements: [{ field: "scheduled", label: L("예정 점검", "Scheduled"), unit: L("건", "cases"), color: "#3b82f6" }] },
+          mapping: { measurements: [{ field: "scheduled", label: L("예정 점검", "Scheduled"), unit: L("건", "cases"), color: "#3b82f6", aggregation: "latest" }] },
         },
         style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
       },
@@ -1435,9 +1435,11 @@ function createConditionalDashboardSchema(siteOptions: { value: string; label: s
       id: "w_cond_site",
       type: "filter-select",
       title: L("발전소", "Site"),
-      layout: { x: 5, y: 0, w: 4, h: 2 },
+      layout: { x: 5, y: 0, w: 3, h: 2 },
       options: { filterKey: "selectedSite", options: siteOptions },
     },
+    makeDatepickerWidget("w_cond_filter_time", 8, 0, 4),
+    makeIntervalWidget("w_cond_filter_interval", 12, 0, 3),
   ];
 
   // ── KPI 카드 (항상 표시, 조건 없음) ──
@@ -1474,7 +1476,7 @@ function createConditionalDashboardSchema(siteOptions: { value: string; label: s
       dataBinding: {
         dataSourceId: "ds_inverter",
         requestParams: { siteId: "{{filter.selectedSite}}" },
-        mapping: { measurements: [{ field: "efficiency", label: L("효율", "Efficiency"), unit: "%", color: "#3b82f6" }] },
+        mapping: { measurements: [{ field: "efficiency", label: L("효율", "Efficiency"), unit: "%", color: "#3b82f6", aggregation: "avg" }] },
       },
       style: { backgroundColor: "#ffffff", borderRadius: 8, shadow: "sm" },
     },
@@ -1496,7 +1498,7 @@ function createConditionalDashboardSchema(siteOptions: { value: string; label: s
           layout: { x: 0, y: 0, w: 24, h: 10 },
           dataBinding: {
             dataSourceId: "ds_inverter",
-            requestParams: { siteId: "{{filter.selectedSite}}" },
+            requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
             mapping: {
               timeField: "timestamp",
               measurements: [
@@ -1534,7 +1536,7 @@ function createConditionalDashboardSchema(siteOptions: { value: string; label: s
           layout: { x: 0, y: 0, w: 24, h: 10 },
           dataBinding: {
             dataSourceId: "ds_weather",
-            requestParams: { siteId: "{{filter.selectedSite}}" },
+            requestParams: { siteId: "{{filter.selectedSite}}", startTime: "{{filter.startTime}}", endTime: "{{filter.endTime}}", interval: "{{filter.interval}}" },
             mapping: {
               timeField: "timestamp",
               measurements: [

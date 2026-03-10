@@ -38,9 +38,6 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       data,
-      meta: {
-        count: data.length,
-      },
     });
   } catch (error) {
     console.error("Sites API Error:", error);

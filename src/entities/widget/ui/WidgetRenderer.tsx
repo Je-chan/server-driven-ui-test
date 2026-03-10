@@ -100,7 +100,6 @@ interface WidgetRendererProps {
 interface DataResponse {
   success: boolean;
   data: Record<string, unknown>[];
-  summary?: Record<string, number>;
   error?: string;
 }
 
@@ -317,20 +316,23 @@ function DataWidgetRenderer({
 }
 
 // KPI 카드 컨텐츠
+// data[]에서 measurement.aggregation 기반으로 값을 계산한다.
+// - data.length === 1: 백엔드 사전 집계값 → data[0][field]
+// - data.length > 1: 클라이언트 폴백 → reduce(data, aggregation)
 function KpiCardContent({
   data,
   mapping,
 }: {
   data: DataResponse | null;
   mapping?: {
-    measurements?: { field: string; label: I18nLabel; unit?: I18nLabel; color?: string }[];
+    measurements?: { field: string; label: I18nLabel; unit?: I18nLabel; color?: string; aggregation?: string }[];
   };
 }) {
   const locale = useLocale();
   const tc = useTranslations("common");
   const tw = useTranslations("widget");
 
-  if (!data?.summary && !data?.data?.length) {
+  if (!data?.data?.length) {
     return <div className="text-center text-sm text-muted-foreground">{tc("noData")}</div>;
   }
 
@@ -339,33 +341,40 @@ function KpiCardContent({
     return <div className="text-center text-sm text-muted-foreground">{tw("noMeasurement")}</div>;
   }
 
-  // summary에서 값 찾기 또는 data에서 계산
+  const aggregation = measurement.aggregation ?? "sum";
   let value: number | null = null;
-  const summary = data.summary as Record<string, number> | undefined;
 
-  // summary 필드 매핑
-  const summaryFieldMap: Record<string, string> = {
-    activePower: "totalActivePower",
-    dailyEnergy: "totalDailyEnergy",
-    efficiency: "avgEfficiency",
-    irradiance: "avgIrradiance",
-    temperature: "avgTemperature",
-  };
-
-  const summaryField = summaryFieldMap[measurement.field] ?? measurement.field;
-
-  if (summary && summaryField in summary) {
-    value = summary[summaryField];
-  } else if (data.data?.length) {
-    // data 배열에서 첫번째 값 또는 합계/평균 계산
+  if (data.data.length === 1) {
+    // 백엔드 사전 집계: 단일 row에서 직접 읽기
+    const v = data.data[0][measurement.field];
+    if (typeof v === "number") value = v;
+  } else {
+    // 클라이언트 폴백: aggregation 기반 집계
     const values = data.data
       .map((d) => d[measurement.field] as number)
       .filter((v) => typeof v === "number");
 
     if (values.length > 0) {
-      value = values.reduce((a, b) => a + b, 0);
-      if (measurement.field.includes("efficiency") || measurement.field.includes("temperature")) {
-        value = value / values.length; // 평균
+      switch (aggregation) {
+        case "avg":
+          value = values.reduce((a, b) => a + b, 0) / values.length;
+          break;
+        case "min":
+          value = Math.min(...values);
+          break;
+        case "max":
+          value = Math.max(...values);
+          break;
+        case "count":
+          value = data.data.length;
+          break;
+        case "latest":
+          value = values[0];
+          break;
+        case "sum":
+        default:
+          value = values.reduce((a, b) => a + b, 0);
+          break;
       }
     }
   }

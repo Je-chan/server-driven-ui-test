@@ -31,19 +31,9 @@ export async function GET(request: NextRequest) {
       take: limit,
     });
 
-    const summary = {
-      totalRevenue: revenueData.reduce((sum, d) => sum + d.totalRevenue, 0),
-      totalEnergySales: revenueData.reduce((sum, d) => sum + d.energySales, 0),
-      totalRecSales: revenueData.reduce((sum, d) => sum + (d.recSales ?? 0), 0),
-      totalGeneration: revenueData.reduce((sum, d) => sum + d.generationKwh, 0),
-      avgDailyRevenue: revenueData.length > 0 ? revenueData.reduce((sum, d) => sum + d.totalRevenue, 0) / revenueData.length : 0,
-    };
-
     return NextResponse.json({
       success: true,
       data: revenueData,
-      summary,
-      meta: { startDate: start, endDate: end, count: revenueData.length },
     });
   } catch (error) {
     console.error("Revenue API Error:", error);

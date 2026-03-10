@@ -24,57 +24,21 @@ interface DataBinding {
 }
 
 // WidgetRenderer와 동일한 엔드포인트 매핑
-function getEndpoint(dataSourceId: string, widgetType: string): string {
-  const isChart = widgetType === "line-chart" || widgetType === "bar-chart";
-  const endpoints: Record<string, { latest: string; timeseries: string }> = {
-    ds_inverter: {
-      latest: "/api/data/inverter?aggregation=latest",
-      timeseries: "/api/data/inverter?limit=200",
-    },
-    ds_weather: {
-      latest: "/api/data/weather?aggregation=latest",
-      timeseries: "/api/data/weather?limit=200",
-    },
-    ds_kpi: {
-      latest: "/api/data/kpi?limit=1",
-      timeseries: "/api/data/kpi?limit=30",
-    },
-    ds_alarm: {
-      latest: "/api/data/alarm?limit=20",
-      timeseries: "/api/data/alarm?limit=100",
-    },
-    ds_battery: {
-      latest: "/api/data/battery?aggregation=latest",
-      timeseries: "/api/data/battery?limit=200",
-    },
-    ds_revenue: {
-      latest: "/api/data/revenue?limit=1",
-      timeseries: "/api/data/revenue?limit=30",
-    },
-    ds_grid: {
-      latest: "/api/data/grid?aggregation=latest",
-      timeseries: "/api/data/grid?limit=200",
-    },
-    ds_price: {
-      latest: "/api/data/price?aggregation=latest",
-      timeseries: "/api/data/price?limit=72",
-    },
-    ds_meter: {
-      latest: "/api/data/meter?aggregation=latest",
-      timeseries: "/api/data/meter?limit=200",
-    },
-    ds_maintenance: {
-      latest: "/api/data/maintenance?limit=20",
-      timeseries: "/api/data/maintenance?limit=50",
-    },
-    ds_module: {
-      latest: "/api/data/module?aggregation=latest",
-      timeseries: "/api/data/module?limit=200",
-    },
+function getEndpoint(dataSourceId: string): string {
+  const endpoints: Record<string, string> = {
+    ds_inverter: "/api/data/inverter",
+    ds_weather: "/api/data/weather",
+    ds_kpi: "/api/data/kpi",
+    ds_alarm: "/api/data/alarm",
+    ds_battery: "/api/data/battery",
+    ds_revenue: "/api/data/revenue",
+    ds_grid: "/api/data/grid",
+    ds_price: "/api/data/price",
+    ds_meter: "/api/data/meter",
+    ds_maintenance: "/api/data/maintenance",
+    ds_module: "/api/data/module",
   };
-  const config = endpoints[dataSourceId];
-  if (!config) return "";
-  return isChart ? config.timeseries : config.latest;
+  return endpoints[dataSourceId] ?? "";
 }
 
 // URL에서 파라미터 파싱
@@ -98,7 +62,7 @@ export function DataFlowDiagram({ widget }: DataFlowDiagramProps) {
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
 
   const endpoint = dataBinding?.dataSourceId
-    ? getEndpoint(dataBinding.dataSourceId, widget.type)
+    ? getEndpoint(dataBinding.dataSourceId)
     : "";
 
   // 실제 API 호출하여 Response 가져오기
@@ -132,7 +96,7 @@ export function DataFlowDiagram({ widget }: DataFlowDiagramProps) {
     const res = response as Record<string, unknown>;
     if (res.success === false) return `Error: ${res.error}`;
     const dataArr = res.data as unknown[];
-    return `${dataArr?.length ?? 0} records, ${res.summary ? "summary 포함" : "summary 없음"}`;
+    return `${dataArr?.length ?? 0} records`;
   })();
 
   const steps = [

@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
     const startTime = searchParams.get("startTime");
     const endTime = searchParams.get("endTime");
     const interval = searchParams.get("interval");
-    const aggregation = searchParams.get("aggregation") ?? "latest";
 
     // 시간 범위 설정
     const now = new Date();
@@ -34,7 +33,7 @@ export async function GET(request: NextRequest) {
       whereClause.asset = { siteId };
     }
 
-    if (aggregation === "latest") {
+    if (!interval) {
       // 각 인버터의 최신 데이터 (선택된 시간 범위 내)
       const assets = await prisma.asset.findMany({
         where: siteId ? { siteId } : assetId ? { id: assetId } : undefined,
@@ -70,26 +69,18 @@ export async function GET(request: NextRequest) {
           };
         });
 
-      // 집계 데이터
-      const summary = {
-        totalActivePower: data.reduce((sum, d) => sum + d.activePower, 0),
-        totalDailyEnergy: data.reduce((sum, d) => sum + d.dailyEnergy, 0),
-        avgEfficiency: data.length > 0
-          ? data.reduce((sum, d) => sum + (d.efficiency ?? 0), 0) / data.length
-          : 0,
-        activeCount: data.filter((d) => d.activePower > 0).length,
-        totalCount: data.length,
-      };
+      // 집계 값을 각 data row에 포함
+      const activeCount = data.filter((d) => d.activePower > 0).length;
+      const totalCount = data.length;
+      const enrichedData = data.map((d) => ({
+        ...d,
+        activeCount,
+        totalCount,
+      }));
 
       return NextResponse.json({
         success: true,
-        data,
-        summary,
-        meta: {
-          startTime: start,
-          endTime: end,
-          count: data.length,
-        },
+        data: enrichedData,
       });
     }
 
@@ -129,12 +120,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data,
-      meta: {
-        startTime: start,
-        endTime: end,
-        count: data.length,
-        interval: bucketInterval,
-      },
     });
   } catch (error) {
     console.error("Inverter API Error:", error);
