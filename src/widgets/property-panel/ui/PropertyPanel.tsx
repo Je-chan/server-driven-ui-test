@@ -14,6 +14,16 @@ import { resolveLabel, type I18nLabel } from "@/src/shared/lib";
 import { FilterWidgetOptions } from "./FilterWidgetOptions";
 import { FormWidgetOptions } from "./FormWidgetOptions";
 import { ConditionsEditor } from "./ConditionsEditor";
+import { KpiCardOptions } from "./KpiCardOptions";
+import { LineChartOptions } from "./LineChartOptions";
+import { BarChartOptions } from "./BarChartOptions";
+import { PieChartOptions } from "./PieChartOptions";
+import { TableOptions } from "./TableOptions";
+import { GaugeOptions } from "./GaugeOptions";
+import { MapOptions } from "./MapOptions";
+import { TextOptions } from "./TextOptions";
+import { ImageOptions } from "./ImageOptions";
+import { RequestParamsEditor } from "./RequestParamsEditor";
 
 type TabType = "style" | "data" | "options";
 
@@ -177,7 +187,16 @@ export function PropertyPanel() {
   // 현재 선택된 데이터 소스
   const currentDataSourceId = (selectedWidget.dataBinding as { dataSourceId?: string } | undefined)?.dataSourceId;
   const currentDataSource = availableDataSources.find((d) => d.id === currentDataSourceId);
-  const currentBinding = selectedWidget.dataBinding as { mapping?: { timeField?: string; measurements?: MeasurementMapping[] } } | undefined;
+  const currentBinding = selectedWidget.dataBinding as {
+    dataSourceId?: string;
+    requestParams?: Record<string, unknown>;
+    mapping?: {
+      timeField?: string;
+      dimensions?: string[];
+      measurements?: MeasurementMapping[];
+      comparison?: { field: string; type: "split" | "overlay" };
+    };
+  } | undefined;
 
   return (
     <div className="flex h-full flex-col">
@@ -286,6 +305,20 @@ export function PropertyPanel() {
                   </div>
                 </div>
 
+                {/* Request Params Editor */}
+                <RequestParamsEditor
+                  params={currentBinding?.requestParams ?? {}}
+                  filterKeys={collectFilterKeys(schema.widgets)}
+                  onChange={(requestParams) => {
+                    handleUpdate({
+                      dataBinding: {
+                        ...currentBinding,
+                        requestParams,
+                      },
+                    });
+                  }}
+                />
+
                 {/* Time Field (for charts) */}
                 {["line-chart", "bar-chart"].includes(selectedWidget.type) && (
                   <div>
@@ -306,6 +339,46 @@ export function PropertyPanel() {
                     </select>
                   </div>
                 )}
+
+                {/* Dimensions Mapping */}
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">
+                    {tb("dimensions")}
+                  </label>
+                  <p className="text-[10px] text-muted-foreground">{tb("dimensionsHint")}</p>
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {currentDataSource.returnStructure.dimensions.map((field) => {
+                      const isSelected = (currentBinding?.mapping?.dimensions ?? []).includes(field);
+                      return (
+                        <button
+                          key={field}
+                          onClick={() => {
+                            const dims = currentBinding?.mapping?.dimensions ?? [];
+                            const newDims = isSelected
+                              ? dims.filter((d) => d !== field)
+                              : [...dims, field];
+                            handleUpdate({
+                              dataBinding: {
+                                ...currentBinding,
+                                mapping: {
+                                  ...currentBinding?.mapping,
+                                  dimensions: newDims,
+                                },
+                              },
+                            });
+                          }}
+                          className={`rounded px-1.5 py-0.5 text-xs transition-colors ${
+                            isSelected
+                              ? "bg-blue-500 text-white"
+                              : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                          }`}
+                        >
+                          {field}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 {/* Measurements Mapping */}
                 <div>
@@ -372,6 +445,33 @@ export function PropertyPanel() {
                               />
                             </div>
                           </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-[10px] text-muted-foreground">{tb("aggregation")}</label>
+                              <select
+                                value={m.aggregation ?? "sum"}
+                                onChange={(e) => handleMeasurementChange(idx, "aggregation", e.target.value)}
+                                className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
+                              >
+                                <option value="sum">sum</option>
+                                <option value="avg">avg</option>
+                                <option value="min">min</option>
+                                <option value="max">max</option>
+                                <option value="count">count</option>
+                                <option value="latest">latest</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-muted-foreground">{tb("format")}</label>
+                              <input
+                                type="text"
+                                value={m.format ?? ""}
+                                onChange={(e) => handleMeasurementChange(idx, "format", e.target.value)}
+                                placeholder="0,0.00"
+                                className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
+                              />
+                            </div>
+                          </div>
                           <div>
                             <label className="text-[10px] text-muted-foreground">{tb("fieldColor")}</label>
                             <div className="mt-0.5 flex gap-1">
@@ -400,6 +500,69 @@ export function PropertyPanel() {
                     )}
                   </div>
                 </div>
+
+                {/* Comparison Mapping (chart widgets only) */}
+                {["line-chart", "bar-chart"].includes(selectedWidget.type) && (
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">
+                      {tb("comparison")}
+                    </label>
+                    <div className="mt-1 grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">{tb("comparisonField")}</label>
+                        <select
+                          value={currentBinding?.mapping?.comparison?.field ?? ""}
+                          onChange={(e) => {
+                            const field = e.target.value;
+                            handleUpdate({
+                              dataBinding: {
+                                ...currentBinding,
+                                mapping: {
+                                  ...currentBinding?.mapping,
+                                  comparison: field
+                                    ? { field, type: currentBinding?.mapping?.comparison?.type ?? "split" }
+                                    : undefined,
+                                },
+                              },
+                            });
+                          }}
+                          className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
+                        >
+                          <option value="">{tb("shadowNone")}</option>
+                          {currentDataSource.returnStructure.dimensions.map((field) => (
+                            <option key={field} value={field}>{field}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {currentBinding?.mapping?.comparison?.field && (
+                        <div>
+                          <label className="text-[10px] text-muted-foreground">{tb("comparisonType")}</label>
+                          <select
+                            value={currentBinding.mapping.comparison.type}
+                            onChange={(e) => {
+                              handleUpdate({
+                                dataBinding: {
+                                  ...currentBinding,
+                                  mapping: {
+                                    ...currentBinding?.mapping,
+                                    comparison: {
+                                      ...currentBinding.mapping!.comparison!,
+                                      type: e.target.value as "split" | "overlay",
+                                    },
+                                  },
+                                },
+                              });
+                            }}
+                            className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
+                          >
+                            <option value="split">{tb("comparisonSplit")}</option>
+                            <option value="overlay">{tb("comparisonOverlay")}</option>
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
@@ -501,6 +664,18 @@ export function PropertyPanel() {
               />
             </div>
 
+            {/* Padding */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{tb("padding")}</label>
+              <input
+                type="number"
+                value={selectedWidget.style?.padding ?? 16}
+                onChange={(e) => handleStyleChange("padding", parseInt(e.target.value) || 0)}
+                min={0}
+                className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+              />
+            </div>
+
             {/* Shadow */}
             <div>
               <label className="text-xs font-medium text-muted-foreground">{tb("shadow")}</label>
@@ -536,14 +711,7 @@ export function PropertyPanel() {
             ) : selectedWidget.type === "form" ? (
               <FormWidgetOptions widget={selectedWidget} />
             ) : (
-              <>
-                <p className="text-xs text-muted-foreground">
-                  {tb("widgetOptions", { widget: widgetDef?.label ?? selectedWidget.type })}
-                </p>
-                <div className="rounded-md bg-muted/50 p-4 text-center text-xs text-muted-foreground">
-                  {tb("widgetOptionsPlaceholder")}
-                </div>
-              </>
+              <WidgetOptionsDispatch widget={selectedWidget} onUpdate={handleUpdate} widgetLabel={widgetDef?.label ?? selectedWidget.type} />
             )}
 
             {/* 조건부 표시 — 모든 위젯 타입에서 사용 가능 */}
@@ -616,6 +784,52 @@ function ConditionalSlotOptions({
   );
 }
 
+// 위젯 타입별 옵션 에디터 디스패치
+function WidgetOptionsDispatch({
+  widget,
+  onUpdate,
+  widgetLabel,
+}: {
+  widget: { type: string; options?: Record<string, unknown> };
+  onUpdate: (updates: Record<string, unknown>) => void;
+  widgetLabel: string;
+}) {
+  const tb = useTranslations("builder");
+
+  switch (widget.type) {
+    case "kpi-card":
+    case "number-card":
+      return <KpiCardOptions widget={widget} onUpdate={onUpdate} />;
+    case "line-chart":
+      return <LineChartOptions widget={widget} onUpdate={onUpdate} />;
+    case "bar-chart":
+      return <BarChartOptions widget={widget} onUpdate={onUpdate} />;
+    case "pie-chart":
+      return <PieChartOptions widget={widget} onUpdate={onUpdate} />;
+    case "table":
+      return <TableOptions widget={widget} onUpdate={onUpdate} />;
+    case "gauge":
+      return <GaugeOptions widget={widget} onUpdate={onUpdate} />;
+    case "map":
+      return <MapOptions widget={widget} onUpdate={onUpdate} />;
+    case "text":
+      return <TextOptions widget={widget} onUpdate={onUpdate} />;
+    case "image":
+      return <ImageOptions widget={widget} onUpdate={onUpdate} />;
+    default:
+      return (
+        <>
+          <p className="text-xs text-muted-foreground">
+            {tb("widgetOptions", { widget: widgetLabel })}
+          </p>
+          <div className="rounded-md bg-muted/50 p-4 text-center text-xs text-muted-foreground">
+            {tb("widgetOptionsPlaceholder")}
+          </div>
+        </>
+      );
+  }
+}
+
 // Card 위젯 전용 옵션 컴포넌트
 function CardWidgetOptions({
   widget,
@@ -661,4 +875,21 @@ function CardWidgetOptions({
       )}
     </>
   );
+}
+
+// 대시보드 위젯에서 filter-* 타입의 filterKey를 수집
+function collectFilterKeys(widgets: unknown): string[] {
+  if (!Array.isArray(widgets)) return [];
+  const keys: string[] = [];
+  for (const w of widgets) {
+    const widget = w as { type?: string; options?: { filterKey?: string }; children?: unknown[] };
+    if (widget.type?.startsWith("filter-") && widget.options?.filterKey) {
+      keys.push(widget.options.filterKey);
+    }
+    // card/conditional-slot 자식도 검색
+    if (Array.isArray(widget.children)) {
+      keys.push(...collectFilterKeys(widget.children));
+    }
+  }
+  return keys;
 }

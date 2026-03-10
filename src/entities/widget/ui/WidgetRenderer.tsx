@@ -47,8 +47,8 @@
  */
 "use client";
 
-import { useMemo } from "react";
-import { Loader2, AlertCircle } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Loader2, AlertCircle, Zap, Activity, TrendingUp, TrendingDown, BarChart2, Sun, Battery, Thermometer, Wind, Droplets, Gauge, Power, Bolt, Flame, Leaf, ChevronUp, ChevronDown, ArrowUpDown } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -296,16 +296,18 @@ function DataWidgetRenderer({
   }
 
   // ── 3. 위젯 타입별 시각화 컴포넌트 분기 ──
+  const widgetOptions = (widget.options ?? {}) as Record<string, unknown>;
+
   switch (widget.type) {
     case "kpi-card":
     case "number-card":
-      return <KpiCardContent data={data ?? null} mapping={dataBinding.mapping} />;
+      return <KpiCardContent data={data ?? null} mapping={dataBinding.mapping} options={widgetOptions} />;
     case "table":
-      return <TableContent data={data ?? null} mapping={dataBinding.mapping} />;
+      return <TableContent data={data ?? null} mapping={dataBinding.mapping} options={widgetOptions} />;
     case "line-chart":
-      return <LineChartContent data={data ?? null} mapping={dataBinding.mapping} />;
+      return <LineChartContent data={data ?? null} mapping={dataBinding.mapping} options={widgetOptions} />;
     case "bar-chart":
-      return <BarChartContent data={data ?? null} mapping={dataBinding.mapping} />;
+      return <BarChartContent data={data ?? null} mapping={dataBinding.mapping} options={widgetOptions} />;
     default:
       return (
         <div className="flex h-full items-center justify-center p-4 text-muted-foreground">
@@ -315,6 +317,13 @@ function DataWidgetRenderer({
   }
 }
 
+// Lucide 아이콘 맵
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
+  Zap, Activity, TrendingUp, TrendingDown, BarChart2,
+  Sun, Battery, Thermometer, Wind, Droplets,
+  Gauge, Power, Bolt, Flame, Leaf,
+};
+
 // KPI 카드 컨텐츠
 // data[]에서 measurement.aggregation 기반으로 값을 계산한다.
 // - data.length === 1: 백엔드 사전 집계값 → data[0][field]
@@ -322,11 +331,13 @@ function DataWidgetRenderer({
 function KpiCardContent({
   data,
   mapping,
+  options,
 }: {
   data: DataResponse | null;
   mapping?: {
     measurements?: { field: string; label: I18nLabel; unit?: I18nLabel; color?: string; aggregation?: string }[];
   };
+  options: Record<string, unknown>;
 }) {
   const locale = useLocale();
   const tc = useTranslations("common");
@@ -379,8 +390,28 @@ function KpiCardContent({
     }
   }
 
+  const iconName = options.icon as string | undefined;
+  const showTrend = options.showTrend as boolean | undefined;
+  const IconComponent = iconName ? ICON_MAP[iconName] : null;
+
+  // 간단한 트렌드 계산: 데이터가 2개 이상일 때 마지막 값과 그 이전 값 비교
+  let trendPercent: number | null = null;
+  if (showTrend && data && data.data.length >= 2) {
+    const last = data.data[data.data.length - 1][measurement.field] as number;
+    const prev = data.data[data.data.length - 2][measurement.field] as number;
+    if (typeof last === "number" && typeof prev === "number" && prev !== 0) {
+      trendPercent = ((last - prev) / Math.abs(prev)) * 100;
+    }
+  }
+
   return (
     <div className="flex h-full flex-col items-center justify-center p-2">
+      {IconComponent && (
+        <IconComponent
+          className="mb-1 h-5 w-5"
+          style={{ color: measurement.color ?? "#6b7280" }}
+        />
+      )}
       <div
         className="text-3xl font-bold"
         style={{ color: measurement.color ?? "#000" }}
@@ -390,6 +421,12 @@ function KpiCardContent({
       <div className="mt-1 text-sm text-muted-foreground">
         {resolveLabel(measurement.unit, locale)}
       </div>
+      {showTrend && trendPercent !== null && (
+        <div className={`mt-1 flex items-center gap-0.5 text-xs font-medium ${trendPercent >= 0 ? "text-green-600" : "text-red-600"}`}>
+          {trendPercent >= 0 ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          {Math.abs(trendPercent).toFixed(1)}%
+        </div>
+      )}
     </div>
   );
 }
@@ -398,20 +435,29 @@ function KpiCardContent({
 function TableContent({
   data,
   mapping,
+  options,
 }: {
   data: DataResponse | null;
   mapping?: {
     dimensions?: string[];
     measurements?: { field: string; label: I18nLabel; unit?: I18nLabel }[];
   };
+  options: Record<string, unknown>;
 }) {
   const locale = useLocale();
   const tc = useTranslations("common");
   const tw = useTranslations("widget");
+  const [page, setPage] = useState(0);
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   if (!data?.data?.length) {
     return <div className="text-center text-sm text-muted-foreground p-4">{tc("noData")}</div>;
   }
+
+  const paginationEnabled = options.pagination as boolean | undefined;
+  const pageSize = (options.pageSize as number) ?? 10;
+  const sortable = options.sortable as boolean | undefined;
 
   const dimensions = mapping?.dimensions ?? [];
   const measurements = mapping?.measurements ?? [];
@@ -421,34 +467,105 @@ function TableContent({
     ...measurements.map((m) => ({ field: m.field, label: resolveLabel(m.label, locale), unit: resolveLabel(m.unit, locale) || undefined })),
   ];
 
+  // 정렬 적용
+  let sortedData = data.data;
+  if (sortable && sortField) {
+    sortedData = [...data.data].sort((a, b) => {
+      const aVal = a[sortField];
+      const bVal = b[sortField];
+      if (aVal == null && bVal == null) return 0;
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+      const cmp = typeof aVal === "number" && typeof bVal === "number"
+        ? aVal - bVal
+        : String(aVal).localeCompare(String(bVal));
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }
+
+  // 페이지네이션 적용
+  const totalPages = paginationEnabled ? Math.ceil(sortedData.length / pageSize) : 1;
+  const displayData = paginationEnabled
+    ? sortedData.slice(page * pageSize, (page + 1) * pageSize)
+    : sortedData.slice(0, 100);
+
+  const handleSort = (field: string) => {
+    if (!sortable) return;
+    if (sortField === field) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  };
+
   return (
-    <div className="h-full overflow-auto">
-      <table className="w-full text-xs">
-        <thead className="sticky top-0 bg-muted">
-          <tr>
-            {headers.map((h) => (
-              <th key={h.field} className="px-2 py-1 text-left font-medium">
-                {h.label}
-                {h.unit && <span className="text-muted-foreground ml-1">({h.unit})</span>}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {data.data.slice(0, 10).map((row, idx) => (
-            <tr key={idx} className="border-t hover:bg-muted/50">
-              {columns.map((col) => (
-                <td key={col} className="px-2 py-1">
-                  {formatCellValue(row[col])}
-                </td>
+    <div className="flex h-full flex-col">
+      <div className="flex-1 overflow-auto">
+        <table className="w-full text-xs">
+          <thead className="sticky top-0 bg-muted">
+            <tr>
+              {headers.map((h) => (
+                <th
+                  key={h.field}
+                  className={`px-2 py-1 text-left font-medium ${sortable ? "cursor-pointer select-none hover:bg-muted/80" : ""}`}
+                  onClick={() => handleSort(h.field)}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    {h.label}
+                    {h.unit && <span className="text-muted-foreground">({h.unit})</span>}
+                    {sortable && sortField === h.field && (
+                      sortDir === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
+                    )}
+                    {sortable && sortField !== h.field && (
+                      <ArrowUpDown className="h-2.5 w-2.5 text-muted-foreground/40" />
+                    )}
+                  </span>
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-      {data.data.length > 10 && (
+          </thead>
+          <tbody>
+            {displayData.map((row, idx) => (
+              <tr key={idx} className="border-t hover:bg-muted/50">
+                {columns.map((col) => (
+                  <td key={col} className="px-2 py-1">
+                    {formatCellValue(row[col])}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {paginationEnabled && totalPages > 1 && (
+        <div className="flex items-center justify-between border-t px-2 py-1.5">
+          <span className="text-[10px] text-muted-foreground">
+            {page * pageSize + 1}-{Math.min((page + 1) * pageSize, sortedData.length)} / {sortedData.length}
+          </span>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setPage(Math.max(0, page - 1))}
+              disabled={page === 0}
+              className="rounded px-2 py-0.5 text-xs hover:bg-muted disabled:opacity-40"
+            >
+              ‹
+            </button>
+            <button
+              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+              disabled={page >= totalPages - 1}
+              className="rounded px-2 py-0.5 text-xs hover:bg-muted disabled:opacity-40"
+            >
+              ›
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!paginationEnabled && sortedData.length > 100 && (
         <div className="p-2 text-center text-xs text-muted-foreground">
-          {tw("moreRows", { count: data.data.length - 10 })}
+          {tw("moreRows", { count: sortedData.length - 100 })}
         </div>
       )}
     </div>
@@ -459,12 +576,14 @@ function TableContent({
 function LineChartContent({
   data,
   mapping,
+  options,
 }: {
   data: DataResponse | null;
   mapping?: {
     timeField?: string;
     measurements?: { field: string; label: I18nLabel; unit?: I18nLabel; color?: string }[];
   };
+  options: Record<string, unknown>;
 }) {
   const locale = useLocale();
   const tw = useTranslations("widget");
@@ -475,6 +594,9 @@ function LineChartContent({
 
   const measurements = mapping?.measurements ?? [];
   const timeField = mapping?.timeField ?? "timestamp";
+  const showLegend = (options.showLegend as boolean) ?? true;
+  const smooth = (options.smooth as boolean) ?? true;
+  const showArea = (options.showArea as boolean) ?? false;
 
   // 데이터를 시간순으로 정렬하고 차트용 데이터로 변환
   const chartData = processChartData(data.data, timeField, measurements);
@@ -498,17 +620,19 @@ function LineChartContent({
             contentStyle={{ fontSize: 12 }}
             labelFormatter={(value) => formatTimeLabel(value)}
           />
-          <Legend wrapperStyle={{ fontSize: 11 }} />
+          {showLegend && <Legend wrapperStyle={{ fontSize: 11 }} />}
           {measurements.map((m) => (
             <Line
               key={m.field}
-              type="monotone"
+              type={smooth ? "monotone" : "linear"}
               dataKey={m.field}
               name={resolveLabel(m.label, locale)}
               stroke={m.color ?? "#3b82f6"}
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 4 }}
+              fill={showArea ? (m.color ?? "#3b82f6") : undefined}
+              fillOpacity={showArea ? 0.1 : 0}
             />
           ))}
         </LineChart>
@@ -521,6 +645,7 @@ function LineChartContent({
 function BarChartContent({
   data,
   mapping,
+  options,
 }: {
   data: DataResponse | null;
   mapping?: {
@@ -528,6 +653,7 @@ function BarChartContent({
     dimensions?: string[];
     measurements?: { field: string; label: I18nLabel; unit?: I18nLabel; color?: string }[];
   };
+  options: Record<string, unknown>;
 }) {
   const locale = useLocale();
   const tw = useTranslations("widget");
@@ -539,6 +665,8 @@ function BarChartContent({
   const measurements = mapping?.measurements ?? [];
   const dimensions = mapping?.dimensions ?? [];
   const categoryField = dimensions[0] ?? mapping?.timeField ?? "timestamp";
+  const showLegend = (options.showLegend as boolean) ?? true;
+  const horizontal = (options.horizontal as boolean) ?? false;
 
   // 카테고리별로 집계
   const chartData = processBarChartData(data.data, categoryField, measurements);
@@ -550,12 +678,25 @@ function BarChartContent({
   return (
     <div className="h-full w-full p-2">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+        <BarChart
+          data={chartData}
+          layout={horizontal ? "vertical" : "horizontal"}
+          margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis dataKey="category" tick={{ fontSize: 10 }} />
-          <YAxis tick={{ fontSize: 10 }} width={40} />
+          {horizontal ? (
+            <>
+              <XAxis type="number" tick={{ fontSize: 10 }} />
+              <YAxis dataKey="category" type="category" tick={{ fontSize: 10 }} width={60} />
+            </>
+          ) : (
+            <>
+              <XAxis dataKey="category" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 10 }} width={40} />
+            </>
+          )}
           <Tooltip contentStyle={{ fontSize: 12 }} />
-          <Legend wrapperStyle={{ fontSize: 11 }} />
+          {showLegend && <Legend wrapperStyle={{ fontSize: 11 }} />}
           {measurements.map((m) => (
             <Bar
               key={m.field}

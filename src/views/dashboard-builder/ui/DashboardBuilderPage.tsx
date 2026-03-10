@@ -181,7 +181,7 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
                   className="fixed inset-0 z-10"
                   onClick={() => setShowGridSettings(false)}
                 />
-                <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-md border bg-card p-3 shadow-lg">
+                <div className="absolute right-0 top-full z-20 mt-1 w-64 rounded-md border bg-card p-3 shadow-lg">
                   <div className="space-y-3">
                     <div>
                       <label className="mb-1 block text-xs font-medium text-muted-foreground">
@@ -214,6 +214,51 @@ export function DashboardBuilderPage({ dashboard }: DashboardBuilderPageProps) {
                         }}
                         className="w-full rounded-md border px-2 py-1.5 text-sm"
                       />
+                    </div>
+                    <div className="border-t pt-3">
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                        {tb("refreshInterval")}
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={((schema.settings?.refreshInterval as number) ?? 0) / 1000}
+                        onChange={(e) => {
+                          const sec = Math.max(0, Number(e.target.value) || 0);
+                          updateSettings({ refreshInterval: sec * 1000 });
+                        }}
+                        className="w-full rounded-md border px-2 py-1.5 text-sm"
+                      />
+                      <p className="mt-0.5 text-[10px] text-muted-foreground">
+                        {tb("refreshIntervalHint")}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                        {tb("theme")}
+                      </label>
+                      <select
+                        value={(schema.settings?.theme as string) ?? "light"}
+                        onChange={(e) => updateSettings({ theme: e.target.value as "light" | "dark" | "system" })}
+                        className="w-full rounded-md border px-2 py-1.5 text-sm"
+                      >
+                        <option value="light">{tb("themeLight")}</option>
+                        <option value="dark">{tb("themeDark")}</option>
+                        <option value="system">{tb("themeSystem")}</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                        {tb("filterMode")}
+                      </label>
+                      <select
+                        value={(schema.settings?.filterMode as string) ?? "auto"}
+                        onChange={(e) => updateSettings({ filterMode: e.target.value as "auto" | "manual" })}
+                        className="w-full rounded-md border px-2 py-1.5 text-sm"
+                      >
+                        <option value="auto">{tb("filterModeAuto")}</option>
+                        <option value="manual">{tb("filterModeManual")}</option>
+                      </select>
                     </div>
                   </div>
                 </div>
