@@ -1,0 +1,1021 @@
+{
+    "version": "1.0.0",
+    "settings": {
+        "refreshInterval": 15000,
+        "theme": "light",
+        "gridColumns": 24,
+        "rowHeight": 12,
+        "filterMode": "auto"
+    },
+    "dataSources": [
+        {
+            "id": "ds_inverter",
+            "type": "timeseries",
+            "name": {
+                "defaultValue": "\uc778\ubc84\ud130 \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "\uc778\ubc84\ud130 \ub370\uc774\ud130",
+                    "en": "Inverter Data"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/inverter"
+            },
+            "cache": {
+                "staleTime": 30000,
+                "gcTime": 300000,
+                "refetchInterval": 30000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "assetId",
+                    "assetName",
+                    "siteName",
+                    "timestamp"
+                ],
+                "measurements": [
+                    "activePower",
+                    "reactivePower",
+                    "dailyEnergy",
+                    "totalEnergy",
+                    "efficiency"
+                ]
+            }
+        },
+        {
+            "id": "ds_weather",
+            "type": "rest-api",
+            "name": {
+                "defaultValue": "\uae30\uc0c1 \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "\uae30\uc0c1 \ub370\uc774\ud130",
+                    "en": "Weather Data"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/weather"
+            },
+            "cache": {
+                "staleTime": 600000,
+                "gcTime": 1800000,
+                "refetchInterval": 600000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "siteId",
+                    "siteName",
+                    "timestamp"
+                ],
+                "measurements": [
+                    "irradiance",
+                    "temperature",
+                    "humidity",
+                    "windSpeed"
+                ]
+            }
+        },
+        {
+            "id": "ds_kpi",
+            "type": "metric",
+            "name": {
+                "defaultValue": "KPI \uc9c0\ud45c",
+                "i18nValue": {
+                    "ko": "KPI \uc9c0\ud45c",
+                    "en": "KPI Metrics"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/kpi"
+            },
+            "cache": {
+                "staleTime": 300000,
+                "gcTime": 1800000,
+                "refetchInterval": 300000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "siteId",
+                    "date"
+                ],
+                "measurements": [
+                    "dailyGeneration",
+                    "pr",
+                    "availability",
+                    "capacityFactor"
+                ]
+            }
+        },
+        {
+            "id": "ds_alarm",
+            "type": "rest-api",
+            "name": {
+                "defaultValue": "\uc54c\ub78c \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "\uc54c\ub78c \ub370\uc774\ud130",
+                    "en": "Alarm Data"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/alarm"
+            },
+            "cache": {
+                "staleTime": 60000,
+                "gcTime": 300000,
+                "refetchInterval": 60000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "siteId",
+                    "severity",
+                    "category",
+                    "timestamp"
+                ],
+                "measurements": [
+                    "count"
+                ]
+            }
+        },
+        {
+            "id": "ds_revenue",
+            "type": "metric",
+            "name": {
+                "defaultValue": "\uc218\uc775 \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "\uc218\uc775 \ub370\uc774\ud130",
+                    "en": "Revenue Data"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/revenue"
+            },
+            "cache": {
+                "staleTime": 300000,
+                "gcTime": 1800000,
+                "refetchInterval": 300000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "siteId",
+                    "date"
+                ],
+                "measurements": [
+                    "energySales",
+                    "recSales",
+                    "totalRevenue",
+                    "generationKwh"
+                ]
+            }
+        },
+        {
+            "id": "ds_battery",
+            "type": "timeseries",
+            "name": {
+                "defaultValue": "ESS \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "ESS \ub370\uc774\ud130",
+                    "en": "ESS Data"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/battery"
+            },
+            "cache": {
+                "staleTime": 30000,
+                "gcTime": 300000,
+                "refetchInterval": 30000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "siteId",
+                    "batteryId",
+                    "timestamp"
+                ],
+                "measurements": [
+                    "soc",
+                    "power",
+                    "temperature",
+                    "voltage",
+                    "current"
+                ]
+            }
+        },
+        {
+            "id": "ds_grid",
+            "type": "timeseries",
+            "name": {
+                "defaultValue": "\uacc4\ud1b5 \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "\uacc4\ud1b5 \ub370\uc774\ud130",
+                    "en": "Grid Data"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/grid"
+            },
+            "cache": {
+                "staleTime": 30000,
+                "gcTime": 300000,
+                "refetchInterval": 30000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "siteId",
+                    "timestamp"
+                ],
+                "measurements": [
+                    "gridVoltage",
+                    "gridFrequency",
+                    "exportPower",
+                    "importPower"
+                ]
+            }
+        },
+        {
+            "id": "ds_price",
+            "type": "rest-api",
+            "name": {
+                "defaultValue": "\uc804\ub825 \uac00\uaca9",
+                "i18nValue": {
+                    "ko": "\uc804\ub825 \uac00\uaca9",
+                    "en": "Energy Price"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/price"
+            },
+            "cache": {
+                "staleTime": 600000,
+                "gcTime": 1800000,
+                "refetchInterval": 600000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "region",
+                    "timestamp"
+                ],
+                "measurements": [
+                    "smp",
+                    "rec"
+                ]
+            }
+        },
+        {
+            "id": "ds_meter",
+            "type": "timeseries",
+            "name": {
+                "defaultValue": "\uacc4\ub7c9\uae30 \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "\uacc4\ub7c9\uae30 \ub370\uc774\ud130",
+                    "en": "Meter Data"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/meter"
+            },
+            "cache": {
+                "staleTime": 30000,
+                "gcTime": 300000,
+                "refetchInterval": 30000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "siteId",
+                    "meterId",
+                    "timestamp"
+                ],
+                "measurements": [
+                    "activeExport",
+                    "activeImport",
+                    "powerFactor"
+                ]
+            }
+        },
+        {
+            "id": "ds_maintenance",
+            "type": "rest-api",
+            "name": {
+                "defaultValue": "\uc720\uc9c0\ubcf4\uc218 \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "\uc720\uc9c0\ubcf4\uc218 \ub370\uc774\ud130",
+                    "en": "Maintenance Data"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/maintenance"
+            },
+            "cache": {
+                "staleTime": 60000,
+                "gcTime": 300000,
+                "refetchInterval": 60000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "siteId",
+                    "type",
+                    "status"
+                ],
+                "measurements": [
+                    "cost"
+                ]
+            }
+        },
+        {
+            "id": "ds_module",
+            "type": "timeseries",
+            "name": {
+                "defaultValue": "\ubaa8\ub4c8/\uc2a4\ud2b8\ub9c1 \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "\ubaa8\ub4c8/\uc2a4\ud2b8\ub9c1 \ub370\uc774\ud130",
+                    "en": "Module/String Data"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/module"
+            },
+            "cache": {
+                "staleTime": 30000,
+                "gcTime": 300000,
+                "refetchInterval": 30000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "siteId",
+                    "stringId",
+                    "timestamp"
+                ],
+                "measurements": [
+                    "voltage",
+                    "current",
+                    "power",
+                    "temperature"
+                ]
+            }
+        }
+    ],
+    "filters": [],
+    "widgets": [
+        {
+            "id": "widget_migrated_filter_site",
+            "type": "filter-select",
+            "title": {
+                "defaultValue": "\ubc1c\uc804\uc18c \uc120\ud0dd",
+                "i18nValue": {
+                    "ko": "\ubc1c\uc804\uc18c \uc120\ud0dd",
+                    "en": "Select Site"
+                }
+            },
+            "layout": {
+                "x": 0,
+                "y": 0,
+                "w": 6,
+                "h": 132,
+                "minW": 3,
+                "minH": 50
+            },
+            "style": {
+                "backgroundColor": "#ffffff",
+                "borderRadius": 4,
+                "padding": 8,
+                "shadow": "none"
+            },
+            "options": {
+                "filterKey": "selectedSite",
+                "options": [
+                    {
+                        "value": "",
+                        "label": {
+                            "defaultValue": "\uc804\uccb4",
+                            "i18nValue": {
+                                "ko": "\uc804\uccb4",
+                                "en": "All"
+                            }
+                        }
+                    },
+                    {
+                        "value": "cmmlb8nyh0002tauyjz04lpgy",
+                        "label": "\uc11c\uc6b8 \ud0dc\uc591\uad11 1\ud638"
+                    },
+                    {
+                        "value": "cmmlb8oyo14d1tauy8rn1z48d",
+                        "label": "\ubd80\uc0b0 \ud0dc\uc591\uad11 2\ud638"
+                    },
+                    {
+                        "value": "cmmlb8q7w2hc9tauycv78v26r",
+                        "label": "\uc81c\uc8fc \ud0dc\uc591\uad11 3\ud638"
+                    },
+                    {
+                        "value": "cmmlb8rnj402btauymlkivuzo",
+                        "label": "\uc138\uc885 \ud0dc\uc591\uad11 4\ud638"
+                    },
+                    {
+                        "value": "cmmlb8tjx5x5gtauy79tkl26x",
+                        "label": "\uc804\ub0a8 \ud0dc\uc591\uad11 5\ud638"
+                    },
+                    {
+                        "value": "cmmlb8vxh88lotauy6l5qiqzd",
+                        "label": "\uacbd\ubd81 \ud0dc\uc591\uad11 6\ud638"
+                    },
+                    {
+                        "value": "cmmlb8xon9x2ktauy2utip2d2",
+                        "label": "\ucda9\ub0a8 \ud0dc\uc591\uad11 7\ud638"
+                    }
+                ],
+                "defaultValue": ""
+            }
+        },
+        {
+            "id": "widget_migrated_filter_interval",
+            "type": "filter-select",
+            "title": {
+                "defaultValue": "\uc9d1\uacc4 \ub2e8\uc704",
+                "i18nValue": {
+                    "ko": "\uc9d1\uacc4 \ub2e8\uc704",
+                    "en": "Interval"
+                }
+            },
+            "layout": {
+                "x": 6,
+                "y": 0,
+                "w": 5,
+                "h": 132,
+                "minW": 3,
+                "minH": 50
+            },
+            "style": {
+                "backgroundColor": "#ffffff",
+                "borderRadius": 4,
+                "padding": 8,
+                "shadow": "none"
+            },
+            "options": {
+                "filterKey": "interval",
+                "options": [
+                    {
+                        "value": "auto",
+                        "label": {
+                            "defaultValue": "\uc790\ub3d9",
+                            "i18nValue": {
+                                "ko": "\uc790\ub3d9",
+                                "en": "Auto"
+                            }
+                        }
+                    },
+                    {
+                        "value": "1m",
+                        "label": {
+                            "defaultValue": "1\ubd84",
+                            "i18nValue": {
+                                "ko": "1\ubd84",
+                                "en": "1 min"
+                            }
+                        }
+                    },
+                    {
+                        "value": "5m",
+                        "label": {
+                            "defaultValue": "5\ubd84",
+                            "i18nValue": {
+                                "ko": "5\ubd84",
+                                "en": "5 min"
+                            }
+                        }
+                    },
+                    {
+                        "value": "15m",
+                        "label": {
+                            "defaultValue": "15\ubd84",
+                            "i18nValue": {
+                                "ko": "15\ubd84",
+                                "en": "15 min"
+                            }
+                        }
+                    },
+                    {
+                        "value": "1h",
+                        "label": {
+                            "defaultValue": "1\uc2dc\uac04",
+                            "i18nValue": {
+                                "ko": "1\uc2dc\uac04",
+                                "en": "1 hour"
+                            }
+                        }
+                    },
+                    {
+                        "value": "1d",
+                        "label": {
+                            "defaultValue": "1\uc77c",
+                            "i18nValue": {
+                                "ko": "1\uc77c",
+                                "en": "1 day"
+                            }
+                        }
+                    }
+                ],
+                "defaultValue": "auto"
+            }
+        },
+        {
+            "id": "widget_migrated_filter_time",
+            "type": "filter-datepicker",
+            "title": {
+                "defaultValue": "\uc870\ud68c \uae30\uac04",
+                "i18nValue": {
+                    "ko": "\uc870\ud68c \uae30\uac04",
+                    "en": "Date Range"
+                }
+            },
+            "layout": {
+                "x": 11,
+                "y": 0,
+                "w": 8,
+                "h": 132,
+                "minW": 3,
+                "minH": 50
+            },
+            "style": {
+                "backgroundColor": "#ffffff",
+                "borderRadius": 4,
+                "padding": 8,
+                "shadow": "none"
+            },
+            "options": {
+                "filterKey": "timeRange",
+                "presets": [
+                    "today",
+                    "yesterday",
+                    "last7days",
+                    "last30days",
+                    "thisMonth"
+                ],
+                "defaultValue": "today",
+                "outputKeys": {
+                    "start": "startTime",
+                    "end": "endTime"
+                }
+            }
+        },
+        {
+            "id": "w_inv_kpi1",
+            "type": "kpi-card",
+            "title": {
+                "defaultValue": "\ucd1d \ucd9c\ub825",
+                "i18nValue": {
+                    "ko": "\ucd1d \ucd9c\ub825",
+                    "en": "Total Output"
+                }
+            },
+            "layout": {
+                "x": 0,
+                "y": 156,
+                "w": 6,
+                "h": 120
+            },
+            "dataBinding": {
+                "dataSourceId": "ds_inverter",
+                "requestParams": {
+                    "siteId": "{{filter.selectedSite}}"
+                },
+                "mapping": {
+                    "measurements": [
+                        {
+                            "field": "activePower",
+                            "label": {
+                                "defaultValue": "\ucd1d\ucd9c\ub825",
+                                "i18nValue": {
+                                    "ko": "\ucd1d\ucd9c\ub825",
+                                    "en": "Total Output"
+                                }
+                            },
+                            "unit": "kW",
+                            "color": "#10b981"
+                        }
+                    ]
+                }
+            },
+            "style": {
+                "backgroundColor": "#ffffff",
+                "borderRadius": 8,
+                "shadow": "sm"
+            }
+        },
+        {
+            "id": "w_inv_kpi2",
+            "type": "kpi-card",
+            "title": {
+                "defaultValue": "\ud3c9\uade0 \ud6a8\uc728",
+                "i18nValue": {
+                    "ko": "\ud3c9\uade0 \ud6a8\uc728",
+                    "en": "Avg. Efficiency"
+                }
+            },
+            "layout": {
+                "x": 6,
+                "y": 156,
+                "w": 6,
+                "h": 120
+            },
+            "dataBinding": {
+                "dataSourceId": "ds_inverter",
+                "requestParams": {
+                    "siteId": "{{filter.selectedSite}}"
+                },
+                "mapping": {
+                    "measurements": [
+                        {
+                            "field": "efficiency",
+                            "label": {
+                                "defaultValue": "\ud6a8\uc728",
+                                "i18nValue": {
+                                    "ko": "\ud6a8\uc728",
+                                    "en": "Efficiency"
+                                }
+                            },
+                            "unit": "%",
+                            "color": "#3b82f6",
+                            "aggregation": "avg"
+                        }
+                    ]
+                }
+            },
+            "style": {
+                "backgroundColor": "#ffffff",
+                "borderRadius": 8,
+                "shadow": "sm"
+            }
+        },
+        {
+            "id": "w_inv_kpi3",
+            "type": "kpi-card",
+            "title": {
+                "defaultValue": "\uac00\ub3d9 \uc778\ubc84\ud130",
+                "i18nValue": {
+                    "ko": "\uac00\ub3d9 \uc778\ubc84\ud130",
+                    "en": "Active Inverters"
+                }
+            },
+            "layout": {
+                "x": 12,
+                "y": 156,
+                "w": 6,
+                "h": 120
+            },
+            "dataBinding": {
+                "dataSourceId": "ds_inverter",
+                "requestParams": {
+                    "siteId": "{{filter.selectedSite}}"
+                },
+                "mapping": {
+                    "measurements": [
+                        {
+                            "field": "activeCount",
+                            "label": {
+                                "defaultValue": "\uac00\ub3d9",
+                                "i18nValue": {
+                                    "ko": "\uac00\ub3d9",
+                                    "en": "Active"
+                                }
+                            },
+                            "unit": {
+                                "defaultValue": "\ub300",
+                                "i18nValue": {
+                                    "ko": "\ub300",
+                                    "en": "units"
+                                }
+                            },
+                            "color": "#f59e0b",
+                            "aggregation": "latest"
+                        }
+                    ]
+                }
+            },
+            "style": {
+                "backgroundColor": "#ffffff",
+                "borderRadius": 8,
+                "shadow": "sm"
+            }
+        },
+        {
+            "id": "w_inv_kpi4",
+            "type": "kpi-card",
+            "title": {
+                "defaultValue": "\uc804\uccb4 \uc778\ubc84\ud130",
+                "i18nValue": {
+                    "ko": "\uc804\uccb4 \uc778\ubc84\ud130",
+                    "en": "Total Inverters"
+                }
+            },
+            "layout": {
+                "x": 18,
+                "y": 156,
+                "w": 6,
+                "h": 120
+            },
+            "dataBinding": {
+                "dataSourceId": "ds_inverter",
+                "requestParams": {
+                    "siteId": "{{filter.selectedSite}}"
+                },
+                "mapping": {
+                    "measurements": [
+                        {
+                            "field": "totalCount",
+                            "label": {
+                                "defaultValue": "\uc804\uccb4",
+                                "i18nValue": {
+                                    "ko": "\uc804\uccb4",
+                                    "en": "Total"
+                                }
+                            },
+                            "unit": {
+                                "defaultValue": "\ub300",
+                                "i18nValue": {
+                                    "ko": "\ub300",
+                                    "en": "units"
+                                }
+                            },
+                            "color": "#8b5cf6",
+                            "aggregation": "latest"
+                        }
+                    ]
+                }
+            },
+            "style": {
+                "backgroundColor": "#ffffff",
+                "borderRadius": 8,
+                "shadow": "sm"
+            }
+        },
+        {
+            "id": "w_inv_chart1",
+            "type": "line-chart",
+            "title": {
+                "defaultValue": "\uc720\ud6a8/\ubb34\ud6a8 \uc804\ub825 \ucd94\uc774",
+                "i18nValue": {
+                    "ko": "\uc720\ud6a8/\ubb34\ud6a8 \uc804\ub825 \ucd94\uc774",
+                    "en": "Active/Reactive Power Trend"
+                }
+            },
+            "layout": {
+                "x": 0,
+                "y": 288,
+                "w": 8,
+                "h": 324
+            },
+            "dataBinding": {
+                "dataSourceId": "ds_inverter",
+                "requestParams": {
+                    "siteId": "{{filter.selectedSite}}",
+                    "startTime": "{{filter.startTime}}",
+                    "endTime": "{{filter.endTime}}",
+                    "interval": "{{filter.interval}}"
+                },
+                "mapping": {
+                    "timeField": "timestamp",
+                    "measurements": [
+                        {
+                            "field": "activePower",
+                            "label": {
+                                "defaultValue": "\uc720\ud6a8\uc804\ub825",
+                                "i18nValue": {
+                                    "ko": "\uc720\ud6a8\uc804\ub825",
+                                    "en": "Active Power"
+                                }
+                            },
+                            "unit": "kW",
+                            "color": "#3b82f6"
+                        },
+                        {
+                            "field": "reactivePower",
+                            "label": {
+                                "defaultValue": "\ubb34\ud6a8\uc804\ub825",
+                                "i18nValue": {
+                                    "ko": "\ubb34\ud6a8\uc804\ub825",
+                                    "en": "Reactive Power"
+                                }
+                            },
+                            "unit": "kVar",
+                            "color": "#f59e0b"
+                        }
+                    ]
+                }
+            },
+            "style": {
+                "backgroundColor": "#ffffff",
+                "borderRadius": 8,
+                "shadow": "sm"
+            },
+            "options": {
+                "showLegend": true,
+                "smooth": true
+            }
+        },
+        {
+            "id": "w_inv_chart2",
+            "type": "line-chart",
+            "title": {
+                "defaultValue": "\uc778\ubc84\ud130 \uc628\ub3c4 \ucd94\uc774",
+                "i18nValue": {
+                    "ko": "\uc778\ubc84\ud130 \uc628\ub3c4 \ucd94\uc774",
+                    "en": "Inverter Temperature Trend"
+                }
+            },
+            "layout": {
+                "x": 8,
+                "y": 288,
+                "w": 8,
+                "h": 324
+            },
+            "dataBinding": {
+                "dataSourceId": "ds_inverter",
+                "requestParams": {
+                    "siteId": "{{filter.selectedSite}}",
+                    "startTime": "{{filter.startTime}}",
+                    "endTime": "{{filter.endTime}}",
+                    "interval": "{{filter.interval}}"
+                },
+                "mapping": {
+                    "timeField": "timestamp",
+                    "measurements": [
+                        {
+                            "field": "temperature",
+                            "label": {
+                                "defaultValue": "\uc628\ub3c4",
+                                "i18nValue": {
+                                    "ko": "\uc628\ub3c4",
+                                    "en": "Temperature"
+                                }
+                            },
+                            "unit": "\u00b0C",
+                            "color": "#ef4444"
+                        }
+                    ]
+                }
+            },
+            "style": {
+                "backgroundColor": "#ffffff",
+                "borderRadius": 8,
+                "shadow": "sm"
+            },
+            "options": {
+                "showLegend": true,
+                "smooth": true
+            }
+        },
+        {
+            "id": "w_inv_chart3",
+            "type": "line-chart",
+            "title": {
+                "defaultValue": "\uc2a4\ud2b8\ub9c1 \ucd9c\ub825 \ucd94\uc774",
+                "i18nValue": {
+                    "ko": "\uc2a4\ud2b8\ub9c1 \ucd9c\ub825 \ucd94\uc774",
+                    "en": "String Output Trend"
+                }
+            },
+            "layout": {
+                "x": 16,
+                "y": 288,
+                "w": 8,
+                "h": 324
+            },
+            "dataBinding": {
+                "dataSourceId": "ds_module",
+                "requestParams": {
+                    "siteId": "{{filter.selectedSite}}",
+                    "startTime": "{{filter.startTime}}",
+                    "endTime": "{{filter.endTime}}",
+                    "interval": "{{filter.interval}}"
+                },
+                "mapping": {
+                    "timeField": "timestamp",
+                    "measurements": [
+                        {
+                            "field": "power",
+                            "label": {
+                                "defaultValue": "\uc2a4\ud2b8\ub9c1 \ucd9c\ub825",
+                                "i18nValue": {
+                                    "ko": "\uc2a4\ud2b8\ub9c1 \ucd9c\ub825",
+                                    "en": "String Power"
+                                }
+                            },
+                            "unit": "kW",
+                            "color": "#10b981"
+                        },
+                        {
+                            "field": "current",
+                            "label": {
+                                "defaultValue": "\uc2a4\ud2b8\ub9c1 \uc804\ub958",
+                                "i18nValue": {
+                                    "ko": "\uc2a4\ud2b8\ub9c1 \uc804\ub958",
+                                    "en": "String Current"
+                                }
+                            },
+                            "unit": "A",
+                            "color": "#8b5cf6"
+                        }
+                    ]
+                }
+            },
+            "style": {
+                "backgroundColor": "#ffffff",
+                "borderRadius": 8,
+                "shadow": "sm"
+            },
+            "options": {
+                "showLegend": true,
+                "smooth": true
+            }
+        },
+        {
+            "id": "w_inv_table1",
+            "type": "table",
+            "title": {
+                "defaultValue": "\uc778\ubc84\ud130 \uc0c1\uc138 \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "\uc778\ubc84\ud130 \uc0c1\uc138 \ub370\uc774\ud130",
+                    "en": "Inverter Detail Data"
+                }
+            },
+            "layout": {
+                "x": 0,
+                "y": 612,
+                "w": 24,
+                "h": 360
+            },
+            "dataBinding": {
+                "dataSourceId": "ds_inverter",
+                "requestParams": {
+                    "siteId": "{{filter.selectedSite}}"
+                },
+                "mapping": {
+                    "dimensions": [
+                        "assetName",
+                        "siteName"
+                    ],
+                    "measurements": [
+                        {
+                            "field": "activePower",
+                            "label": {
+                                "defaultValue": "\uc720\ud6a8\uc804\ub825",
+                                "i18nValue": {
+                                    "ko": "\uc720\ud6a8\uc804\ub825",
+                                    "en": "Active Power"
+                                }
+                            },
+                            "unit": "kW"
+                        },
+                        {
+                            "field": "reactivePower",
+                            "label": {
+                                "defaultValue": "\ubb34\ud6a8\uc804\ub825",
+                                "i18nValue": {
+                                    "ko": "\ubb34\ud6a8\uc804\ub825",
+                                    "en": "Reactive Power"
+                                }
+                            },
+                            "unit": "kVar"
+                        },
+                        {
+                            "field": "dailyEnergy",
+                            "label": {
+                                "defaultValue": "\uc77c\ubc1c\uc804\ub7c9",
+                                "i18nValue": {
+                                    "ko": "\uc77c\ubc1c\uc804\ub7c9",
+                                    "en": "Daily Generation"
+                                }
+                            },
+                            "unit": "kWh"
+                        },
+                        {
+                            "field": "efficiency",
+                            "label": {
+                                "defaultValue": "\ud6a8\uc728",
+                                "i18nValue": {
+                                    "ko": "\ud6a8\uc728",
+                                    "en": "Efficiency"
+                                }
+                            },
+                            "unit": "%"
+                        },
+                        {
+                            "field": "temperature",
+                            "label": {
+                                "defaultValue": "\uc628\ub3c4",
+                                "i18nValue": {
+                                    "ko": "\uc628\ub3c4",
+                                    "en": "Temperature"
+                                }
+                            },
+                            "unit": "\u00b0C"
+                        }
+                    ]
+                }
+            },
+            "style": {
+                "backgroundColor": "#ffffff",
+                "borderRadius": 8,
+                "shadow": "sm"
+            }
+        }
+    ],
+    "linkages": []
+}

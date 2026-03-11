@@ -1,0 +1,1116 @@
+{
+    "version": "1.0.0",
+    "settings": {
+        "refreshInterval": 0,
+        "theme": "light",
+        "gridColumns": 24,
+        "rowHeight": 1,
+        "filterMode": "auto"
+    },
+    "dataSources": [
+        {
+            "id": "ds_inverter",
+            "type": "timeseries",
+            "name": {
+                "defaultValue": "\uc778\ubc84\ud130 \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "\uc778\ubc84\ud130 \ub370\uc774\ud130",
+                    "en": "Inverter Data"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/inverter"
+            },
+            "cache": {
+                "staleTime": 30000,
+                "gcTime": 300000,
+                "refetchInterval": 30000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "assetId",
+                    "assetName",
+                    "siteName",
+                    "timestamp"
+                ],
+                "measurements": [
+                    "activePower",
+                    "reactivePower",
+                    "dailyEnergy",
+                    "totalEnergy",
+                    "efficiency"
+                ]
+            }
+        },
+        {
+            "id": "ds_weather",
+            "type": "rest-api",
+            "name": {
+                "defaultValue": "\uae30\uc0c1 \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "\uae30\uc0c1 \ub370\uc774\ud130",
+                    "en": "Weather Data"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/weather"
+            },
+            "cache": {
+                "staleTime": 600000,
+                "gcTime": 1800000,
+                "refetchInterval": 600000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "siteId",
+                    "siteName",
+                    "timestamp"
+                ],
+                "measurements": [
+                    "irradiance",
+                    "temperature",
+                    "humidity",
+                    "windSpeed"
+                ]
+            }
+        },
+        {
+            "id": "ds_kpi",
+            "type": "metric",
+            "name": {
+                "defaultValue": "KPI \uc9c0\ud45c",
+                "i18nValue": {
+                    "ko": "KPI \uc9c0\ud45c",
+                    "en": "KPI Metrics"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/kpi"
+            },
+            "cache": {
+                "staleTime": 300000,
+                "gcTime": 1800000,
+                "refetchInterval": 300000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "siteId",
+                    "date"
+                ],
+                "measurements": [
+                    "dailyGeneration",
+                    "pr",
+                    "availability",
+                    "capacityFactor"
+                ]
+            }
+        },
+        {
+            "id": "ds_alarm",
+            "type": "rest-api",
+            "name": {
+                "defaultValue": "\uc54c\ub78c \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "\uc54c\ub78c \ub370\uc774\ud130",
+                    "en": "Alarm Data"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/alarm"
+            },
+            "cache": {
+                "staleTime": 60000,
+                "gcTime": 300000,
+                "refetchInterval": 60000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "siteId",
+                    "severity",
+                    "category",
+                    "timestamp"
+                ],
+                "measurements": [
+                    "count"
+                ]
+            }
+        },
+        {
+            "id": "ds_revenue",
+            "type": "metric",
+            "name": {
+                "defaultValue": "\uc218\uc775 \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "\uc218\uc775 \ub370\uc774\ud130",
+                    "en": "Revenue Data"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/revenue"
+            },
+            "cache": {
+                "staleTime": 300000,
+                "gcTime": 1800000,
+                "refetchInterval": 300000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "siteId",
+                    "date"
+                ],
+                "measurements": [
+                    "energySales",
+                    "recSales",
+                    "totalRevenue",
+                    "generationKwh"
+                ]
+            }
+        },
+        {
+            "id": "ds_battery",
+            "type": "timeseries",
+            "name": {
+                "defaultValue": "ESS \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "ESS \ub370\uc774\ud130",
+                    "en": "ESS Data"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/battery"
+            },
+            "cache": {
+                "staleTime": 30000,
+                "gcTime": 300000,
+                "refetchInterval": 30000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "siteId",
+                    "batteryId",
+                    "timestamp"
+                ],
+                "measurements": [
+                    "soc",
+                    "power",
+                    "temperature",
+                    "voltage",
+                    "current"
+                ]
+            }
+        },
+        {
+            "id": "ds_grid",
+            "type": "timeseries",
+            "name": {
+                "defaultValue": "\uacc4\ud1b5 \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "\uacc4\ud1b5 \ub370\uc774\ud130",
+                    "en": "Grid Data"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/grid"
+            },
+            "cache": {
+                "staleTime": 30000,
+                "gcTime": 300000,
+                "refetchInterval": 30000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "siteId",
+                    "timestamp"
+                ],
+                "measurements": [
+                    "gridVoltage",
+                    "gridFrequency",
+                    "exportPower",
+                    "importPower"
+                ]
+            }
+        },
+        {
+            "id": "ds_price",
+            "type": "rest-api",
+            "name": {
+                "defaultValue": "\uc804\ub825 \uac00\uaca9",
+                "i18nValue": {
+                    "ko": "\uc804\ub825 \uac00\uaca9",
+                    "en": "Energy Price"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/price"
+            },
+            "cache": {
+                "staleTime": 600000,
+                "gcTime": 1800000,
+                "refetchInterval": 600000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "region",
+                    "timestamp"
+                ],
+                "measurements": [
+                    "smp",
+                    "rec"
+                ]
+            }
+        },
+        {
+            "id": "ds_meter",
+            "type": "timeseries",
+            "name": {
+                "defaultValue": "\uacc4\ub7c9\uae30 \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "\uacc4\ub7c9\uae30 \ub370\uc774\ud130",
+                    "en": "Meter Data"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/meter"
+            },
+            "cache": {
+                "staleTime": 30000,
+                "gcTime": 300000,
+                "refetchInterval": 30000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "siteId",
+                    "meterId",
+                    "timestamp"
+                ],
+                "measurements": [
+                    "activeExport",
+                    "activeImport",
+                    "powerFactor"
+                ]
+            }
+        },
+        {
+            "id": "ds_maintenance",
+            "type": "rest-api",
+            "name": {
+                "defaultValue": "\uc720\uc9c0\ubcf4\uc218 \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "\uc720\uc9c0\ubcf4\uc218 \ub370\uc774\ud130",
+                    "en": "Maintenance Data"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/maintenance"
+            },
+            "cache": {
+                "staleTime": 60000,
+                "gcTime": 300000,
+                "refetchInterval": 60000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "siteId",
+                    "type",
+                    "status"
+                ],
+                "measurements": [
+                    "cost"
+                ]
+            }
+        },
+        {
+            "id": "ds_module",
+            "type": "timeseries",
+            "name": {
+                "defaultValue": "\ubaa8\ub4c8/\uc2a4\ud2b8\ub9c1 \ub370\uc774\ud130",
+                "i18nValue": {
+                    "ko": "\ubaa8\ub4c8/\uc2a4\ud2b8\ub9c1 \ub370\uc774\ud130",
+                    "en": "Module/String Data"
+                }
+            },
+            "config": {
+                "endpoint": "/api/data/module"
+            },
+            "cache": {
+                "staleTime": 30000,
+                "gcTime": 300000,
+                "refetchInterval": 30000
+            },
+            "returnStructure": {
+                "dimensions": [
+                    "siteId",
+                    "stringId",
+                    "timestamp"
+                ],
+                "measurements": [
+                    "voltage",
+                    "current",
+                    "power",
+                    "temperature"
+                ]
+            }
+        }
+    ],
+    "filters": [],
+    "widgets": [
+        {
+            "id": "w_form_header",
+            "type": "kpi-card",
+            "title": {
+                "defaultValue": "\uc124\ube44 \uc810\uac80 \ubcf4\uace0\uc11c",
+                "i18nValue": {
+                    "ko": "\uc124\ube44 \uc810\uac80 \ubcf4\uace0\uc11c",
+                    "en": "Equipment Inspection Report"
+                }
+            },
+            "layout": {
+                "x": 0,
+                "y": 0,
+                "w": 6,
+                "h": 200
+            },
+            "dataBinding": {
+                "dataSourceId": "ds_maintenance",
+                "requestParams": {},
+                "mapping": {
+                    "measurements": [
+                        {
+                            "field": "scheduled",
+                            "label": {
+                                "defaultValue": "\uc608\uc815 \uc810\uac80",
+                                "i18nValue": {
+                                    "ko": "\uc608\uc815 \uc810\uac80",
+                                    "en": "Scheduled"
+                                }
+                            },
+                            "unit": {
+                                "defaultValue": "\uac74",
+                                "i18nValue": {
+                                    "ko": "\uac74",
+                                    "en": "cases"
+                                }
+                            },
+                            "color": "#3b82f6",
+                            "aggregation": "latest"
+                        }
+                    ]
+                }
+            },
+            "style": {
+                "backgroundColor": "#ffffff",
+                "borderRadius": 8,
+                "shadow": "sm"
+            }
+        },
+        {
+            "id": "w_form_inspection",
+            "type": "form",
+            "title": {
+                "defaultValue": "\uc124\ube44 \uc810\uac80 \ubcf4\uace0\uc11c",
+                "i18nValue": {
+                    "ko": "\uc124\ube44 \uc810\uac80 \ubcf4\uace0\uc11c",
+                    "en": "Equipment Inspection Report"
+                }
+            },
+            "layout": {
+                "x": 0,
+                "y": 210,
+                "w": 24,
+                "h": 650
+            },
+            "style": {
+                "backgroundColor": "#ffffff",
+                "borderRadius": 8,
+                "padding": 16,
+                "shadow": "sm"
+            },
+            "options": {
+                "formId": "inspection",
+                "columns": 3,
+                "fields": [
+                    {
+                        "fieldName": "siteId",
+                        "type": "select",
+                        "label": {
+                            "defaultValue": "\uc810\uac80 \ub300\uc0c1 \ubc1c\uc804\uc18c",
+                            "i18nValue": {
+                                "ko": "\uc810\uac80 \ub300\uc0c1 \ubc1c\uc804\uc18c",
+                                "en": "Target Site"
+                            }
+                        },
+                        "options": [
+                            {
+                                "value": "cmmlb8nyh0002tauyjz04lpgy",
+                                "label": "\uc11c\uc6b8 \ud0dc\uc591\uad11 1\ud638"
+                            },
+                            {
+                                "value": "cmmlb8oyo14d1tauy8rn1z48d",
+                                "label": "\ubd80\uc0b0 \ud0dc\uc591\uad11 2\ud638"
+                            },
+                            {
+                                "value": "cmmlb8q7w2hc9tauycv78v26r",
+                                "label": "\uc81c\uc8fc \ud0dc\uc591\uad11 3\ud638"
+                            },
+                            {
+                                "value": "cmmlb8rnj402btauymlkivuzo",
+                                "label": "\uc138\uc885 \ud0dc\uc591\uad11 4\ud638"
+                            },
+                            {
+                                "value": "cmmlb8tjx5x5gtauy79tkl26x",
+                                "label": "\uc804\ub0a8 \ud0dc\uc591\uad11 5\ud638"
+                            },
+                            {
+                                "value": "cmmlb8vxh88lotauy6l5qiqzd",
+                                "label": "\uacbd\ubd81 \ud0dc\uc591\uad11 6\ud638"
+                            },
+                            {
+                                "value": "cmmlb8xon9x2ktauy2utip2d2",
+                                "label": "\ucda9\ub0a8 \ud0dc\uc591\uad11 7\ud638"
+                            }
+                        ],
+                        "placeholder": {
+                            "defaultValue": "\ubc1c\uc804\uc18c\ub97c \uc120\ud0dd\ud558\uc138\uc694",
+                            "i18nValue": {
+                                "ko": "\ubc1c\uc804\uc18c\ub97c \uc120\ud0dd\ud558\uc138\uc694",
+                                "en": "Select a site"
+                            }
+                        },
+                        "validation": [
+                            {
+                                "type": "required",
+                                "message": {
+                                    "defaultValue": "\ubc1c\uc804\uc18c\ub97c \uc120\ud0dd\ud574\uc8fc\uc138\uc694",
+                                    "i18nValue": {
+                                        "ko": "\ubc1c\uc804\uc18c\ub97c \uc120\ud0dd\ud574\uc8fc\uc138\uc694",
+                                        "en": "Please select a site"
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "fieldName": "inspectionType",
+                        "type": "radio",
+                        "label": {
+                            "defaultValue": "\uc810\uac80 \uc720\ud615",
+                            "i18nValue": {
+                                "ko": "\uc810\uac80 \uc720\ud615",
+                                "en": "Inspection Type"
+                            }
+                        },
+                        "options": [
+                            {
+                                "value": "routine",
+                                "label": {
+                                    "defaultValue": "\uc815\uae30 \uc810\uac80",
+                                    "i18nValue": {
+                                        "ko": "\uc815\uae30 \uc810\uac80",
+                                        "en": "Routine"
+                                    }
+                                }
+                            },
+                            {
+                                "value": "emergency",
+                                "label": {
+                                    "defaultValue": "\uae34\uae09 \uc810\uac80",
+                                    "i18nValue": {
+                                        "ko": "\uae34\uae09 \uc810\uac80",
+                                        "en": "Emergency"
+                                    }
+                                }
+                            },
+                            {
+                                "value": "preventive",
+                                "label": {
+                                    "defaultValue": "\uc608\ubc29 \uc815\ube44",
+                                    "i18nValue": {
+                                        "ko": "\uc608\ubc29 \uc815\ube44",
+                                        "en": "Preventive"
+                                    }
+                                }
+                            }
+                        ],
+                        "direction": "horizontal",
+                        "defaultValue": "routine",
+                        "validation": [
+                            {
+                                "type": "required",
+                                "message": {
+                                    "defaultValue": "\uc810\uac80 \uc720\ud615\uc744 \uc120\ud0dd\ud574\uc8fc\uc138\uc694",
+                                    "i18nValue": {
+                                        "ko": "\uc810\uac80 \uc720\ud615\uc744 \uc120\ud0dd\ud574\uc8fc\uc138\uc694",
+                                        "en": "Please select an inspection type"
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "fieldName": "inspectorName",
+                        "type": "input",
+                        "label": {
+                            "defaultValue": "\uc810\uac80\uc790\uba85",
+                            "i18nValue": {
+                                "ko": "\uc810\uac80\uc790\uba85",
+                                "en": "Inspector Name"
+                            }
+                        },
+                        "inputType": "text",
+                        "placeholder": {
+                            "defaultValue": "\uc774\ub984\uc744 \uc785\ub825\ud558\uc138\uc694",
+                            "i18nValue": {
+                                "ko": "\uc774\ub984\uc744 \uc785\ub825\ud558\uc138\uc694",
+                                "en": "Enter name"
+                            }
+                        },
+                        "validation": [
+                            {
+                                "type": "required",
+                                "message": {
+                                    "defaultValue": "\uc810\uac80\uc790\uba85\uc744 \uc785\ub825\ud574\uc8fc\uc138\uc694",
+                                    "i18nValue": {
+                                        "ko": "\uc810\uac80\uc790\uba85\uc744 \uc785\ub825\ud574\uc8fc\uc138\uc694",
+                                        "en": "Please enter inspector name"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "minLength",
+                                "value": 2,
+                                "message": {
+                                    "defaultValue": "2\uc790 \uc774\uc0c1 \uc785\ub825\ud574\uc8fc\uc138\uc694",
+                                    "i18nValue": {
+                                        "ko": "2\uc790 \uc774\uc0c1 \uc785\ub825\ud574\uc8fc\uc138\uc694",
+                                        "en": "Minimum 2 characters"
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "fieldName": "phone",
+                        "type": "input",
+                        "label": {
+                            "defaultValue": "\uc5f0\ub77d\ucc98",
+                            "i18nValue": {
+                                "ko": "\uc5f0\ub77d\ucc98",
+                                "en": "Phone"
+                            }
+                        },
+                        "inputType": "tel",
+                        "placeholder": "010-0000-0000",
+                        "validation": [
+                            {
+                                "type": "required",
+                                "message": {
+                                    "defaultValue": "\uc5f0\ub77d\ucc98\ub97c \uc785\ub825\ud574\uc8fc\uc138\uc694",
+                                    "i18nValue": {
+                                        "ko": "\uc5f0\ub77d\ucc98\ub97c \uc785\ub825\ud574\uc8fc\uc138\uc694",
+                                        "en": "Please enter phone number"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "pattern",
+                                "value": "^\\d{2,3}-\\d{3,4}-\\d{4}$",
+                                "message": {
+                                    "defaultValue": "\uc62c\ubc14\ub978 \uc804\ud654\ubc88\ud638 \ud615\uc2dd\uc774 \uc544\ub2d9\ub2c8\ub2e4",
+                                    "i18nValue": {
+                                        "ko": "\uc62c\ubc14\ub978 \uc804\ud654\ubc88\ud638 \ud615\uc2dd\uc774 \uc544\ub2d9\ub2c8\ub2e4",
+                                        "en": "Invalid phone format"
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "fieldName": "checklist",
+                        "type": "checkbox",
+                        "label": {
+                            "defaultValue": "\uc810\uac80 \ud56d\ubaa9 (\ud574\ub2f9 \ud56d\ubaa9 \uc120\ud0dd)",
+                            "i18nValue": {
+                                "ko": "\uc810\uac80 \ud56d\ubaa9 (\ud574\ub2f9 \ud56d\ubaa9 \uc120\ud0dd)",
+                                "en": "Checklist (select applicable)"
+                            }
+                        },
+                        "mode": "group",
+                        "options": [
+                            {
+                                "value": "panel",
+                                "label": {
+                                    "defaultValue": "\ud0dc\uc591\uad11 \ud328\ub110 \uc0c1\ud0dc",
+                                    "i18nValue": {
+                                        "ko": "\ud0dc\uc591\uad11 \ud328\ub110 \uc0c1\ud0dc",
+                                        "en": "Solar Panel Condition"
+                                    }
+                                }
+                            },
+                            {
+                                "value": "inverter",
+                                "label": {
+                                    "defaultValue": "\uc778\ubc84\ud130 \ub3d9\uc791 \ud655\uc778",
+                                    "i18nValue": {
+                                        "ko": "\uc778\ubc84\ud130 \ub3d9\uc791 \ud655\uc778",
+                                        "en": "Inverter Operation"
+                                    }
+                                }
+                            },
+                            {
+                                "value": "wiring",
+                                "label": {
+                                    "defaultValue": "\ubc30\uc120 \ubc0f \ucee4\ub125\ud130",
+                                    "i18nValue": {
+                                        "ko": "\ubc30\uc120 \ubc0f \ucee4\ub125\ud130",
+                                        "en": "Wiring & Connectors"
+                                    }
+                                }
+                            },
+                            {
+                                "value": "structure",
+                                "label": {
+                                    "defaultValue": "\uad6c\uc870\ubb3c/\ub9c8\uc6b4\ud2b8",
+                                    "i18nValue": {
+                                        "ko": "\uad6c\uc870\ubb3c/\ub9c8\uc6b4\ud2b8",
+                                        "en": "Structure/Mount"
+                                    }
+                                }
+                            },
+                            {
+                                "value": "grounding",
+                                "label": {
+                                    "defaultValue": "\uc811\uc9c0 \uc0c1\ud0dc",
+                                    "i18nValue": {
+                                        "ko": "\uc811\uc9c0 \uc0c1\ud0dc",
+                                        "en": "Grounding"
+                                    }
+                                }
+                            },
+                            {
+                                "value": "monitoring",
+                                "label": {
+                                    "defaultValue": "\ubaa8\ub2c8\ud130\ub9c1 \uc2dc\uc2a4\ud15c",
+                                    "i18nValue": {
+                                        "ko": "\ubaa8\ub2c8\ud130\ub9c1 \uc2dc\uc2a4\ud15c",
+                                        "en": "Monitoring System"
+                                    }
+                                }
+                            }
+                        ],
+                        "direction": "vertical",
+                        "validation": [
+                            {
+                                "type": "required",
+                                "message": {
+                                    "defaultValue": "\ud558\ub098 \uc774\uc0c1\uc758 \ud56d\ubaa9\uc744 \uc120\ud0dd\ud574\uc8fc\uc138\uc694",
+                                    "i18nValue": {
+                                        "ko": "\ud558\ub098 \uc774\uc0c1\uc758 \ud56d\ubaa9\uc744 \uc120\ud0dd\ud574\uc8fc\uc138\uc694",
+                                        "en": "Please select at least one item"
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "fieldName": "conditionScore",
+                        "type": "input",
+                        "label": {
+                            "defaultValue": "\uc124\ube44 \uc0c1\ud0dc \uc810\uc218 (0~100)",
+                            "i18nValue": {
+                                "ko": "\uc124\ube44 \uc0c1\ud0dc \uc810\uc218 (0~100)",
+                                "en": "Condition Score (0-100)"
+                            }
+                        },
+                        "inputType": "number",
+                        "placeholder": "0~100",
+                        "validation": [
+                            {
+                                "type": "required",
+                                "message": {
+                                    "defaultValue": "\uc810\uc218\ub97c \uc785\ub825\ud574\uc8fc\uc138\uc694",
+                                    "i18nValue": {
+                                        "ko": "\uc810\uc218\ub97c \uc785\ub825\ud574\uc8fc\uc138\uc694",
+                                        "en": "Please enter a score"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "min",
+                                "value": 0,
+                                "message": {
+                                    "defaultValue": "0 \uc774\uc0c1\uc774\uc5b4\uc57c \ud569\ub2c8\ub2e4",
+                                    "i18nValue": {
+                                        "ko": "0 \uc774\uc0c1\uc774\uc5b4\uc57c \ud569\ub2c8\ub2e4",
+                                        "en": "Must be 0 or above"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "max",
+                                "value": 100,
+                                "message": {
+                                    "defaultValue": "100 \uc774\ud558\uc5ec\uc57c \ud569\ub2c8\ub2e4",
+                                    "i18nValue": {
+                                        "ko": "100 \uc774\ud558\uc5ec\uc57c \ud569\ub2c8\ub2e4",
+                                        "en": "Must be 100 or below"
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "fieldName": "isUrgent",
+                        "type": "checkbox",
+                        "label": {
+                            "defaultValue": "\uae34\uae09 \uc5ec\ubd80",
+                            "i18nValue": {
+                                "ko": "\uae34\uae09 \uc5ec\ubd80",
+                                "en": "Urgency"
+                            }
+                        },
+                        "mode": "single",
+                        "checkboxLabel": {
+                            "defaultValue": "\uae34\uae09 \uc870\uce58\uac00 \ud544\uc694\ud569\ub2c8\ub2e4",
+                            "i18nValue": {
+                                "ko": "\uae34\uae09 \uc870\uce58\uac00 \ud544\uc694\ud569\ub2c8\ub2e4",
+                                "en": "Urgent action required"
+                            }
+                        }
+                    },
+                    {
+                        "fieldName": "severity",
+                        "type": "select",
+                        "label": {
+                            "defaultValue": "\ubc1c\uacac \uc774\uc0c1 \uc2ec\uac01\ub3c4",
+                            "i18nValue": {
+                                "ko": "\ubc1c\uacac \uc774\uc0c1 \uc2ec\uac01\ub3c4",
+                                "en": "Issue Severity"
+                            }
+                        },
+                        "options": [
+                            {
+                                "value": "none",
+                                "label": {
+                                    "defaultValue": "\uc774\uc0c1 \uc5c6\uc74c",
+                                    "i18nValue": {
+                                        "ko": "\uc774\uc0c1 \uc5c6\uc74c",
+                                        "en": "None"
+                                    }
+                                }
+                            },
+                            {
+                                "value": "low",
+                                "label": {
+                                    "defaultValue": "\uacbd\ubbf8",
+                                    "i18nValue": {
+                                        "ko": "\uacbd\ubbf8",
+                                        "en": "Low"
+                                    }
+                                }
+                            },
+                            {
+                                "value": "medium",
+                                "label": {
+                                    "defaultValue": "\ubcf4\ud1b5",
+                                    "i18nValue": {
+                                        "ko": "\ubcf4\ud1b5",
+                                        "en": "Medium"
+                                    }
+                                }
+                            },
+                            {
+                                "value": "high",
+                                "label": {
+                                    "defaultValue": "\uc2ec\uac01",
+                                    "i18nValue": {
+                                        "ko": "\uc2ec\uac01",
+                                        "en": "High"
+                                    }
+                                }
+                            },
+                            {
+                                "value": "critical",
+                                "label": {
+                                    "defaultValue": "\uae34\uae09",
+                                    "i18nValue": {
+                                        "ko": "\uae34\uae09",
+                                        "en": "Critical"
+                                    }
+                                }
+                            }
+                        ],
+                        "placeholder": {
+                            "defaultValue": "\uc2ec\uac01\ub3c4 \uc120\ud0dd",
+                            "i18nValue": {
+                                "ko": "\uc2ec\uac01\ub3c4 \uc120\ud0dd",
+                                "en": "Select severity"
+                            }
+                        },
+                        "defaultValue": "none"
+                    },
+                    {
+                        "fieldName": "nextInspectionDate",
+                        "type": "input",
+                        "label": {
+                            "defaultValue": "\ub2e4\uc74c \uc810\uac80 \ud76c\ub9dd\uc77c",
+                            "i18nValue": {
+                                "ko": "\ub2e4\uc74c \uc810\uac80 \ud76c\ub9dd\uc77c",
+                                "en": "Next Inspection Date"
+                            }
+                        },
+                        "inputType": "text",
+                        "placeholder": "YYYY-MM-DD",
+                        "validation": [
+                            {
+                                "type": "pattern",
+                                "value": "^\\d{4}-\\d{2}-\\d{2}$",
+                                "message": {
+                                    "defaultValue": "YYYY-MM-DD \ud615\uc2dd\uc73c\ub85c \uc785\ub825\ud574\uc8fc\uc138\uc694",
+                                    "i18nValue": {
+                                        "ko": "YYYY-MM-DD \ud615\uc2dd\uc73c\ub85c \uc785\ub825\ud574\uc8fc\uc138\uc694",
+                                        "en": "Please enter in YYYY-MM-DD format"
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "fieldName": "notes",
+                        "type": "textarea",
+                        "label": {
+                            "defaultValue": "\uc810\uac80 \uc18c\uacac \ubc0f \ud2b9\uc774\uc0ac\ud56d",
+                            "i18nValue": {
+                                "ko": "\uc810\uac80 \uc18c\uacac \ubc0f \ud2b9\uc774\uc0ac\ud56d",
+                                "en": "Inspection Findings & Notes"
+                            }
+                        },
+                        "placeholder": {
+                            "defaultValue": "\uc810\uac80 \uacb0\uacfc\ub97c \uc0c1\uc138\ud788 \uae30\ub85d\ud574\uc8fc\uc138\uc694...",
+                            "i18nValue": {
+                                "ko": "\uc810\uac80 \uacb0\uacfc\ub97c \uc0c1\uc138\ud788 \uae30\ub85d\ud574\uc8fc\uc138\uc694...",
+                                "en": "Please describe the inspection results in detail..."
+                            }
+                        },
+                        "rows": 5,
+                        "maxLength": 500,
+                        "colSpan": 3,
+                        "validation": [
+                            {
+                                "type": "required",
+                                "message": {
+                                    "defaultValue": "\uc810\uac80 \uc18c\uacac\uc744 \uc785\ub825\ud574\uc8fc\uc138\uc694",
+                                    "i18nValue": {
+                                        "ko": "\uc810\uac80 \uc18c\uacac\uc744 \uc785\ub825\ud574\uc8fc\uc138\uc694",
+                                        "en": "Please enter inspection findings"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "minLength",
+                                "value": 10,
+                                "message": {
+                                    "defaultValue": "10\uc790 \uc774\uc0c1 \uc785\ub825\ud574\uc8fc\uc138\uc694",
+                                    "i18nValue": {
+                                        "ko": "10\uc790 \uc774\uc0c1 \uc785\ub825\ud574\uc8fc\uc138\uc694",
+                                        "en": "Minimum 10 characters"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "buttons": [
+                    {
+                        "label": {
+                            "defaultValue": "\uc810\uac80 \ubcf4\uace0\uc11c \uc81c\ucd9c",
+                            "i18nValue": {
+                                "ko": "\uc810\uac80 \ubcf4\uace0\uc11c \uc81c\ucd9c",
+                                "en": "Submit Report"
+                            }
+                        },
+                        "buttonType": "submit",
+                        "variant": "primary"
+                    },
+                    {
+                        "label": {
+                            "defaultValue": "\ucd08\uae30\ud654",
+                            "i18nValue": {
+                                "ko": "\ucd08\uae30\ud654",
+                                "en": "Reset"
+                            }
+                        },
+                        "buttonType": "reset",
+                        "variant": "outline"
+                    }
+                ],
+                "submitConfig": {
+                    "endpoint": "/api/data/maintenance",
+                    "method": "POST",
+                    "confirmation": {
+                        "enabled": true,
+                        "title": {
+                            "defaultValue": "\ubcf4\uace0\uc11c \uc81c\ucd9c",
+                            "i18nValue": {
+                                "ko": "\ubcf4\uace0\uc11c \uc81c\ucd9c",
+                                "en": "Submit Report"
+                            }
+                        },
+                        "message": {
+                            "defaultValue": "\uc810\uac80 \ubcf4\uace0\uc11c\ub97c \uc81c\ucd9c\ud558\uc2dc\uaca0\uc2b5\ub2c8\uae4c? \uc81c\ucd9c \ud6c4\uc5d0\ub294 \uc218\uc815\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.",
+                            "i18nValue": {
+                                "ko": "\uc810\uac80 \ubcf4\uace0\uc11c\ub97c \uc81c\ucd9c\ud558\uc2dc\uaca0\uc2b5\ub2c8\uae4c? \uc81c\ucd9c \ud6c4\uc5d0\ub294 \uc218\uc815\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.",
+                                "en": "Submit the inspection report? It cannot be modified after submission."
+                            }
+                        }
+                    },
+                    "onSuccess": {
+                        "message": {
+                            "defaultValue": "\uc810\uac80 \ubcf4\uace0\uc11c\uac00 \uc131\uacf5\uc801\uc73c\ub85c \uc81c\ucd9c\ub418\uc5c8\uc2b5\ub2c8\ub2e4",
+                            "i18nValue": {
+                                "ko": "\uc810\uac80 \ubcf4\uace0\uc11c\uac00 \uc131\uacf5\uc801\uc73c\ub85c \uc81c\ucd9c\ub418\uc5c8\uc2b5\ub2c8\ub2e4",
+                                "en": "Inspection report submitted successfully"
+                            }
+                        },
+                        "resetForm": true
+                    },
+                    "onError": {
+                        "message": {
+                            "defaultValue": "\uc81c\ucd9c\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. \ub2e4\uc2dc \uc2dc\ub3c4\ud574\uc8fc\uc138\uc694.",
+                            "i18nValue": {
+                                "ko": "\uc81c\ucd9c\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. \ub2e4\uc2dc \uc2dc\ub3c4\ud574\uc8fc\uc138\uc694.",
+                                "en": "Submission failed. Please try again."
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "id": "w_form_ref_alarms",
+            "type": "table",
+            "title": {
+                "defaultValue": "\ucd5c\uadfc \uc54c\ub78c \ub0b4\uc5ed (\ucc38\uace0)",
+                "i18nValue": {
+                    "ko": "\ucd5c\uadfc \uc54c\ub78c \ub0b4\uc5ed (\ucc38\uace0)",
+                    "en": "Recent Alarms (Reference)"
+                }
+            },
+            "layout": {
+                "x": 6,
+                "y": 0,
+                "w": 9,
+                "h": 200
+            },
+            "dataBinding": {
+                "dataSourceId": "ds_alarm",
+                "requestParams": {},
+                "mapping": {
+                    "dimensions": [
+                        "siteId",
+                        "severity",
+                        "category"
+                    ],
+                    "measurements": [
+                        {
+                            "field": "message",
+                            "label": {
+                                "defaultValue": "\uba54\uc2dc\uc9c0",
+                                "i18nValue": {
+                                    "ko": "\uba54\uc2dc\uc9c0",
+                                    "en": "Message"
+                                }
+                            }
+                        },
+                        {
+                            "field": "status",
+                            "label": {
+                                "defaultValue": "\uc0c1\ud0dc",
+                                "i18nValue": {
+                                    "ko": "\uc0c1\ud0dc",
+                                    "en": "Status"
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            "style": {
+                "backgroundColor": "#ffffff",
+                "borderRadius": 8,
+                "shadow": "sm"
+            }
+        },
+        {
+            "id": "w_form_ref_maint",
+            "type": "table",
+            "title": {
+                "defaultValue": "\ucd5c\uadfc \uc815\ube44 \uae30\ub85d (\ucc38\uace0)",
+                "i18nValue": {
+                    "ko": "\ucd5c\uadfc \uc815\ube44 \uae30\ub85d (\ucc38\uace0)",
+                    "en": "Recent Maintenance (Reference)"
+                }
+            },
+            "layout": {
+                "x": 15,
+                "y": 0,
+                "w": 9,
+                "h": 200
+            },
+            "dataBinding": {
+                "dataSourceId": "ds_maintenance",
+                "requestParams": {},
+                "mapping": {
+                    "dimensions": [
+                        "siteId",
+                        "type"
+                    ],
+                    "measurements": [
+                        {
+                            "field": "description",
+                            "label": {
+                                "defaultValue": "\ub0b4\uc6a9",
+                                "i18nValue": {
+                                    "ko": "\ub0b4\uc6a9",
+                                    "en": "Description"
+                                }
+                            }
+                        },
+                        {
+                            "field": "status",
+                            "label": {
+                                "defaultValue": "\uc0c1\ud0dc",
+                                "i18nValue": {
+                                    "ko": "\uc0c1\ud0dc",
+                                    "en": "Status"
+                                }
+                            }
+                        },
+                        {
+                            "field": "cost",
+                            "label": {
+                                "defaultValue": "\ube44\uc6a9",
+                                "i18nValue": {
+                                    "ko": "\ube44\uc6a9",
+                                    "en": "Cost"
+                                }
+                            },
+                            "unit": {
+                                "defaultValue": "\uc6d0",
+                                "i18nValue": {
+                                    "ko": "\uc6d0",
+                                    "en": "KRW"
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            "style": {
+                "backgroundColor": "#ffffff",
+                "borderRadius": 8,
+                "shadow": "sm"
+            }
+        }
+    ],
+    "linkages": []
+}
